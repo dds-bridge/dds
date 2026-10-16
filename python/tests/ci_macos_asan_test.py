@@ -51,8 +51,26 @@ def _positional(kwargs: dict, index: int) -> object | None:
 
 
 def _skip_ws(text: str, i: int, n: int) -> int:
-    while i < n and text[i] in " \t\r\n":
-        i += 1
+    """Skip whitespace, including a backslash-newline line continuation.
+
+    A backslash immediately followed by an LF or CRLF line break is a
+    line continuation -- dropped entirely, the same rule _decode_escape()
+    applies inside a string -- so it is whitespace here too; skipping
+    only the bare characters in " \t\r\n" left the backslash itself
+    unconsumed, so e.g. "archive_override\\\n(" (the call name and "("
+    split across such a continuation) was never recognized as a call.
+    """
+    while i < n:
+        if text[i] in " \t\r\n":
+            i += 1
+            continue
+        if text[i] == "\\" and text[i + 1 : i + 2] == "\n":
+            i += 2
+            continue
+        if text[i] == "\\" and text[i + 1 : i + 3] == "\r\n":
+            i += 3
+            continue
+        break
     return i
 
 
@@ -340,8 +358,162 @@ def _match_parenthesized_call(
     return None, 0
 
 
+def _match_call_name(
+    text: str, i: int, n: int, sorted_names: list[str]
+) -> tuple[str | None, int]:
+    """Try to match a call "name(...)" at text[i], directly or through
+
+    one or more layers of grouping parens (see _match_parenthesized_call).
+    Whitespace and comments between the name and its "(" are tolerated
+    either way. Returns (matched_name, index_of_opening_paren), or
+    (None, 0) if text[i] isn't the start of a recognized call.
+    """
+    if _is_identifier_boundary(text, i):
+        for name in sorted_names:
+            if text.startswith(name, i):
+                j = _skip_ws_and_comments(text, i + len(name), n)
+                if j < n and text[j] == "(":
+                    return name, j
+    if i < n and text[i] == "(":
+        return _match_parenthesized_call(text, i, n, sorted_names)
+    return None, 0
+
+
+def _scan_call_body(
+    text: str,
+    i: int,
+    n: int,
+    sorted_names: list[str],
+    results: list[dict[str, str]],
+) -> int:
+    """Scan one call's body, starting right after its opening "(".
+
+    Parses each "identifier = value" pair at the call's own top-level
+    parenthesis depth (see _iter_call_kwargs for why only there), then
+    appends the resulting {keyword: value} dict to `results` and returns
+    the index just past the matching closing ")".
+
+    A recognized call name appearing anywhere in the body -- not just as
+    this call's own name -- is itself a real call Bazel executes, e.g.
+    `patches = single_version_override(...) or []`; such a nested call
+    is recursively scanned the same way (appending its own dict to
+    `results` too) and its matched span is skipped whole, rather than
+    being silently swallowed as inert text while this call's argument
+    list is paren-balanced.
+    """
+    depth = 1
+    bracket_depth = 0
+    brace_depth = 0
+    kwargs: dict[str, str] = {}
+    while i < n and depth > 0:
+        ch = text[i]
+        if ch == "#":
+            i = _skip_comment(text, i, n)
+            continue
+        at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
+        if ch in "\"'" or _is_raw_string_start(text, i, n):
+            if at_top:
+                end, value = _skip_any_string(text, i, n)
+                _add_positional(
+                    kwargs,
+                    value if _is_complete_literal(text, end, n) else _UNRESOLVED,
+                )
+                i = end
+                continue
+            i, _ = _skip_any_string(text, i, n)
+            continue
+        nested_name, nested_paren = _match_call_name(text, i, n, sorted_names)
+        if nested_name is not None:
+            if at_top:
+                _add_positional(kwargs, _UNRESOLVED)
+            i = _scan_call_body(text, nested_paren + 1, n, sorted_names, results)
+            continue
+        if ch == "(":
+            # A "(" at the top level, not preceded by "ident =" and not
+            # a recognized call name (handled above), opens a
+            # parenthesized positional expression (e.g. an argument
+            # written as ("a" + "b")) rather than a literal or a bare
+            # variable reference; mark it unresolved before descending
+            # into it, the same as any other non-literal positional
+            # value.
+            if at_top:
+                _add_positional(kwargs, _UNRESOLVED)
+            depth += 1
+            i += 1
+            continue
+        if ch == ")":
+            depth -= 1
+            i += 1
+            continue
+        if ch == "[":
+            # Same reasoning as the "(" branch above: a top-level "["
+            # not preceded by "ident =" opens a list expression (e.g.
+            # an argument written as ["a"][0]).
+            if at_top:
+                _add_positional(kwargs, _UNRESOLVED)
+            bracket_depth += 1
+            i += 1
+            continue
+        if ch == "]":
+            bracket_depth -= 1
+            i += 1
+            continue
+        if ch == "{":
+            # Same reasoning again, for a dict/set expression opening
+            # a positional argument.
+            if at_top:
+                _add_positional(kwargs, _UNRESOLVED)
+            brace_depth += 1
+            i += 1
+            continue
+        if ch == "}":
+            brace_depth -= 1
+            i += 1
+            continue
+        if at_top and _is_identifier_boundary(text, i):
+            m = _IDENT_RE.match(text, i)
+            if m:
+                ident = m.group(0)
+                j = _skip_ws_and_comments(text, m.end(), n)
+                if j < n and text[j] == "=" and text[j : j + 2] != "==":
+                    rhs_start = _skip_ws_and_comments(text, j + 1, n)
+                    if rhs_start < n and (
+                        text[rhs_start] in "\"'"
+                        or _is_raw_string_start(text, rhs_start, n)
+                    ):
+                        end, value = _skip_any_string(text, rhs_start, n)
+                        kwargs[ident] = (
+                            value
+                            if _is_complete_literal(text, end, n)
+                            else _UNRESOLVED
+                        )
+                        i = end
+                        continue
+                    # A non-literal right-hand side (a variable
+                    # reference, a function call, ...) can't be read
+                    # back from the source text. Fail closed: mark it
+                    # unresolved rather than leaving it absent, which
+                    # would read identically to the argument never
+                    # having been given at all.
+                    kwargs[ident] = _UNRESOLVED
+                    i = rhs_start
+                    continue
+                # Not "ident = ...": a bare identifier is a variable
+                # used as a value, passed positionally; fail closed
+                # the same way as a non-literal keyword value, rather
+                # than silently dropping it.
+                _add_positional(kwargs, _UNRESOLVED)
+                i = m.end()
+                continue
+        i += 1
+    results.append(kwargs)
+    return i
+
+
 def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, str]]:
-    """Yield the {keyword: string value} args of each top-level call.
+    """Yield the {keyword: string value} args of each call, top-level or
+
+    nested in another call's argument value (see _scan_call_body).
 
     A single linear scan recognizes a call name, and each "identifier =
     value" pair inside its body, only at a genuine identifier boundary and
@@ -359,10 +531,10 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
     characters — is never scanned as code), makes that impossible: nothing
     inside a string literal or comment is ever offered to the identifier
     matcher. Only simple `identifier = "string"` / `identifier = 'string'`
-    assignments are captured (list/nested-call values are skipped over for
-    paren balancing but not parsed), which is everything every caller here
-    needs. Whitespace between a call name and "(" is tolerated
-    ("archive_override (..." is valid Starlark).
+    assignments are captured (list values are skipped over for paren
+    balancing but not parsed, aside from a nested recognized call).
+    Whitespace between a call name and "(" is tolerated ("archive_override
+    (..." is valid Starlark).
 
     Bazel's `*_override`/`bazel_dep` APIs accept their leading arguments
     (module_name / name, and for bazel_dep also version) positionally —
@@ -386,123 +558,11 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
         if ch in "\"'" or _is_raw_string_start(text, i, n):
             i, _ = _skip_any_string(text, i, n)
             continue
-        matched_name = None
-        paren_index = None
-        if _is_identifier_boundary(text, i):
-            for name in sorted_names:
-                if text.startswith(name, i):
-                    j = _skip_ws(text, i + len(name), n)
-                    if j < n and text[j] == "(":
-                        matched_name = name
-                        paren_index = j
-                        break
-        if matched_name is None and ch == "(":
-            matched_name, paren_index = _match_parenthesized_call(
-                text, i, n, sorted_names
-            )
+        matched_name, paren_index = _match_call_name(text, i, n, sorted_names)
         if matched_name is None:
             i += 1
             continue
-        i = paren_index + 1
-        depth = 1
-        bracket_depth = 0
-        brace_depth = 0
-        kwargs: dict[str, str] = {}
-        while i < n and depth > 0:
-            ch = text[i]
-            if ch == "#":
-                i = _skip_comment(text, i, n)
-                continue
-            at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
-            if ch in "\"'" or _is_raw_string_start(text, i, n):
-                if at_top:
-                    end, value = _skip_any_string(text, i, n)
-                    _add_positional(
-                        kwargs,
-                        value if _is_complete_literal(text, end, n) else _UNRESOLVED,
-                    )
-                    i = end
-                    continue
-                i, _ = _skip_any_string(text, i, n)
-                continue
-            if ch == "(":
-                # A "(" at the top level, not preceded by "ident =", opens
-                # a parenthesized positional expression (e.g. an
-                # argument written as ("a" + "b")) rather than a literal
-                # or a bare variable reference; mark it unresolved before
-                # descending into it, the same as any other non-literal
-                # positional value.
-                if at_top:
-                    _add_positional(kwargs, _UNRESOLVED)
-                depth += 1
-                i += 1
-                continue
-            if ch == ")":
-                depth -= 1
-                i += 1
-                continue
-            if ch == "[":
-                # Same reasoning as the "(" branch above: a top-level "["
-                # not preceded by "ident =" opens a list expression (e.g.
-                # an argument written as ["a"][0]).
-                if at_top:
-                    _add_positional(kwargs, _UNRESOLVED)
-                bracket_depth += 1
-                i += 1
-                continue
-            if ch == "]":
-                bracket_depth -= 1
-                i += 1
-                continue
-            if ch == "{":
-                # Same reasoning again, for a dict/set expression opening
-                # a positional argument.
-                if at_top:
-                    _add_positional(kwargs, _UNRESOLVED)
-                brace_depth += 1
-                i += 1
-                continue
-            if ch == "}":
-                brace_depth -= 1
-                i += 1
-                continue
-            if at_top and _is_identifier_boundary(text, i):
-                m = _IDENT_RE.match(text, i)
-                if m:
-                    ident = m.group(0)
-                    j = _skip_ws_and_comments(text, m.end(), n)
-                    if j < n and text[j] == "=" and text[j : j + 2] != "==":
-                        rhs_start = _skip_ws_and_comments(text, j + 1, n)
-                        if rhs_start < n and (
-                            text[rhs_start] in "\"'"
-                            or _is_raw_string_start(text, rhs_start, n)
-                        ):
-                            end, value = _skip_any_string(text, rhs_start, n)
-                            kwargs[ident] = (
-                                value
-                                if _is_complete_literal(text, end, n)
-                                else _UNRESOLVED
-                            )
-                            i = end
-                            continue
-                        # A non-literal right-hand side (a variable
-                        # reference, a function call, ...) can't be read
-                        # back from the source text. Fail closed: mark it
-                        # unresolved rather than leaving it absent, which
-                        # would read identically to the argument never
-                        # having been given at all.
-                        kwargs[ident] = _UNRESOLVED
-                        i = rhs_start
-                        continue
-                    # Not "ident = ...": a bare identifier is a variable
-                    # used as a value, passed positionally; fail closed
-                    # the same way as a non-literal keyword value, rather
-                    # than silently dropping it.
-                    _add_positional(kwargs, _UNRESOLVED)
-                    i = m.end()
-                    continue
-            i += 1
-        results.append(kwargs)
+        i = _scan_call_body(text, paren_index + 1, n, sorted_names, results)
     return results
 
 
@@ -1203,6 +1263,63 @@ single_version_override(
         self,
     ) -> None:
         sample = 'archive_override (module_name = "apple_support", strip_prefix = "x")'
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_call_after_lf_continuation(
+        self,
+    ) -> None:
+        """A backslash-LF line continuation between the call name and "("
+
+        is valid Starlark, dropped entirely the same as inside a string;
+        it must not leave the call unrecognized.
+        """
+        sample = (
+            'archive_override\\\n(module_name = "apple_support", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_call_after_crlf_continuation(
+        self,
+    ) -> None:
+        """Same as the LF case, for a backslash-CRLF line continuation."""
+        sample = (
+            'archive_override\\\r\n(module_name = "apple_support", '
+            'strip_prefix = "x")'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_comment_before_own_paren(
+        self,
+    ) -> None:
+        """A comment between the callable name and its own "(" is legal
+
+        inside a parenthesized expression statement, e.g.
+        "(local_path_override # note\\n(module_name = ..., ...))"; the
+        direct call-name match must skip comments, not just whitespace,
+        there too.
+        """
+        sample = (
+            "(local_path_override # note\n"
+            '(module_name = "apple_support", path = "../apple_support"))'
+        )
+        self.assertTrue(_has_apple_support_override(sample))
+
+    def test_has_apple_support_override_detects_nested_override_call(
+        self,
+    ) -> None:
+        """A recognized call nested inside another call's argument value
+
+        (e.g. patches = single_version_override(...) or []) is still a
+        real override Bazel executes, not inert text; it must not be
+        silently swallowed while the outer call's own argument list is
+        paren-balanced.
+        """
+        sample = (
+            'single_version_override(module_name = "rules_cc", '
+            'patches = single_version_override(module_name = "apple_support", '
+            'version = "1.24.2") or [])'
+        )
         self.assertTrue(_has_apple_support_override(sample))
 
     def test_has_apple_support_override_detects_archive_override(self) -> None:
