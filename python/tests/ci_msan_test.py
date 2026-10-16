@@ -357,6 +357,22 @@ def _match_parenthesized_call(
     return None, 0
 
 
+def _skip_attribute(text: str, i: int, n: int) -> int:
+    """Skip a "." (at text[i]) and the attribute name that follows it.
+
+    Starlark allows whitespace, line continuations, and (inside brackets)
+    comments between the "." and the name, so "ext. bazel_dep(...)" is
+    still an attribute call. Checking only the character just before a
+    name can't see that; consuming the name here, in the same forward
+    scan that already skips strings and comments, means it is never
+    offered to the call matcher at all, while a "." inside a comment or
+    string is never seen.
+    """
+    j = _skip_ws_and_comments(text, i + 1, n)
+    m = _IDENT_RE.match(text, j)
+    return m.end() if m else i + 1
+
+
 def _match_call_name(
     text: str, i: int, n: int, sorted_names: list[str]
 ) -> tuple[str | None, int]:
@@ -387,10 +403,18 @@ def _scan_call_body(
 ) -> int:
     """Scan one call's body, starting right after its opening "(".
 
-    Parses each "identifier = value" pair at the call's own top-level
-    parenthesis depth (see _iter_call_kwargs for why only there), then
-    appends the resulting {keyword: value} dict to `results` and returns
-    the index just past the matching closing ")".
+    Parses the call's own arguments (see _iter_call_kwargs for why only
+    at its top-level depth), then appends the resulting {keyword: value}
+    dict to `results` and returns the index just past the matching
+    closing ")".
+
+    Each argument is classified once, by its first token: "identifier
+    =" makes it a keyword argument, anything else a positional one
+    (resolved only when the whole argument is a single string literal).
+    Every later token up to the next top-level "," belongs to that same
+    argument and is never recorded on its own -- otherwise, e.g., the
+    "9.9.9" tail of `repo_name = "toolchains_llvm_" + "9.9.9"` would be
+    read back as an extra positional argument (bazel_dep's version).
 
     A recognized call name appearing anywhere in the body -- not just as
     this call's own name -- is itself a real call Bazel executes, e.g.
@@ -403,15 +427,25 @@ def _scan_call_body(
     depth = 1
     bracket_depth = 0
     brace_depth = 0
+    at_arg_start = True
     kwargs: dict[str, str] = {}
     while i < n and depth > 0:
         ch = text[i]
         if ch == "#":
             i = _skip_comment(text, i, n)
             continue
+        ws_end = _skip_ws(text, i, n)
+        if ws_end > i:
+            i = ws_end
+            continue
         at_top = depth == 1 and bracket_depth == 0 and brace_depth == 0
-        if ch in "\"'" or _is_raw_string_start(text, i, n):
-            if at_top:
+        if at_top and ch == ",":
+            at_arg_start = True
+            i += 1
+            continue
+        if at_top and at_arg_start and ch != ")":
+            at_arg_start = False
+            if ch in "\"'" or _is_raw_string_start(text, i, n):
                 end, value = _skip_any_string(text, i, n)
                 _add_positional(
                     kwargs,
@@ -419,62 +453,11 @@ def _scan_call_body(
                 )
                 i = end
                 continue
-            i, _ = _skip_any_string(text, i, n)
-            continue
-        nested_name, nested_paren = _match_call_name(text, i, n, sorted_names)
-        if nested_name is not None:
-            if at_top:
-                _add_positional(kwargs, _UNRESOLVED)
-            i = _scan_call_body(text, nested_paren + 1, n, sorted_names, results)
-            continue
-        if ch == "(":
-            # A "(" at the top level, not preceded by "ident =" and not
-            # a recognized call name (handled above), opens a
-            # parenthesized positional expression (e.g. an argument
-            # written as ("a" + "b")) rather than a literal or a bare
-            # variable reference; mark it unresolved before descending
-            # into it, the same as any other non-literal positional
-            # value.
-            if at_top:
-                _add_positional(kwargs, _UNRESOLVED)
-            depth += 1
-            i += 1
-            continue
-        if ch == ")":
-            depth -= 1
-            i += 1
-            continue
-        if ch == "[":
-            # Same reasoning as the "(" branch above: a top-level "["
-            # not preceded by "ident =" opens a list expression (e.g.
-            # an argument written as ["a"][0]).
-            if at_top:
-                _add_positional(kwargs, _UNRESOLVED)
-            bracket_depth += 1
-            i += 1
-            continue
-        if ch == "]":
-            bracket_depth -= 1
-            i += 1
-            continue
-        if ch == "{":
-            # Same reasoning again, for a dict/set expression opening
-            # a positional argument.
-            if at_top:
-                _add_positional(kwargs, _UNRESOLVED)
-            brace_depth += 1
-            i += 1
-            continue
-        if ch == "}":
-            brace_depth -= 1
-            i += 1
-            continue
-        if at_top and _is_identifier_boundary(text, i):
             m = _IDENT_RE.match(text, i)
             if m:
-                ident = m.group(0)
                 j = _skip_ws_and_comments(text, m.end(), n)
                 if j < n and text[j] == "=" and text[j : j + 2] != "==":
+                    ident = m.group(0)
                     rhs_start = _skip_ws_and_comments(text, j + 1, n)
                     if rhs_start < n and (
                         text[rhs_start] in "\"'"
@@ -493,15 +476,42 @@ def _scan_call_body(
                     # back from the source text. Fail closed: mark it
                     # unresolved rather than leaving it absent, which
                     # would read identically to the argument never
-                    # having been given at all.
+                    # having been given at all. Its tokens are still
+                    # scanned below, for nesting and nested calls.
                     kwargs[ident] = _UNRESOLVED
                     i = rhs_start
                     continue
-                # Not "ident = ...": a bare identifier is a variable
-                # used as a value, passed positionally; fail closed
-                # the same way as a non-literal keyword value, rather
-                # than silently dropping it.
-                _add_positional(kwargs, _UNRESOLVED)
+            # Any other first token -- a bare variable reference, a
+            # parenthesized/list/dict expression, a nested call, ... --
+            # starts a positional argument whose value can't be read
+            # back from the source text; fail closed rather than
+            # dropping it. The token itself is then scanned below.
+            _add_positional(kwargs, _UNRESOLVED)
+        if ch in "\"'" or _is_raw_string_start(text, i, n):
+            i, _ = _skip_any_string(text, i, n)
+            continue
+        if ch == ".":
+            i = _skip_attribute(text, i, n)
+            continue
+        nested_name, nested_paren = _match_call_name(text, i, n, sorted_names)
+        if nested_name is not None:
+            i = _scan_call_body(text, nested_paren + 1, n, sorted_names, results)
+            continue
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "[":
+            bracket_depth += 1
+        elif ch == "]":
+            bracket_depth -= 1
+        elif ch == "{":
+            brace_depth += 1
+        elif ch == "}":
+            brace_depth -= 1
+        elif _is_identifier_boundary(text, i):
+            m = _IDENT_RE.match(text, i)
+            if m:
                 i = m.end()
                 continue
         i += 1
@@ -556,6 +566,9 @@ def _iter_call_kwargs(call_names: tuple[str, ...], text: str) -> list[dict[str, 
             continue
         if ch in "\"'" or _is_raw_string_start(text, i, n):
             i, _ = _skip_any_string(text, i, n)
+            continue
+        if ch == ".":
+            i = _skip_attribute(text, i, n)
             continue
         matched_name, paren_index = _match_call_name(text, i, n, sorted_names)
         if matched_name is None:
@@ -872,6 +885,45 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
         ):
             with self.assertRaises(AssertionError):
                 _toolchains_llvm_bazel_dep_version(sample)
+
+    def test_toolchains_llvm_bazel_dep_version_ignores_spaced_attribute_call(
+        self,
+    ) -> None:
+        """"ext. bazel_dep(...)" is still an attribute call, whatever
+
+        whitespace, line continuation, or comment separates the "." from
+        the name; only the real top-level bazel_dep's version counts.
+        """
+        for qualifier in ("ext. ", "ext.\\\n", "[ext. # note\n"):
+            sample = (
+                f'{qualifier}bazel_dep(name = "toolchains_llvm", version = "9.9.9")\n'
+                'bazel_dep(name = "toolchains_llvm", version = "1.9.0")'
+            )
+            with self.subTest(qualifier=qualifier):
+                self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.9.0")
+
+    def test_toolchains_llvm_bazel_dep_version_accepts_call_after_comment_ending_in_dot(
+        self,
+    ) -> None:
+        """A "." inside a preceding comment is not a qualifier."""
+        sample = '# see the docs.\nbazel_dep(name = "toolchains_llvm", version = "1.11.2")'
+        self.assertEqual(_toolchains_llvm_bazel_dep_version(sample), "1.11.2")
+
+    def test_toolchains_llvm_bazel_dep_version_rejects_versionless_call(
+        self,
+    ) -> None:
+        """Tokens inside a keyword's value are never positional arguments.
+
+        Here no version is pinned at all; the "9.9.9" literal is just the
+        tail of repo_name's concatenated value and must not be read back
+        as bazel_dep's second positional (version) argument.
+        """
+        sample = (
+            'bazel_dep(name = "toolchains_llvm", dev_dependency = False, '
+            'repo_name = "toolchains_llvm_" + "9.9.9")'
+        )
+        with self.assertRaises(AssertionError):
+            _toolchains_llvm_bazel_dep_version(sample)
 
     def test_has_toolchains_llvm_override_detects_same_line_args(self) -> None:
         sample = (
@@ -1489,6 +1541,32 @@ single_version_override(
             'single_version_override(module_name = "apple_support", '
             'patches = single_version_override(module_name = "toolchains_llvm", '
             'version = "1.11.2") or [])'
+        )
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_spaced_attribute_call(
+        self,
+    ) -> None:
+        """"ext. archive_override(...)" is an attribute call, not the
+
+        archive_override directive, whatever separates the "." from the
+        name.
+        """
+        for qualifier in ("ext. ", "ext.\\\n", "[ext. # note\n"):
+            sample = (
+                f'{qualifier}archive_override(module_name = "toolchains_llvm", '
+                'urls = ["x"])'
+            )
+            with self.subTest(qualifier=qualifier):
+                self.assertFalse(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_detects_call_after_comment_ending_in_dot(
+        self,
+    ) -> None:
+        """A "." inside a preceding comment is not a qualifier."""
+        sample = (
+            "# see the docs.\n"
+            'archive_override(module_name = "toolchains_llvm", urls = ["x"])'
         )
         self.assertTrue(_has_toolchains_llvm_override(sample))
 
