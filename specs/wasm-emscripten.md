@@ -34,7 +34,7 @@ core solver builds and runs correctly under Emscripten.
 - **The toolchain is hermetic and transition-driven.** `wasm_cc_binary` applies an
   Emscripten **platform transition** to the underlying `cc_binary` — no
   `--config=wasm` or `.bazelrc` profile is needed. The emsdk toolchain is
-  downloaded/cached by Bazel (pinned in `MODULE.bazel`, currently `emsdk 5.0.7`).
+  downloaded/cached by Bazel (pinned in `MODULE.bazel`, currently `emsdk 6.0.12`).
   The transition is what makes the `//:build_wasm` config setting
   (`@platforms//cpu:wasm32`) active — see [build-system](build-system.md).
 - **WASM builds use pthreads.** Every `wasm_cc_binary` sets
@@ -75,7 +75,7 @@ core solver builds and runs correctly under Emscripten.
   `dtest_wasm` is an additional harness port, not an example CLI.
 - **No link-time LTO.** `-flto` applies at WASM compile time only
   ([build-system](build-system.md)); enabling it at link time was tried and
-  reverted because the `emsdk 5.0.7` toolchain pinned in `MODULE.bazel` ships a
+  reverted because the `emsdk` toolchain pinned in `MODULE.bazel` (checked again at 6.0.12) ships a
   frozen, pre-built cache containing only non-LTO system libraries. Link-time
   LTO requires LTO-bitcode variants of core sysroot libraries (e.g.
   `libprintf_long_double`) that the frozen cache cannot build on demand inside

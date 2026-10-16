@@ -17,7 +17,7 @@ The Emscripten SDK (emsdk) does NOT need to be manually installed. Bazel downloa
 
 WASM builds use the Bazel Central Registry package pinned in `MODULE.bazel`:
 
-- `bazel_dep(name = "emsdk", version = "5.0.7")` (Emscripten 5.0.x toolchain)
+- `bazel_dep(name = "emsdk", version = "6.0.12")` (Emscripten 6.0.x toolchain)
 
 If you upgrade `emsdk`, rebuild WASM targets and the DDS Web (`./web/update_wasm.sh`). The post-build script `web/patch_web_wasm.py` patches one generated `isFileURI` helper for browser/file URL safety; if Emscripten changes that line, update the regex in that script and this note.
 
@@ -159,7 +159,7 @@ For other experiments, copy built `.js` / `.wasm` files from `bazel-bin/wasm/` t
 
 `-flto` is applied at compile time (`DDS_CPPOPTS`) but deliberately **not** at
 link time. Passing `-flto` to the wasm link step was tried and reverted: the
-`emsdk 5.0.7` package pinned in `MODULE.bazel` ships a frozen, pre-built cache
+`emsdk` package pinned in `MODULE.bazel` (checked again at 6.0.12) ships a frozen, pre-built cache
 containing only non-LTO system libraries, and requesting link-time LTO makes
 Emscripten require LTO-bitcode variants of core sysroot libraries (e.g.
 `libprintf_long_double`) that the frozen cache can't build on demand inside

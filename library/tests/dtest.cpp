@@ -52,7 +52,9 @@ EM_JS(void, dtest_schedule_pthread_clean_exit, (int code), {
 // Join C++ workers, let pending Worker "loaded" messages flush, then tear down
 // Emscripten pthread Workers and exit Node. Avoids ASSERTIONS noise of the form
 // `received "loaded" command from terminated worker` when -n exceeds the
-// precreated PTHREAD_POOL_SIZE.
+// precreated PTHREAD_POOL_SIZE. Emscripten 6 no longer exposes
+// PThread.runningWorkers or a per-worker `loaded` flag, so there the wait is a
+// bounded retry (up to 100 event-loop turns) rather than a readiness check.
 [[noreturn]] static void dtest_emscripten_clean_exit(const int code)
 {
     dds::internal::shutdown_parallel_boards_pool();
