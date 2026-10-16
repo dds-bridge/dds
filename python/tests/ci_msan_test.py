@@ -54,12 +54,22 @@ def _calls(call_names: tuple[str, ...], module_bazel: str) -> list[ast.Call]:
 
 
 def _argument(call: ast.Call, keyword: str, position: int) -> object | None:
-    """The argument given as keyword or at position, or None if absent."""
+    """The argument given as keyword or at position, or None if absent.
+
+    **kwargs (a keyword whose arg is None) may supply a missing argument
+    without naming it, so it resolves to _UNRESOLVED rather than to absent.
+    A *args at the requested position is an ast.Starred node, which
+    _literal() already resolves to _UNRESOLVED. (A *args before it could
+    shift later positions, but callers only read past position 0 once
+    position 0 has resolved to a literal.)
+    """
     for kw in call.keywords:
         if kw.arg == keyword:
             return _literal(kw.value)
     if position < len(call.args):
         return _literal(call.args[position])
+    if any(kw.arg is None for kw in call.keywords):
+        return _UNRESOLVED
     return None
 
 
@@ -412,6 +422,32 @@ bazel_dep(name = "toolchains_llvm", version = "1.11.2")
             sample = f'archive_override({module_name}, strip_prefix = "x")'
             with self.subTest(module_name=module_name):
                 self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_keyword_unpacking(
+        self,
+    ) -> None:
+        """**kwargs may supply module_name, whose value can't be read back."""
+        for unpacked in (
+            '**{"module_name": "toolchains_llvm", "path": "../toolchains_llvm"}',
+            "**override_kwargs",
+        ):
+            sample = f"local_path_override({unpacked})"
+            with self.subTest(unpacked=unpacked):
+                self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_fails_closed_on_positional_unpacking(
+        self,
+    ) -> None:
+        """*args may supply module_name positionally."""
+        sample = 'local_path_override(*["toolchains_llvm"], path = "../x")'
+        self.assertTrue(_has_toolchains_llvm_override(sample))
+
+    def test_has_toolchains_llvm_override_ignores_unpacking_after_positional_module_name(
+        self,
+    ) -> None:
+        """module_name given positionally can't also come from **kwargs."""
+        sample = 'local_path_override("rules_cc", **{"path": "../x"})'
+        self.assertFalse(_has_toolchains_llvm_override(sample))
 
     def test_has_toolchains_llvm_override_ignores_positional_string_in_list(
         self,
