@@ -178,7 +178,7 @@ py_test(
     ],
     deps = [
         ":web_site",
-        "@pypi//playwright",
+        "@dds_pypi//playwright",
     ],
     tags = [
         "e2e",
