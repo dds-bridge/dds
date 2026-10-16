@@ -24,7 +24,7 @@ common --lockfile_mode=error
 common --repo_env=ANDROID_HOME=
 
 # Java toolchain for the FFM bindings (//jni:*). JDK 25 is the hermetic remote
-# JDK shipped by rules_java 9.6.1; being >= 22 it exposes java.lang.foreign as a
+# JDK shipped by rules_java 9.9.0; being >= 22 it exposes java.lang.foreign as a
 # stable (non-preview) API, so no --enable-preview is needed. These are
 # unconditional build flags (they apply to every build), but only Java compile
 # and run actions consult the Java toolchain, so they have no effect on the

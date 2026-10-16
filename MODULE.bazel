@@ -22,10 +22,10 @@ bazel_dep(name = "platforms", version = "1.1.0")
 # copy_file (shell-free, cross-platform) for staging the native lib into the jar.
 # Pin to the version the graph resolves (via rules_jvm_external) to avoid a
 # direct-dependency mismatch warning on every invocation.
-bazel_dep(name = "bazel_skylib", version = "1.9.0")
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "pybind11_bazel", version = "3.0.1")
-bazel_dep(name = "rules_python", version = "2.0.1")
+bazel_dep(name = "rules_python", version = "2.4.2")
 # 1.8.0+ adds --features=msan and libcxx_url for an instrumented libc++ overlay.
 bazel_dep(name = "toolchains_llvm", version = "1.11.2")
 
@@ -41,10 +41,10 @@ bazel_dep(name = "apple_support", version = "2.10.1")
 # rebuild and run web/update_wasm.sh; see docs/wasm_build.md and patch_web_wasm.py.
 bazel_dep(name = "emsdk", version = "5.0.7")
 # Java bindings (//jni:*). Provides the hermetic remote JDK used to build and run
-# the FFM (java.lang.foreign) smoke test. rules_java 9.6.1 registers remotejdk_21
+# the FFM (java.lang.foreign) smoke test. rules_java 9.9.0 registers remotejdk_21
 # and remotejdk_25; we pin JDK 25 (>= 22, so the Foreign Function & Memory API is
 # stable, not preview) via --java_*_version in .bazelrc.
-bazel_dep(name = "rules_java", version = "9.6.1")
+bazel_dep(name = "rules_java", version = "9.9.0")
 # Java packaging (//jni:dds_ffm_dist). Provides java_export -> a Maven-coordinate
 # jar plus a generated .publish target that supports file:// local repos, used to
 # install into ~/.m2 (Phase 1; no remote/public publishing yet).
@@ -141,11 +141,11 @@ use_repo(python, "python_3_14")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
-    hub_name = "pypi",
+    hub_name = "dds_pypi",
     python_version = "3.14",
     requirements_lock = "//web:requirements_lock.txt",
 )
-use_repo(pip, "pypi")
+use_repo(pip, "dds_pypi")
 
 register_toolchains("@llvm_toolchain//:all")
 register_toolchains("@emsdk//:all")
