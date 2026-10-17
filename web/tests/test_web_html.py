@@ -10,6 +10,52 @@ HTML_PATH = WEB_ROOT / "dds_web.html"
 COI_PATH = WEB_ROOT / "coi-serviceworker.js"
 
 
+class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
+    def test_visible_page_title(self) -> None:
+        # Document <title> alone is not enough; the page needs a visible
+        # product heading so first-time visitors know what they opened.
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'(?is)<h1[^>]*>\s*DDS Web\s*</h1>',
+            msg="dds_web.html must show a visible DDS Web title",
+        )
+        head_title = re.search(r"(?is)<title>\s*(.*?)\s*</title>", text)
+        self.assertIsNotNone(head_title)
+        self.assertIn("DDS Web", head_title.group(1))
+
+    def test_link_to_github_repository(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*href="https://github\.com/dds-bridge/dds"[^>]*>',
+            msg="dds_web.html must link to the dds-bridge/dds repository",
+        )
+        # Prefer opening the repo in a new tab without leaking the opener.
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*href="https://github\.com/dds-bridge/dds"[^>]*'
+            r'rel="[^"]*\bnoopener\b[^"]*"[^>]*>',
+        )
+
+    def test_faq_section_with_common_questions(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*>',
+            msg="dds_web.html must include an FAQ landmark",
+        )
+        self.assertRegex(text, r"(?is)<h2[^>]*>\s*FAQ\s*</h2>")
+        # Cover the questions visitors actually ask about a browser solver.
+        for question in (
+            "What is DDS Web?",
+            "Does my deal leave my browser?",
+            "How do I play through a contract?",
+        ):
+            self.assertIn(question, text)
+        self.assertNotIn("Why won't solving start?", text)
+
+
 class DdsWebHtmlCharsetTest(unittest.TestCase):
     def test_declares_utf8_charset_within_first_1024_bytes(self) -> None:
         # Browsers only honor <meta charset> in the first 1024 bytes. Without it,

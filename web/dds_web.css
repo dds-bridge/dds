@@ -5,6 +5,70 @@
    https://opensource.org/licenses/MIT
 */
 
+.site-header {
+  margin: 0 0 1rem;
+}
+
+.site-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.site-tagline {
+  margin: 0 0 0.35rem;
+  color: #333;
+}
+
+.site-repo {
+  margin: 0;
+}
+
+.site-repo a {
+  color: #0b57d0;
+}
+
+.deal-entry-hint {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.faq {
+  max-width: 1100px;
+  margin: 1.5rem 0 2rem;
+}
+
+.faq h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.faq details {
+  margin: 0.35rem 0;
+  border-top: 1px solid #ccc;
+  padding: 0.4rem 0;
+}
+
+.faq details:last-child {
+  border-bottom: 1px solid #ccc;
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq details p {
+  margin: 0.5rem 0 0.25rem;
+  max-width: 42rem;
+  line-height: 1.45;
+}
+
+.faq code {
+  font-size: 0.95em;
+}
+
 /* Toolbar controls: flat 1px chrome like
    https://macroxue.github.io/bridge-solver/web/ — Sample deals keeps a CSS
    chevron as the only visual difference from Clear / Import / Rotate. */
