@@ -24,14 +24,22 @@
     </script>
     <script src="coi-serviceworker.js"></script>
     <link rel="stylesheet" type="text/css" href="dds_web.css">
-    <title>
-        DDS Web
-    </title>
+    <title>DDS Web — Double Dummy Solver</title>
 </head>
 <body onload="pageLoad()">
-    <h1>
-    Enter a 52-card deal using only these pips: <span id=valid-pips></span><br/>
-    </h1>
+    <header class="site-header">
+        <h1>DDS Web</h1>
+        <p class="site-tagline">Double dummy bridge solver in your browser</p>
+        <p class="site-repo">
+            <a href="https://github.com/dds-bridge/dds"
+               target="_blank"
+               rel="noopener noreferrer">Source on GitHub</a>
+        </p>
+    </header>
+
+    <p class="deal-entry-hint">
+    Enter a 52-card deal using only these pips: <span id=valid-pips></span>
+    </p>
 
     <button type="button" onclick="clearTestData()">Clear entries</button>
     <button type="button" onclick="chooseDealFile()">Import deal…</button>
@@ -161,6 +169,42 @@
         </div>
     </div>
     </div>
+
+    <section id="faq" class="faq" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">FAQ</h2>
+        <details>
+            <summary>What is DDS Web?</summary>
+            <p>
+                DDS Web is a browser demo of
+                <a href="https://github.com/dds-bridge/dds"
+                   target="_blank"
+                   rel="noopener noreferrer">DDS</a>,
+                a double dummy originally written by Bo Haglund. It runs entirely
+                client-side via WebAssembly: enter a deal (or import one),
+                and the page fills a double-dummy table of max tricks by
+                declarer and strain.
+            </p>
+        </details>
+        <details>
+            <summary>Does my deal leave my browser?</summary>
+            <p>
+                No. Cards, imports, and solve results stay on your device.
+                The solver module is downloaded once with the page; nothing
+                is sent to a server to analyze a deal.
+            </p>
+        </details>
+        <details>
+            <summary>How do I play through a contract?</summary>
+            <p>
+                After the double-dummy table appears, click a cell to enter
+                play for that declarer and strain (or that seat on lead for a
+                partial deal). Drag or click a highlighted card to play it;
+                each card shows the contract outcome with best play and
+                defense. Undo with ⌘/Ctrl-Z, or choose Edit hands to leave
+                play mode.
+            </p>
+        </details>
+    </section>
 
     <script src="dds_web_wasm_bin.js"></script>
     <script src="dds_web_wasm.js"></script>
