@@ -12,6 +12,10 @@ WASM_WEB_LINKOPTS = WASM_LINKOPTS + [
     "-sEXPORTED_FUNCTIONS=['_dds_web_calc_table','_dds_web_solve_leads','_dds_web_solve_plays','_malloc','_free']",
     "-sEXPORTED_RUNTIME_METHODS=['ccall','getValue']",
     "-sENVIRONMENT=web,worker,node",
+    # The Module properties createDdsModule() is called with (dds_web_solve.js,
+    # tests/dds_web_wasm_node.mjs). Emscripten >= 6.0.2 dropped wasmBinary from
+    # the default list: debug builds abort and release builds ignore the bytes.
+    "-sINCOMING_MODULE_JS_API=['wasmBinary']",
 ]
 
 cc_binary(
