@@ -13,6 +13,15 @@ common --enable_platform_specific_config
 #   bazelisk mod deps --lockfile_mode=update
 common --lockfile_mode=error
 
+# rules_python 2.4+ warns on deprecated implicit __init__.py creation for every
+# py_* target that still uses the legacy path — including dependencies we do
+# not control (rules_python's own tools, emsdk wasm_binary, bazel_tools JDK
+# helpers). This flag turns the legacy path off workspace-wide so those
+# warnings stay quiet. Remove it once those dependencies ship explicit-init
+# defaults (or set legacy_create_init = 0 on their py_* targets); see
+# bazel-contrib/rules_python#2945.
+build --incompatible_default_to_explicit_init_py
+
 # We build nothing for Android, but rules_jvm_external (the //jni Maven jar)
 # depends on rules_android, whose android_sdk_repository extension probes
 # $ANDROID_HOME while analyzing *any* target. When ANDROID_HOME is exported but
