@@ -648,7 +648,14 @@ class TestWindowsCiSplitsWasmWeb(unittest.TestCase):
         )
 
     def test_native_job_excludes_wasm_and_web_patterns(self) -> None:
-        native = _workflow_job_bodies(_windows_ci_workflow_text())["build_and_test"]
+        # Scoped to the "Bazel build and test" step itself, not the whole
+        # job: the job also runs a separate, narrower bazelisk build for the
+        # Python wheel smoke test (see ci_wheel_smoke_test.py), which has no
+        # reason to touch //wasm or //web.
+        native_job = _workflow_job_bodies(_windows_ci_workflow_text())["build_and_test"]
+        native = _workflow_named_step_body(native_job, "Bazel build and test")
+        self.assertIsNotNone(native, "expected a 'Bazel build and test' step")
+        assert native is not None
         # Prefetch/fetch is intentionally omitted: repository-cache covers
         # downloads and a standalone fetch adds a cold analysis pass.
         self.assertFalse(

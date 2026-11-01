@@ -73,6 +73,30 @@ jobs:
 
       # .NET binding lives in CI – Windows .NET (ci_windows_dotnet.yml).
 
+      # Python wheel: the build above already produces dds3_wheel_dist as a
+      # side effect, but that alone never runs `pip install` on the packaged
+      # .whl, so a mistagged or incomplete archive would go unnoticed. 3.14
+      # matches the cp314 tag dds3_wheel sets for its compiled _dds3
+      # extension (see python/BUILD.bazel). --config=opt matches every other
+      # bazelisk build invocation on this job (avoids MSVC D9025).
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
+      - name: Build and smoke-test Python wheel
+        shell: pwsh
+        run: |
+          bazelisk build --config=opt --verbose_failures //python:dds3_wheel_dist
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $wheel = Get-ChildItem -Path "bazel-bin/python/dist" -Filter *.whl | Select-Object -First 1
+          python -m venv "$env:RUNNER_TEMP/dds3_wheel_venv"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:RUNNER_TEMP/dds3_wheel_venv/Scripts/pip.exe" install --no-index --no-deps $wheel.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:RUNNER_TEMP/dds3_wheel_venv/Scripts/python.exe" -c "import dds3; assert dds3.api_root() == 'dds.hpp'; print('dds3 wheel OK:', dds3.__file__)"
+          exit $LASTEXITCODE
+
       - name: Upload test logs - Windows
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

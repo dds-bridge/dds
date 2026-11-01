@@ -113,6 +113,26 @@ py_test(
     ],
 )
 
+# Guard: dds3_wheel must carry CPython/platform tags, not py_wheel's
+# py3-none-any defaults, since _dds3 is a compiled extension.
+py_test(
+    name = "ci_wheel_tags_test",
+    size = "small",
+    main = "tests/ci_wheel_tags_test.py",
+    srcs = ["tests/ci_wheel_tags_test.py"],
+    data = ["BUILD.bazel"],
+)
+
+# Guard: CI actually `pip install`s the packaged wheel (not just Bazel's own
+# py_library layout) on all three host OSes.
+py_test(
+    name = "ci_wheel_smoke_test",
+    size = "small",
+    main = "tests/ci_wheel_smoke_test.py",
+    srcs = ["tests/ci_wheel_smoke_test.py"],
+    data = ["//.github/workflows:all_workflows"],
+)
+
 # Guard: MemorySanitizer config + Linux CI job stay wired together.
 py_test(
     name = "ci_msan_test",
@@ -300,10 +320,36 @@ py_test(
     ],
 )
 
+# _dds3 links against the full CPython API (no Py_LIMITED_API/abi3) for the
+# CPython version MODULE.bazel pins (python_version = "3.14"); the py_wheel
+# defaults (python_tag="py3", abi="none", platform="any") would mislabel this
+# compiled extension as a universal pure-Python wheel.
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
     version = "1.0.0",
+    python_tag = "cp314",
+    abi = "cp314",
+    platform = select({
+        # CI builds on plain ubuntu-latest with this repo's own hermetic
+        # LLVM -- no manylinux sysroot or auditwheel step -- so a
+        # manylinux2014 tag would overclaim glibc-floor portability.
+        # linux_x86_64 is the honest, non-portable tag for how this is
+        # actually built.
+        "//:build_linux": "linux_x86_64",
+        # Keyed on the CPU-specific build_macos_arm64, not build_macos
+        # (which matches any macOS CPU per specs/build-system.md): an
+        # x86_64 mac build has no matching arm here and fails closed at
+        # analysis time, the same fail-closed behavior build_windows
+        # already has for non-x86_64, rather than silently mistagging.
+        # 11.0 is an assumed floor (arm64 Macs can't run below Big Sur
+        # anyway), not a verified -mmacosx-version-min: none is set anywhere
+        # in CPPVARIABLES.bzl/.bazelrc/BUILD.bazel, so the real minimum load
+        # command baked into the .so is whatever the runner's default Xcode
+        # SDK picks.
+        "//:build_macos_arm64": "macosx_11_0_arm64",
+        "//:build_windows": "win_amd64",
+    }),
     deps = [":dds3_lib", ":_dds3_in_package"],
     strip_path_prefixes = ["python/"],
     entry_points = {},
