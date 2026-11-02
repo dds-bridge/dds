@@ -149,6 +149,36 @@ DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
     }
 }
 
+DLLEXPORT int dds_c_analyse_play(DDS_C_SOLVER_CTX ctx,
+                                  const struct Deal* dl,
+                                  const struct PlayTraceBin* play,
+                                  struct SolvedPlay* solved)
+{
+    if (ctx == nullptr || dl == nullptr || play == nullptr || solved == nullptr)
+        return RETURN_UNKNOWN_FAULT;
+
+    try {
+        return dds_analyse_play(static_cast<SolverContext*>(ctx), *dl, *play, solved);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
+}
+
+DLLEXPORT int dds_c_convert_play_from_pbn(const struct PlayTracePBN* pbn_play,
+                                           struct PlayTraceBin* bin_play)
+{
+    if (pbn_play == nullptr || bin_play == nullptr)
+        return RETURN_UNKNOWN_FAULT;
+
+    try {
+        /* convert_play_from_pbn already returns a proper RETURN_* code
+           (unlike convert_from_pbn's bare 1/0), so forward it as-is. */
+        return convert_play_from_pbn(*pbn_play, *bin_play);
+    } catch (...) {
+        return RETURN_UNKNOWN_FAULT;
+    }
+}
+
 DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,
                                     int def_mb, int max_mb)
 {

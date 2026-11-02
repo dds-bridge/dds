@@ -668,7 +668,65 @@ auto register_analysis_bindings(py::module_& module) -> void
         "Args:\n"
         "    user_threads (int, optional): Ignored;\n\n");
 
+    // analyse_play: double-dummy trick count after each card of a played
+    // hand, binary format. New binding (no legacy Python precedent), so
+    // unlike solve_board's None-context branch, this always calls the
+    // modern analyse_play() -- never legacy AnalysePlayBin.
+    module.def(
+        "analyse_play",
+        [](const py::dict& deal,
+           const py::sequence& play_suit,
+           const py::sequence& play_rank,
+           py::object context_obj) {
+            const Deal native_deal = dds3_python::dict_to_deal(deal);
+            const PlayTraceBin trace =
+                dds3_python::sequences_to_play_trace_bin(play_suit, play_rank);
+
+            SolverContext* context_ptr = nullptr;
+            if (!context_obj.is_none()) {
+                context_ptr = py::cast<SolverContext*>(context_obj);
+            }
+
+            SolvedPlay solved{};
+            int code = RETURN_NO_FAULT;
+            {
+                py::gil_scoped_release release;
+                if (context_ptr == nullptr) {
+                    SolverContext temp_ctx;
+                    code = analyse_play(temp_ctx, native_deal, trace, &solved);
+                } else {
+                    code = analyse_play(*context_ptr, native_deal, trace, &solved);
+                }
+            }
+            throw_on_dds_error(code);
+            return dds3_python::solved_play_to_dict(solved);
+        },
+        py::arg("deal"),
+        py::arg("play_suit"),
+        py::arg("play_rank"),
+        py::arg("context") = py::none(),
+        "Analyze a played deal: double-dummy trick count after each card played.\n\n"
+        "Wraps the modern C++ analyse_play() entry point.\n\n"
+        "Args:\n"
+        "    deal (dict): Deal dict with keys 'trump', 'first', 'remain_cards', "
+        "'current_trick_suit', 'current_trick_rank' (see solve_board).\n"
+        "    play_suit (seq): Suit of each card played, in order (0=\xe2\x99\xa0,1=\xe2\x99\xa5,2=\xe2\x99\xa6,3=\xe2\x99\xa3).\n"
+        "    play_rank (seq): Rank of each card played, in order (2-14), same length as play_suit.\n"
+        "    context (SolverContext, optional): Reusable solver context for efficiency. Default: None\n\n"
+        "Returns:\n"
+        "    dict: {'number': int, 'tricks': list[int]} -- tricks[i] is the\n"
+        "          double-dummy trick count for the side to play after i cards.\n\n"
+        "Raises:\n"
+        "    ValueError: If deal or play format is invalid.\n"
+        "    RuntimeError: If DDS solver returns error code.");
+
     // analyse_play_pbn: double-dummy trick count after each card of a played hand.
+    //
+    // Modern API only: converts PBN to binary with convert_from_pbn /
+    // convert_play_from_pbn and calls analyse_play() directly; never calls
+    // legacy AnalysePlayPBN. thread_index is retained (always ignored, as it
+    // always has been) purely so existing callers passing it as a keyword
+    // argument do not break; context supersedes it.
     module.def(
         "analyse_play_pbn",
         [](const std::string& remain_cards,
@@ -677,7 +735,8 @@ auto register_analysis_bindings(py::module_& module) -> void
            const int first,
            const py::sequence& current_trick_suit,
            const py::sequence& current_trick_rank,
-           const int thread_index) {
+           [[maybe_unused]] const int thread_index,
+           py::object context_obj) {
             const DealPBN native_deal = dds3_python::pbn_to_deal(
                 remain_cards, trump, first, current_trick_suit, current_trick_rank);
 
@@ -692,15 +751,42 @@ auto register_analysis_bindings(py::module_& module) -> void
                     "play string length must be even (2 characters per card)");
             }
 
-            PlayTracePBN trace{};
-            trace.number = static_cast<int>(play.size() / 2U);
-            play.copy(trace.cards, play.size());
+            PlayTracePBN pbn_trace{};
+            pbn_trace.number = static_cast<int>(play.size() / 2U);
+            play.copy(pbn_trace.cards, play.size());
+
+            SolverContext* context_ptr = nullptr;
+            if (!context_obj.is_none()) {
+                context_ptr = py::cast<SolverContext*>(context_obj);
+            }
 
             SolvedPlay solved{};
             int code = RETURN_NO_FAULT;
             {
                 py::gil_scoped_release release;
-                code = AnalysePlayPBN(native_deal, trace, &solved, thread_index);
+
+                Deal native_binary_deal{};
+                PlayTraceBin trace{};
+                if (convert_from_pbn(native_deal.remainCards, native_binary_deal.remainCards) !=
+                        RETURN_NO_FAULT) {
+                    code = RETURN_PBN_FAULT;
+                } else if (convert_play_from_pbn(pbn_trace, trace) != RETURN_NO_FAULT) {
+                    code = RETURN_PLAY_FAULT;
+                } else {
+                    for (int k = 0; k <= 2; ++k) {
+                        native_binary_deal.currentTrickRank[k] = native_deal.currentTrickRank[k];
+                        native_binary_deal.currentTrickSuit[k] = native_deal.currentTrickSuit[k];
+                    }
+                    native_binary_deal.first = native_deal.first;
+                    native_binary_deal.trump = native_deal.trump;
+
+                    if (context_ptr == nullptr) {
+                        SolverContext temp_ctx;
+                        code = analyse_play(temp_ctx, native_binary_deal, trace, &solved);
+                    } else {
+                        code = analyse_play(*context_ptr, native_binary_deal, trace, &solved);
+                    }
+                }
             }
             throw_on_dds_error(code);
             return dds3_python::solved_play_to_dict(solved);
@@ -712,8 +798,9 @@ auto register_analysis_bindings(py::module_& module) -> void
         py::arg("current_trick_suit") = py::make_tuple(0, 0, 0),
         py::arg("current_trick_rank") = py::make_tuple(0, 0, 0),
         py::arg("thread_index") = 0,
+        py::arg("context") = py::none(),
         "Analyze a played deal: double-dummy trick count after each card played.\n\n"
-        "Wraps the DDS AnalysePlayPBN C API.\n\n"
+        "Converts PBN to binary and calls the modern analyse_play() entry point.\n\n"
         "Args:\n"
         "    remain_cards (str): Full deal in PBN format before any card of 'play'.\n"
         "    play (str): Cards played, 2 chars each (suit+rank), e.g. 'SAHK...'.\n"
@@ -721,7 +808,8 @@ auto register_analysis_bindings(py::module_& module) -> void
         "    first (int, optional): Seat that leads (0=N,1=E,2=S,3=W). Default: 0\n"
         "    current_trick_suit (seq, optional): Suits already in the trick. Default: (0,0,0)\n"
         "    current_trick_rank (seq, optional): Ranks already in the trick. Default: (0,0,0)\n"
-        "    thread_index (int, optional): Thread id. Default: 0\n\n"
+        "    thread_index (int, optional): Ignored; superseded by context. Default: 0\n"
+        "    context (SolverContext, optional): Reusable solver context for efficiency. Default: None\n\n"
         "Returns:\n"
         "    dict: {'number': int, 'tricks': list[int]} -- tricks[i] is the\n"
         "          double-dummy trick count for the side to play after i cards.\n\n"

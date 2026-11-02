@@ -3,6 +3,7 @@
 #include <solver_context/solver_context.hpp>
 #include <api/solve_board.hpp>
 #include <api/calc_dd_table.hpp>
+#include <api/analyse_play.hpp>
 
 extern "C" {
 
@@ -63,6 +64,12 @@ extern "C" {
         int vulnerable,
         DdTableResults* table_results,
         ParResults* par_results) -> int;
+
+    EXTERN_C DLLEXPORT auto dds_analyse_play(
+        DDS_SOLVER_CTX ctx,
+        const Deal& dl,
+        const PlayTraceBin& play,
+        SolvedPlay* solvedp) -> int;
 
 
 }

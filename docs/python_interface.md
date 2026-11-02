@@ -238,9 +238,38 @@ result = dealer_par(dd_result, dealer=0, vulnerable=0)
 print(result["score"], result["contracts"])
 ```
 
-#### `analyse_play_pbn(remain_cards, play, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), thread_index=0)`
+#### `analyse_play(deal, play_suit, play_rank, context=None)`
 
-Returns the double-dummy trick count after each card of a played hand (wraps `AnalysePlayPBN`).
+Returns the double-dummy trick count after each card of a played hand, binary format. Wraps the
+modern `analyse_play()` C++ entry point directly (no legacy C API involved).
+
+**Parameters:**
+- `deal` (dict): Deal dict with keys `trump`, `first`, `remain_cards`, `current_trick_suit`,
+  `current_trick_rank` (see `solve_board`)
+- `play_suit` (seq): Suit of each card played, in order (0=♠, 1=♥, 2=♦, 3=♣)
+- `play_rank` (seq): Rank of each card played, in order (2-14), same length as `play_suit`
+- `context` (SolverContext, optional): Reusable solver context for efficiency
+
+**Returns:**
+- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count for the side to play after `i` cards.
+
+```python
+from dds3 import analyse_play
+
+deal = {
+    "trump": 4, "first": 0,
+    "remain_cards": [...],
+    "current_trick_suit": (0, 0, 0), "current_trick_rank": (0, 0, 0),
+}
+result = analyse_play(deal, play_suit=[0], play_rank=[6])
+print(result["tricks"])
+```
+
+#### `analyse_play_pbn(remain_cards, play, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), thread_index=0, context=None)`
+
+Returns the double-dummy trick count after each card of a played hand. Converts PBN to binary and
+calls the modern `analyse_play()` entry point directly — it no longer calls the legacy
+`AnalysePlayPBN` C API.
 
 **Parameters:**
 - `remain_cards` (str): Full deal in PBN format before any card of `play`
@@ -248,7 +277,9 @@ Returns the double-dummy trick count after each card of a played hand (wraps `An
 - `trump` (int, default=4): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT)
 - `first` (int, default=0): Seat that leads (0=N, 1=E, 2=S, 3=W)
 - `current_trick_suit` / `current_trick_rank` (seq, default=(0,0,0)): Cards already in the trick
-- `thread_index` (int, default=0): Thread id
+- `thread_index` (int, default=0): Ignored (retained only for backward compatibility with the
+  legacy call signature); superseded by `context`
+- `context` (SolverContext, optional): Reusable solver context for efficiency
 
 **Returns:**
 - dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count for the side to play after `i` cards.

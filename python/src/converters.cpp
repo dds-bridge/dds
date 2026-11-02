@@ -270,6 +270,40 @@ auto dict_to_dd_table_results(const py::dict& table_input) -> DdTableResults
     return table_results;
 }
 
+auto sequences_to_play_trace_bin(
+    const py::sequence& play_suit,
+    const py::sequence& play_rank) -> PlayTraceBin
+{
+    constexpr std::size_t max_cards = sizeof(PlayTraceBin::suit) / sizeof(int);
+
+    if (play_suit.size() != play_rank.size()) {
+        throw py::value_error(
+            "play_suit and play_rank must have the same length (" +
+            std::to_string(play_suit.size()) + " vs " +
+            std::to_string(play_rank.size()) + ")");
+    }
+
+    const auto count = static_cast<std::size_t>(play_suit.size());
+    if (count > max_cards) {
+        throw py::value_error(
+            "play has too many cards (" + std::to_string(count) +
+            ", maximum " + std::to_string(max_cards) + ")");
+    }
+
+    const auto suits = sequence_to_bounded_int_vector(
+        play_suit, count, 0, DDS_SUITS - 1, "play_suit");
+    const auto ranks = sequence_to_bounded_int_vector(
+        play_rank, count, 2, 14, "play_rank");
+
+    PlayTraceBin trace{};
+    trace.number = static_cast<int>(count);
+    for (std::size_t i = 0; i < count; ++i) {
+        trace.suit[i] = suits[i];
+        trace.rank[i] = ranks[i];
+    }
+    return trace;
+}
+
 auto future_tricks_to_dict(const FutureTricks& future_tricks) -> py::dict
 {
     py::dict result;

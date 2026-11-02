@@ -140,3 +140,72 @@ TEST(SystemContextEquivalence, CalcParContextVsNonContext)
         EXPECT_STREQ(par_no_ctx.par_score[1], par_with_ctx.par_score[1])
                 << "EW par scores differ between context and non-context paths";
 }
+
+// Verify the context-aware analyse_play overload produces results identical
+// to the legacy AnalysePlayBin for the same deal and play.
+TEST(SystemContextEquivalence, AnalysePlayContextVsLegacy)
+{
+        // North leads the spade 6 against a NT contract on the known deal.
+        DdTableDeal table_deal = make_known_deal();
+        Deal dl{};
+        dl.trump = 4;  // No trump
+        dl.first = 0;  // North leads
+        std::memset(dl.currentTrickSuit, 0, sizeof(dl.currentTrickSuit));
+        std::memset(dl.currentTrickRank, 0, sizeof(dl.currentTrickRank));
+        for (int h = 0; h < DDS_HANDS; h++)
+                for (int s = 0; s < DDS_SUITS; s++)
+                        dl.remainCards[h][s] = table_deal.cards[h][s];
+
+        PlayTraceBin play{};
+        play.number = 1;
+        play.suit[0] = 0;   // Spades
+        play.rank[0] = 6;   // 6
+
+        SolvedPlay solved_legacy{};
+        const int r_legacy = AnalysePlayBin(dl, play, &solved_legacy, /*thrId=*/0);
+        ASSERT_EQ(r_legacy, RETURN_NO_FAULT) << "Legacy AnalysePlayBin failed";
+
+        SolverContext ctx;
+        SolvedPlay solved_ctx{};
+        const int r_ctx = analyse_play(ctx, dl, play, &solved_ctx);
+        ASSERT_EQ(r_ctx, RETURN_NO_FAULT) << "Context analyse_play failed";
+
+        EXPECT_EQ(solved_legacy.number, solved_ctx.number);
+        for (int i = 0; i <= solved_legacy.number; i++) {
+                EXPECT_EQ(solved_legacy.tricks[i], solved_ctx.tricks[i])
+                        << "Mismatch at ply " << i;
+        }
+}
+
+// Verify context reuse across multiple analyse_play calls produces results
+// consistent with independent (single-use) calls.
+TEST(SystemContextEquivalence, AnalysePlayContextReuse)
+{
+        DdTableDeal table_deal = make_known_deal();
+        Deal dl{};
+        dl.trump = 4;
+        dl.first = 0;
+        std::memset(dl.currentTrickSuit, 0, sizeof(dl.currentTrickSuit));
+        std::memset(dl.currentTrickRank, 0, sizeof(dl.currentTrickRank));
+        for (int h = 0; h < DDS_HANDS; h++)
+                for (int s = 0; s < DDS_SUITS; s++)
+                        dl.remainCards[h][s] = table_deal.cards[h][s];
+
+        PlayTraceBin play{};
+        play.number = 1;
+        play.suit[0] = 0;
+        play.rank[0] = 6;
+
+        SolverContext ctx;
+        SolvedPlay first_result{};
+        ASSERT_EQ(analyse_play(ctx, dl, play, &first_result), RETURN_NO_FAULT);
+
+        SolvedPlay second_result{};
+        ASSERT_EQ(analyse_play(ctx, dl, play, &second_result), RETURN_NO_FAULT);
+
+        EXPECT_EQ(first_result.number, second_result.number);
+        for (int i = 0; i <= first_result.number; i++) {
+                EXPECT_EQ(first_result.tricks[i], second_result.tricks[i])
+                        << "Context reuse changed result at ply " << i;
+        }
+}
