@@ -90,6 +90,7 @@ jobs:
           bazelisk build --config=opt --verbose_failures //python:dds3_wheel_dist
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $wheel = Get-ChildItem -Path "bazel-bin/python/dist" -Filter *.whl | Select-Object -First 1
+          if (-not $wheel) { Write-Error "no wheel found in bazel-bin/python/dist"; exit 1 }
           python -m venv "$env:RUNNER_TEMP/dds3_wheel_venv"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$env:RUNNER_TEMP/dds3_wheel_venv/Scripts/pip.exe" install --no-index --no-deps $wheel.FullName

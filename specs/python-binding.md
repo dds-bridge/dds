@@ -1,7 +1,7 @@
 ---
 capability: python-binding
 owners: [python]
-last-updated: 2026-11-01
+last-updated: 2026-11-02
 ---
 
 # Python Binding
@@ -56,7 +56,9 @@ context API and the flat API from [dds-public-api](dds-public-api.md).
   toolchain — `_dds3` links the full CPython API, not the stable `abi3`
   ABI) and tagged per host OS via `select()` (`linux_x86_64`,
   `macosx_11_0_arm64`, `win_amd64`); `pip` refuses the wheel outright on any
-  other CPython minor version or platform. Guarded by `ci_wheel_tags_test`.
+  other CPython minor version or platform. Guarded by `ci_wheel_tags_test`
+  (the tags) and `ci_wheel_smoke_test` (CI actually `pip install`s and
+  imports the packaged wheel on all three host OSes).
 - **Behavior tracks the C++ core.** The binding adds no solving logic of its own;
   the `py_test` suite exercises the main entry paths (smoke, solve, tables, par,
   analyze, convert_pbn, context reuse) against the same core. It is coverage of

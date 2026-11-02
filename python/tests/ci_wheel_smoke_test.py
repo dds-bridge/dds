@@ -119,6 +119,7 @@ def _next_nonblank_line(body: str, marker: re.Pattern[str]) -> str | None:
 
 
 _EXIT_CODE_CHECK = re.compile(r"\$LASTEXITCODE\s*-ne\s*0")
+_WHEEL_NULL_CHECK = re.compile(r"if\s*\(\s*-not\s*\$wheel\s*\)")
 
 
 def _assert_wheel_smoke_step(
@@ -164,6 +165,24 @@ def _assert_wheel_smoke_step(
                 _EXIT_CODE_CHECK,
                 f"expected a $LASTEXITCODE check immediately after {label}",
             )
+
+        # Get-ChildItem | Select-Object -First 1 silently yields $null if no
+        # .whl matched, and $null.FullName then silently evaluates to $null
+        # rather than failing -- unlike the external-command checks above,
+        # this needs a $wheel null-check, not a $LASTEXITCODE check.
+        wheel_discovery_line = _next_nonblank_line(
+            body, re.compile(r"Get-ChildItem\b")
+        )
+        case.assertIsNotNone(
+            wheel_discovery_line, "expected a line after the wheel Get-ChildItem"
+        )
+        assert wheel_discovery_line is not None
+        case.assertRegex(
+            wheel_discovery_line,
+            _WHEEL_NULL_CHECK,
+            "expected a $wheel null-check immediately after Get-ChildItem, "
+            "before $wheel.FullName is used",
+        )
 
     case.assertRegex(
         body,
