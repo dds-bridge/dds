@@ -49,11 +49,13 @@ jobs:
       - name: Run all tests
         run: bazelisk test --verbose_failures //...
 
-      # Python wheel: bazelisk build //... already produces dds3_wheel_dist
-      # as a side effect, but that alone never runs `pip install` on the
-      # packaged .whl, so a mistagged or incomplete archive would go
-      # unnoticed. 3.14 matches the cp314 tag dds3_wheel sets for its
-      # compiled _dds3 extension (see python/BUILD.bazel).
+      # Python wheel: dds3_wheel_dist is tagged manual (its platform select
+      # has no arm for Linux ARM64/Intel macOS, see python/BUILD.bazel), so
+      # the build above does not produce it -- build it explicitly here.
+      # Building it alone never runs `pip install` on the packaged .whl,
+      # so a mistagged or incomplete archive would go unnoticed. 3.14
+      # matches the cp314 tag dds3_wheel sets for its compiled _dds3
+      # extension (see python/BUILD.bazel).
       - name: Setup Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:

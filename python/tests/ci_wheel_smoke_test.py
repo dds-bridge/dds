@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Guard that CI builds the Python wheel and smoke-tests a real `pip install`.
 
-`bazelisk build //...` already produces //python:dds3_wheel_dist as a side
-effect, and `bazelisk test //...` already exercises _dds3 through Bazel's own
-py_library layout -- but neither step ever runs `pip install` on the packaged
-.whl, so a mistag (see ci_wheel_tags_test.py) or a missing/renamed file inside
-the archive would go unnoticed. This guards that each of the three CI
-workflows pins a CPython 3.14 interpreter (to match the wheel's cp314 tag)
-and actually installs + imports the built wheel in a throwaway venv.
+//python:dds3_wheel_dist is tagged manual (its platform select has no arm
+for Linux ARM64/Intel macOS, see python/BUILD.bazel), so `bazelisk build
+//...` does not produce it and each CI workflow must build it explicitly by
+name. `bazelisk test //...` already exercises _dds3 through Bazel's own
+py_library layout, but neither that nor an explicit wheel build ever runs
+`pip install` on the packaged .whl, so a mistag (see ci_wheel_tags_test.py)
+or a missing/renamed file inside the archive would go unnoticed. This guards
+that each of the three CI workflows pins a CPython 3.14 interpreter (to
+match the wheel's cp314 tag) and actually installs + imports the built
+wheel in a throwaway venv.
 """
 
 from __future__ import annotations

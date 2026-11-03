@@ -334,10 +334,18 @@ py_test(
 # CPython version MODULE.bazel pins (python_version = "3.14"); the py_wheel
 # defaults (python_tag="py3", abi="none", platform="any") would mislabel this
 # compiled extension as a universal pure-Python wheel.
+#
+# manual: the platform select below has no arm for Linux ARM64 or Intel
+# macOS (by design -- see the arm comments), so on those hosts a plain
+# `bazelisk build //...`/`bazelisk test //...` would otherwise fail at
+# analysis time on this unrequested target. CI builds dds3_wheel_dist
+# explicitly by name (see e.g. ci_linux.yml) on its three supported hosts,
+# which is unaffected by manual.
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
     version = "1.0.0",
+    tags = ["manual"],
     python_tag = "cp314",
     abi = "cp314",
     platform = select({
@@ -370,9 +378,12 @@ py_wheel(
     entry_points = {},
 )
 
+# manual for the same reason as dds3_wheel above: it wraps dds3_wheel, whose
+# platform select fails closed (no arm) on Linux ARM64 or Intel macOS.
 py_wheel_dist(
     name = "dds3_wheel_dist",
     out = "dist",
     wheel = ":dds3_wheel",
+    tags = ["manual"],
 )
 

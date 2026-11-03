@@ -36,19 +36,24 @@ def _literal(node: ast.expr) -> object:
     return _UNRESOLVED
 
 
-def _py_wheel_call(build_bazel: str, name: str) -> ast.Call:
-    """The py_wheel(name = "<name>", ...) call node, by its literal name."""
+def _rule_call(build_bazel: str, rule: str, name: str) -> ast.Call:
+    """The <rule>(name = "<name>", ...) call node, by its literal name."""
     for node in ast.walk(ast.parse(build_bazel)):
         if not (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Name)
-            and node.func.id == "py_wheel"
+            and node.func.id == rule
         ):
             continue
         for kw in node.keywords:
             if kw.arg == "name" and _literal(kw.value) == name:
                 return node
-    raise AssertionError(f'expected py_wheel(name = "{name}", ...)')
+    raise AssertionError(f'expected {rule}(name = "{name}", ...)')
+
+
+def _py_wheel_call(build_bazel: str, name: str) -> ast.Call:
+    """The py_wheel(name = "<name>", ...) call node, by its literal name."""
+    return _rule_call(build_bazel, "py_wheel", name)
 
 
 def _keyword_value(call: ast.Call, keyword: str) -> ast.expr | None:
@@ -142,6 +147,45 @@ class TestDds3WheelCpythonTags(unittest.TestCase):
                 "//:build_windows": "win_amd64",
             },
             "expected one platform tag per supported CI host OS",
+        )
+
+
+class TestDds3WheelManualTag(unittest.TestCase):
+    """build_linux_x86_64/build_macos_arm64 fail closed with no matching arm
+    on Linux ARM64 or Intel macOS (see
+    test_platform_select_covers_all_three_os_with_platform_specific_tags), so
+    a plain `bazelisk build //...` on those hosts would hit an analysis-time
+    error from an unrelated, unrequested wheel target. `tags = ["manual"]`
+    excludes dds3_wheel/dds3_wheel_dist from `//...`'s target pattern
+    expansion; CI still builds dds3_wheel_dist explicitly by name on its
+    three supported hosts.
+    """
+
+    def test_dds3_wheel_is_manual(self) -> None:
+        text = (_repo_root() / "python" / "BUILD.bazel").read_text(encoding="utf-8")
+        call = _py_wheel_call(text, "dds3_wheel")
+        tags = _keyword_value(call, "tags")
+        self.assertIsNotNone(tags, "expected dds3_wheel to set tags")
+        assert tags is not None and isinstance(tags, ast.List)
+        self.assertIn(
+            "manual",
+            [_literal(elt) for elt in tags.elts],
+            "dds3_wheel's platform select has no arm for Linux ARM64 or "
+            "Intel macOS; manual keeps `bazelisk build //...` from failing "
+            "at analysis time on those hosts",
+        )
+
+    def test_dds3_wheel_dist_is_manual(self) -> None:
+        text = (_repo_root() / "python" / "BUILD.bazel").read_text(encoding="utf-8")
+        call = _rule_call(text, "py_wheel_dist", "dds3_wheel_dist")
+        tags = _keyword_value(call, "tags")
+        self.assertIsNotNone(tags, "expected dds3_wheel_dist to set tags")
+        assert tags is not None and isinstance(tags, ast.List)
+        self.assertIn(
+            "manual",
+            [_literal(elt) for elt in tags.elts],
+            "dds3_wheel_dist wraps dds3_wheel and must stay manual for the "
+            "same reason",
         )
 
 
