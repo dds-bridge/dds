@@ -36,11 +36,12 @@ than re-encoding toolchain knowledge.
   `@platforms//cpu:wasm32` (set by the `wasm_cc_binary` platform transition, not
   the host OS). Any target that wants per-platform flags does so through the
   `select()`s in `CPPVARIABLES.bzl` — it should not hand-roll `-O3`/`/O2`.
-- **`build_macos_arm64` is a CPU-qualified sibling of `build_macos`**, for
-  `select()`s that need to match arm64 Macs specifically rather than any
-  macOS CPU (e.g. [python-binding](python-binding.md)'s wheel `platform`
-  tag, which has no CPU-generic macOS value). Unlike
-  `build_{macos,linux,windows}`, it has no `debug_build_*` twin.
+- **`build_macos_arm64` and `build_linux_x86_64` are CPU-qualified siblings
+  of `build_macos` and `build_linux`**, for `select()`s that need to match a
+  specific architecture rather than any CPU of that OS (e.g.
+  [python-binding](python-binding.md)'s wheel `platform` tag, which has no
+  CPU-generic macOS or Linux value). Unlike `build_{macos,linux,windows}`,
+  neither has a `debug_build_*` twin.
 - **Optimized builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
   `-Wall -Wpedantic -Werror`; Windows uses `/W4 /WX /permissive-` and takes
   `/O2`/`/Od` from Bazel's `compilation_mode` (do not restate them in

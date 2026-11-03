@@ -335,8 +335,12 @@ py_wheel(
         # LLVM -- no manylinux sysroot or auditwheel step -- so a
         # manylinux2014 tag would overclaim glibc-floor portability.
         # linux_x86_64 is the honest, non-portable tag for how this is
-        # actually built.
-        "//:build_linux": "linux_x86_64",
+        # actually built. Keyed on the CPU-specific build_linux_x86_64, not
+        # build_linux (which matches any Linux CPU per
+        # specs/build-system.md): an aarch64 Linux build has no matching arm
+        # here and fails closed at analysis time, rather than silently
+        # mistagging an ARM extension as x86_64.
+        "//:build_linux_x86_64": "linux_x86_64",
         # Keyed on the CPU-specific build_macos_arm64, not build_macos
         # (which matches any macOS CPU per specs/build-system.md): an
         # x86_64 mac build has no matching arm here and fails closed at

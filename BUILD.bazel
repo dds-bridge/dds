@@ -40,6 +40,18 @@ config_setting(
     values = {"compilation_mode": "dbg"},
 )
 
+# More specific than build_linux (any CPU): needed where a select() arm must
+# pick a CPU-qualified value (e.g. python/BUILD.bazel's Linux wheel platform
+# tag) and a wrong-arch match would silently mislabel the output rather than
+# failing closed like build_windows does for non-x86_64.
+config_setting(
+    name = "build_linux_x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
 config_setting(
     name = "build_windows",
     constraint_values = [

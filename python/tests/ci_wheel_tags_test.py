@@ -111,10 +111,15 @@ class TestDds3WheelCpythonTags(unittest.TestCase):
     ) -> None:
         """A bare platform="any" would mislabel the compiled extension.
 
-        //:build_linux is plain ubuntu-latest + this repo's own hermetic LLVM
-        -- no manylinux sysroot/auditwheel step -- so claiming a
-        manylinux2014 floor would be a portability lie; "linux_x86_64" is the
-        honest (non-portable) tag for how CI actually builds this wheel.
+        //:build_linux matches any Linux CPU (see specs/build-system.md), but
+        there is no cpu-generic Linux wheel tag, so the select must key on
+        the more specific //:build_linux_x86_64 -- keying on //:build_linux
+        would silently mistag an aarch64 Linux build as x86_64 (pip would
+        then reject the wheel on its real architecture and accept it on an
+        incompatible one). "linux_x86_64" itself is the honest (non-portable)
+        tag for how CI actually builds this wheel: ubuntu-latest + this
+        repo's own hermetic LLVM, with no manylinux sysroot/auditwheel step,
+        so claiming a manylinux2014 floor would be a portability lie.
 
         //:build_macos matches any macOS CPU (see specs/build-system.md), but
         there is no cpu-generic macOS wheel tag, so the select must key on
@@ -132,7 +137,7 @@ class TestDds3WheelCpythonTags(unittest.TestCase):
         self.assertEqual(
             arms,
             {
-                "//:build_linux": "linux_x86_64",
+                "//:build_linux_x86_64": "linux_x86_64",
                 "//:build_macos_arm64": "macosx_11_0_arm64",
                 "//:build_windows": "win_amd64",
             },
