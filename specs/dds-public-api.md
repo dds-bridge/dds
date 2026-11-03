@@ -1,7 +1,7 @@
 ---
 capability: dds-public-api
 owners: [api]
-last-updated: 2026-09-26
+last-updated: 2026-11-03
 ---
 
 # DDS Public API
@@ -53,8 +53,8 @@ capability defines what crosses the boundary and promises to stay stable.
      It forwards to layer 2 and now covers that layer's full surface: context
      lifecycle (including config-based creation), `dds_c_solve_board`,
      `dds_c_calc_dd_table` and its `_pbn` twin, `dds_c_calc_par`,
-     `dds_c_convert_from_pbn`, TT configure/resize/clear, both resets, and the
-     logging passthroughs.
+     `dds_c_analyse_play`, `dds_c_convert_from_pbn`, `dds_c_convert_play_from_pbn`,
+     TT configure/resize/clear, both resets, and the logging passthroughs.
      `SolverConfig` is decomposed into scalar arguments and `TTKind` crosses as
      an `int`, so no struct is passed by value.
 - **Bindings pick different layers.** The shim header
@@ -90,7 +90,11 @@ capability defines what crosses the boundary and promises to stay stable.
   `DdTableDeal.cards` use, so a binding converts once and then uses the binary
   entry points. Every other field of a `*PBN` struct (`trump`, `first`,
   `currentTrick*`) is already binary and needs no conversion, which is what makes
-  one converter enough to replace a twin per function.
+  one converter enough to replace a twin per function. `dds_c_analyse_play`
+  follows the same rule: it has no `_pbn` twin, and `dds_c_convert_play_from_pbn`
+  is the matching converter for its `PlayTracePBN` → `PlayTraceBin` input, so a
+  PBN-based caller converts the deal and the play trace once each and then calls
+  `dds_c_analyse_play` directly.
   `dds_c_calc_dd_table_pbn` is the sole surviving twin: it shipped in v3.1.0 and
   is bound by .NET, so it stays for compatibility. `dds_c_solve_board_pbn` and
   `dds_c_calc_par_pbn` (and their `dds_*` layer-2 counterparts) were withdrawn
