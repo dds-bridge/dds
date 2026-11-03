@@ -5,6 +5,11 @@ DDS_CPPOPTS = select({
         "-O3",
         "-flto=thin",
         "-mtune=generic",
+        # Matches dds3_wheel's macosx_11_0_arm64 platform tag
+        # (python/BUILD.bazel) -- without this, the real floor baked into
+        # the .so is whatever the host's default Xcode/SDK picks, which the
+        # tag would then misrepresent.
+        "-mmacosx-version-min=11.0",
         "-fPIC",
         "-Wpedantic",
         "-Wall",
@@ -14,6 +19,7 @@ DDS_CPPOPTS = select({
     "//:debug_build_macos": [
         "-g",
         "-mtune=generic",
+        "-mmacosx-version-min=11.0",
         "-fPIC",
         "-Wpedantic",
         "-Wall",
@@ -96,8 +102,8 @@ DDS_LOCAL_DEFINES = select({
 })
 
 DDS_LINKOPTS = select({
-    "//:build_macos": ["-flto=thin"],
-    "//:debug_build_macos": [],
+    "//:build_macos": ["-flto=thin", "-mmacosx-version-min=11.0"],
+    "//:debug_build_macos": ["-mmacosx-version-min=11.0"],
     "//:build_linux": [],
     "//:debug_build_linux": [],
     "//conditions:default": [],

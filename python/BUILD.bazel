@@ -133,6 +133,16 @@ py_test(
     data = ["//.github/workflows:all_workflows"],
 )
 
+# Guard: macOS deployment target (CPPVARIABLES.bzl) must match the floor
+# dds3_wheel advertises in its macosx_<floor>_arm64 platform tag.
+py_test(
+    name = "ci_macos_deployment_target_test",
+    size = "small",
+    main = "tests/ci_macos_deployment_target_test.py",
+    srcs = ["tests/ci_macos_deployment_target_test.py"],
+    data = ["BUILD.bazel", "//:windows_cppopts_config_files"],
+)
+
 # Guard: MemorySanitizer config + Linux CI job stay wired together.
 py_test(
     name = "ci_msan_test",
@@ -346,11 +356,12 @@ py_wheel(
         # x86_64 mac build has no matching arm here and fails closed at
         # analysis time, the same fail-closed behavior build_windows
         # already has for non-x86_64, rather than silently mistagging.
-        # 11.0 is an assumed floor (arm64 Macs can't run below Big Sur
-        # anyway), not a verified -mmacosx-version-min: none is set anywhere
-        # in CPPVARIABLES.bzl/.bazelrc/BUILD.bazel, so the real minimum load
-        # command baked into the .so is whatever the runner's default Xcode
-        # SDK picks.
+        # 11.0 is enforced, not assumed: CPPVARIABLES.bzl sets
+        # -mmacosx-version-min=11.0 for both compile and link on
+        # build_macos/debug_build_macos, so the .so's actual LC_BUILD_VERSION
+        # minos matches this tag (verified via `otool -l`) rather than
+        # floating with whatever SDK the runner's Xcode happens to default
+        # to. Guarded by ci_macos_deployment_target_test.
         "//:build_macos_arm64": "macosx_11_0_arm64",
         "//:build_windows": "win_amd64",
     }),

@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-11-02
+last-updated: 2026-11-03
 ---
 
 # Build System
@@ -42,6 +42,15 @@ than re-encoding toolchain knowledge.
   [python-binding](python-binding.md)'s wheel `platform` tag, which has no
   CPU-generic macOS or Linux value). Unlike `build_{macos,linux,windows}`,
   neither has a `debug_build_*` twin.
+- **macOS targets pin a deployment target of 11.0.** `-mmacosx-version-min=11.0`
+  is set in both `DDS_CPPOPTS` and `DDS_LINKOPTS` for `build_macos` and
+  `debug_build_macos`, matching [python-binding](python-binding.md)'s
+  `dds3_wheel` `macosx_11_0_arm64` platform tag — the wheel's compiled
+  extension actually carries that `LC_BUILD_VERSION minos`, not just a tag
+  that assumes it. This does not extend to prebuilt external dependencies
+  (e.g. `googletest`), which keep their own default deployment target; a
+  macOS test binary linking both may emit a harmless `ld: warning: ...was
+  built for newer 'macOS' version...` without affecting the test result.
 - **Optimized builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
   `-Wall -Wpedantic -Werror`; Windows uses `/W4 /WX /permissive-` and takes
   `/O2`/`/Od` from Bazel's `compilation_mode` (do not restate them in
