@@ -115,18 +115,20 @@ DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
    converts once with dds_c_convert_from_pbn (deal) and
    dds_c_convert_play_from_pbn (play), then calls this entry point
    directly. */
-DLLEXPORT int dds_c_analyse_play(DDS_C_SOLVER_CTX ctx,
-                                  const struct Deal* dl,
-                                  const struct PlayTraceBin* play,
-                                  struct SolvedPlay* solved);
+DLLEXPORT int dds_c_analyse_play(
+    DDS_C_SOLVER_CTX ctx,
+    const struct Deal* dl,
+    const struct PlayTraceBin* play,
+    struct SolvedPlay* solved);
 
 /* Parse a PBN-format play trace (two characters per card: suit letter
    S/H/D/C followed by rank 2-9/T/J/Q/K/A) into the binary PlayTraceBin
    consumed by dds_c_analyse_play. Needs no SolverContext. Returns
    RETURN_PLAY_FAULT if pbn_play->number is out of [0, 52] or any card is
    malformed, else RETURN_NO_FAULT. */
-DLLEXPORT int dds_c_convert_play_from_pbn(const struct PlayTracePBN* pbn_play,
-                                           struct PlayTraceBin* bin_play);
+DLLEXPORT int dds_c_convert_play_from_pbn(
+    const struct PlayTracePBN* pbn_play,
+    struct PlayTraceBin* bin_play);
 
 /* Transposition-table configuration. */
 DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,

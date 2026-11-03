@@ -149,10 +149,11 @@ DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
     }
 }
 
-DLLEXPORT int dds_c_analyse_play(DDS_C_SOLVER_CTX ctx,
-                                  const struct Deal* dl,
-                                  const struct PlayTraceBin* play,
-                                  struct SolvedPlay* solved)
+DLLEXPORT int dds_c_analyse_play(
+    DDS_C_SOLVER_CTX ctx,
+    const struct Deal* dl,
+    const struct PlayTraceBin* play,
+    struct SolvedPlay* solved)
 {
     if (ctx == nullptr || dl == nullptr || play == nullptr || solved == nullptr)
         return RETURN_UNKNOWN_FAULT;
@@ -164,8 +165,9 @@ DLLEXPORT int dds_c_analyse_play(DDS_C_SOLVER_CTX ctx,
     }
 }
 
-DLLEXPORT int dds_c_convert_play_from_pbn(const struct PlayTracePBN* pbn_play,
-                                           struct PlayTraceBin* bin_play)
+DLLEXPORT int dds_c_convert_play_from_pbn(
+    const struct PlayTracePBN* pbn_play,
+    struct PlayTraceBin* bin_play)
 {
     if (pbn_play == nullptr || bin_play == nullptr)
         return RETURN_UNKNOWN_FAULT;
