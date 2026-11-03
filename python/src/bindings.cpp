@@ -717,8 +717,10 @@ auto register_analysis_bindings(py::module_& module) -> void
         "    dict: {'number': int, 'tricks': list[int]} -- tricks[i] is the\n"
         "          double-dummy trick count for the side to play after i cards.\n\n"
         "Raises:\n"
-        "    ValueError: If deal or play format is invalid.\n"
-        "    RuntimeError: If DDS solver returns error code.");
+        "    ValueError: If deal or play_suit/play_rank format is invalid (e.g. mismatched\n"
+        "        lengths, out-of-range suit/rank).\n"
+        "    RuntimeError: If the play is illegal for the given deal, or the DDS solver\n"
+        "        otherwise returns an error code.");
 
     // analyse_play_pbn: double-dummy trick count after each card of a played hand.
     //
@@ -814,8 +816,10 @@ auto register_analysis_bindings(py::module_& module) -> void
         "    dict: {'number': int, 'tricks': list[int]} -- tricks[i] is the\n"
         "          double-dummy trick count for the side to play after i cards.\n\n"
         "Raises:\n"
-        "    ValueError: If PBN or play format is invalid.\n"
-        "    RuntimeError: If DDS solver returns error code.");
+        "    ValueError: If the PBN deal string or play string format is invalid (e.g. odd\n"
+        "        play-string length).\n"
+        "    RuntimeError: If the play is illegal for the given deal, or the DDS solver\n"
+        "        otherwise returns an error code.");
 
     // analyse_all_plays_pbn: batched play analysis.
     module.def(
