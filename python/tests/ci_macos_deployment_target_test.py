@@ -101,6 +101,57 @@ class TestMacosDeploymentTargetMatchesWheelTag(unittest.TestCase):
         )
 
 
+class TestAsanMacosAvoidsConflictingDeploymentTargetFlag(unittest.TestCase):
+    """--config=asan on macOS (build:asan_macos in .bazelrc) swaps in
+    local_config_apple_cc_toolchains, whose generated compile command
+    already carries its own `-target arm64-apple-macosX.Y`. Also setting
+    -mmacosx-version-min=11.0 there makes clang error under -Werror:
+    "overriding '-mmacosx-version-min=11.0' option with '-target
+    arm64-apple-macosX.Y' [-Werror,-Woverriding-option]". A more specific
+    config_setting (debug_build_macos_asan, matched via a --define only
+    build:asan_macos sets) must win that select() arm over debug_build_macos
+    and must not carry the flag.
+    """
+
+    def test_bazelrc_sets_the_asan_macos_define(self) -> None:
+        bazelrc = (_repo_root() / ".bazelrc").read_text(encoding="utf-8")
+        self.assertRegex(
+            bazelrc,
+            r"build:asan_macos\s+--define=macos_asan=true",
+            "expected build:asan_macos to set --define=macos_asan=true so "
+            "debug_build_macos_asan can match only under asan",
+        )
+
+    def test_build_bazel_defines_asan_specific_config_setting(self) -> None:
+        build_bazel = (_repo_root() / "BUILD.bazel").read_text(encoding="utf-8")
+        self.assertIn(
+            'name = "debug_build_macos_asan"',
+            build_bazel,
+            "expected a debug_build_macos_asan config_setting, more "
+            "specific than debug_build_macos, to win under --config=asan",
+        )
+
+    def test_cppopts_asan_arm_has_no_deployment_target_flag(self) -> None:
+        text = (_repo_root() / "CPPVARIABLES.bzl").read_text(encoding="utf-8")
+        block = _select_arm_block(text, "DDS_CPPOPTS", "debug_build_macos_asan")
+        self.assertNotRegex(
+            block,
+            _DEPLOYMENT_TARGET,
+            "debug_build_macos_asan must not set -mmacosx-version-min; it "
+            "conflicts with local_config_apple_cc_toolchains' own -target",
+        )
+
+    def test_linkopts_asan_arm_has_no_deployment_target_flag(self) -> None:
+        text = (_repo_root() / "CPPVARIABLES.bzl").read_text(encoding="utf-8")
+        block = _select_arm_block(text, "DDS_LINKOPTS", "debug_build_macos_asan")
+        self.assertNotRegex(
+            block,
+            _DEPLOYMENT_TARGET,
+            "debug_build_macos_asan must not set -mmacosx-version-min; it "
+            "conflicts with local_config_apple_cc_toolchains' own -target",
+        )
+
+
 class TestSelectArmBlockHelperTolerance(unittest.TestCase):
     """Boundary cases for _select_arm_block itself, not the real files."""
 

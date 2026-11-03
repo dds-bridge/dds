@@ -100,6 +100,12 @@ build:linux --cxxopt=-Wno-conversion
 # Chained from build:asan; Apple toolchains do not match on Linux and are ignored.
 build:asan_macos --extra_toolchains=@local_config_apple_cc_toolchains//:all
 build:asan_macos --copt=-Wno-macro-redefined
+# Lets CPPVARIABLES.bzl's debug_build_macos_asan config_setting (BUILD.bazel)
+# detect this config and skip -mmacosx-version-min: local_config_apple_cc_
+# toolchains' generated compile command already carries its own
+# `-target arm64-apple-macosX.Y`, and setting both is a hard error under
+# -Werror (clang -Woverriding-option).
+build:asan_macos --define=macos_asan=true
 
 # ThreadSanitizer configuration
 # Usage: bazel test --config=tsan //path:target

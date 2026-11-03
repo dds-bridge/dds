@@ -51,6 +51,11 @@ than re-encoding toolchain knowledge.
   (e.g. `googletest`), which keep their own default deployment target; a
   macOS test binary linking both may emit a harmless `ld: warning: ...was
   built for newer 'macOS' version...` without affecting the test result.
+  **Exception:** `--config=asan` does not get this flag (`debug_build_macos_asan`,
+  a config_setting more specific than `debug_build_macos`, matches instead and
+  omits it) — `local_config_apple_cc_toolchains` (the Xcode toolchain asan
+  switches to; see above) already emits its own `-target arm64-apple-macosX.Y`,
+  and clang errors under `-Werror` (`-Woverriding-option`) if both are set.
 - **Optimized builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
   `-Wall -Wpedantic -Werror`; Windows uses `/W4 /WX /permissive-` and takes
   `/O2`/`/Od` from Bazel's `compilation_mode` (do not restate them in

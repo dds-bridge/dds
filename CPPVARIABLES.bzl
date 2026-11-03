@@ -26,6 +26,17 @@ DDS_CPPOPTS = select({
         "-Wno-character-conversion",
         "-Werror",
     ],
+    # Same as debug_build_macos but without -mmacosx-version-min: see the
+    # config_setting's comment in BUILD.bazel for why asan can't take it.
+    "//:debug_build_macos_asan": [
+        "-g",
+        "-mtune=generic",
+        "-fPIC",
+        "-Wpedantic",
+        "-Wall",
+        "-Wno-character-conversion",
+        "-Werror",
+    ],
     "//:build_linux": [
         "-O3",
         "-fPIC",
@@ -104,6 +115,9 @@ DDS_LOCAL_DEFINES = select({
 DDS_LINKOPTS = select({
     "//:build_macos": ["-flto=thin", "-mmacosx-version-min=11.0"],
     "//:debug_build_macos": ["-mmacosx-version-min=11.0"],
+    # No -mmacosx-version-min: see the debug_build_macos_asan arm in
+    # DDS_CPPOPTS above.
+    "//:debug_build_macos_asan": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
     "//conditions:default": [],
