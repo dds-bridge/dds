@@ -174,6 +174,22 @@ function importDealFromText(text) {
 var handRecordBoards = [];
 var handRecordIndex = 0;
 
+function updateHandRecordAreaVisibility() {
+    const area = document.getElementById("hand-record");
+    if (!area) {
+        return;
+    }
+    const status = document.getElementById("hand-record-status");
+    const statusText = status ? String(status.textContent || "").trim() : "";
+    const isError = !!(status && status.classList.contains("error"));
+    // Multi-board nav, import progress (no boards yet), or an error.
+    area.hidden = !(
+        handRecordBoards.length > 1
+        || isError
+        || (handRecordBoards.length === 0 && statusText !== "")
+    );
+}
+
 function setHandRecordStatus(message, isError) {
     const el = document.getElementById("hand-record-status");
     if (!el) {
@@ -181,6 +197,7 @@ function setHandRecordStatus(message, isError) {
     }
     el.textContent = message || "";
     el.className = isError ? "hand-record-status error" : "hand-record-status";
+    updateHandRecordAreaVisibility();
 }
 
 function updateHandRecordNav() {
@@ -191,11 +208,13 @@ function updateHandRecordNav() {
     if (!nav || !label || !prev || !next) {
         return;
     }
-    if (handRecordBoards.length === 0) {
+    // Prev/next only matter when more than one board was imported.
+    if (handRecordBoards.length <= 1) {
         nav.hidden = true;
         label.textContent = "";
         prev.disabled = true;
         next.disabled = true;
+        updateHandRecordAreaVisibility();
         return;
     }
     nav.hidden = false;
@@ -205,6 +224,7 @@ function updateHandRecordNav() {
         + " (" + (handRecordIndex + 1) + " of " + handRecordBoards.length + ")";
     prev.disabled = handRecordIndex <= 0;
     next.disabled = handRecordIndex >= handRecordBoards.length - 1;
+    updateHandRecordAreaVisibility();
 }
 
 function clearHandRecordSession() {
@@ -222,10 +242,14 @@ function showHandRecordBoard(index) {
     const board = handRecordBoards[handRecordIndex];
     fillFormWithTestData(handsToDottedDeal(board.hands));
     updateHandRecordNav();
-    setHandRecordStatus(
-        "Loaded board " + board.boardNumber + ".",
-        false
-    );
+    if (handRecordBoards.length > 1) {
+        setHandRecordStatus(
+            "Loaded board " + board.boardNumber + ".",
+            false
+        );
+    } else {
+        setHandRecordStatus("", false);
+    }
 }
 
 function handRecordPrev() {

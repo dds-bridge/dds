@@ -192,6 +192,7 @@ function createMockDocument(initialValues = {}) {
     makeElement("play-score");
     makeElement("edit-hands");
     makeElement("result-table-hint");
+    makeElement("hand-record").hidden = true;
     makeElement("hand-record-nav");
     makeElement("hand-record-prev");
     makeElement("hand-record-next");
@@ -7049,6 +7050,8 @@ test("handleDealFileSelected reports when PDF import helper is missing", async (
         /dds_web_pdf_import\.js/
     );
     assert.ok(document.element("hand-record-status").classList.contains("error"));
+    // Errors still surface in the hand-record area even with no boards.
+    assert.equal(document.element("hand-record").hidden, false);
 });
 
 test("handleDealFileSelected loads a hand-record PDF through Import deal(s)…", async () => {
@@ -7105,17 +7108,97 @@ test("handleDealFileSelected loads a hand-record PDF through Import deal(s)…",
     };
     await ctx.handleDealFileSelected(input);
     assert.equal(document.element("north_spades").value, "AJ7");
-    assert.equal(
-        document.element("hand-record-label").textContent,
-        "Board 1 (1 of 1)"
-    );
-    assert.equal(document.element("hand-record-status").textContent, "Loaded board 1.");
-    assert.equal(document.element("hand-record-nav").hidden, false);
+    // Single-board imports leave the hand-record chrome hidden.
+    assert.equal(document.element("hand-record").hidden, true);
+    assert.equal(document.element("hand-record-nav").hidden, true);
     // A trailing solve may paint WASM/Computing status; PDF import itself
     // must not leave a parse error in #result.
     assert.doesNotMatch(
         document.element("result").innerHTML,
         /hand-record|BridgeComposer|compass|Could not read the selected PDF/i
+    );
+});
+
+test("showHandRecordBoard hides the hand-record area for one board and shows it for multiple", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const board17 = {
+        boardNumber: "17",
+        hands: {
+            north: {
+                spades: "942",
+                hearts: "Q98532",
+                diamonds: "43",
+                clubs: "A8",
+            },
+            east: {
+                spades: "JT653",
+                hearts: "",
+                diamonds: "652",
+                clubs: "JT976",
+            },
+            south: {
+                spades: "Q87",
+                hearts: "KJ64",
+                diamonds: "A8",
+                clubs: "Q432",
+            },
+            west: {
+                spades: "AK",
+                hearts: "AT7",
+                diamonds: "KQJT97",
+                clubs: "K5",
+            },
+        },
+    };
+    ctx.handRecordBoards = [board17];
+    ctx.showHandRecordBoard(0);
+    assert.equal(document.element("hand-record").hidden, true);
+    assert.equal(document.element("hand-record-nav").hidden, true);
+    assert.equal(document.element("north_spades").value, "942");
+
+    ctx.handRecordBoards = [
+        board17,
+        {
+            boardNumber: "18",
+            hands: {
+                north: {
+                    spades: "AKQ",
+                    hearts: "AKQ",
+                    diamonds: "AKQ",
+                    clubs: "AKQJT",
+                },
+                east: {
+                    spades: "234",
+                    hearts: "234",
+                    diamonds: "234",
+                    clubs: "23456",
+                },
+                south: {
+                    spades: "567",
+                    hearts: "567",
+                    diamonds: "567",
+                    clubs: "789",
+                },
+                west: {
+                    spades: "JT98",
+                    hearts: "JT98",
+                    diamonds: "JT98",
+                    clubs: "",
+                },
+            },
+        },
+    ];
+    ctx.showHandRecordBoard(0);
+    assert.equal(document.element("hand-record").hidden, false);
+    assert.equal(document.element("hand-record-nav").hidden, false);
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 17 (1 of 2)"
     );
 });
 
