@@ -338,14 +338,22 @@
         return raw;
     }
 
+    function dealIdentityKey(deal) {
+        return DIRECTIONS.map(function (direction) {
+            return deal[direction] || "";
+        }).join("|");
+    }
+
     /**
-     * Extract every PBN [Deal] from text. When none are present, returns a
-     * one-element list from the first LIN / DLM / dtest / sol-style deal.
+     * Extract every unique PBN [Deal] from text (first copy wins). When none
+     * are present, returns a one-element list from the first LIN / DLM /
+     * dtest / sol-style deal.
      * @returns {{boardNumber:string, deal:{north:string,east:string,south:string,west:string}}[]}
      */
     function parseAllDealsFromText(text) {
         const source = String(text == null ? "" : text);
         const deals = [];
+        const seen = {};
         const dealTagRe = /\[Deal\s+"([^"]+)"\s*\]/gi;
         let match;
         while ((match = dealTagRe.exec(source)) !== null) {
@@ -353,6 +361,11 @@
             if (!deal) {
                 throw new Error("Malformed PBN Deal tag.");
             }
+            const key = dealIdentityKey(deal);
+            if (seen[key]) {
+                continue;
+            }
+            seen[key] = true;
             deals.push({
                 boardNumber: boardNumberFromPrecedingTags(
                     source.slice(0, match.index),

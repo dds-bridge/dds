@@ -5357,6 +5357,46 @@ test("parseAllDealsFromText numbers untitled PBN deals from 1", () => {
     assert.equal(deals[1].boardNumber, "2");
 });
 
+test("parseAllDealsFromText keeps only the first copy of identical PBN deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Board "1"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "2"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "3"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+        `[Board "4"]`,
+        `[Deal "${LIST1_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "1");
+    assert.equal(deals[0].deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deals[1].boardNumber, "3");
+    assert.equal(deals[1].deal.north, "QT9.A8765432.KJ.");
+});
+
+test("importDealFromText treats a PBN of only duplicate deals as a single deal", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const text = [
+        `[Board "1"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "2"]`,
+        `[Deal "${LIST1_PBN}"]`,
+    ].join("\n");
+    const err = ctx.importDealFromText(text);
+    assert.equal(err, "");
+    assert.equal(document.element("north_spades").value, "Q87");
+    assert.equal(document.element("hand-record").hidden, true);
+    assert.equal(document.element("hand-record-nav").hidden, true);
+});
+
 test("importDealFromText loads multiple PBN deals into board navigation", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document, {
