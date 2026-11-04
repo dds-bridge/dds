@@ -55,8 +55,7 @@
     </select>
     <button type="button" onclick="rotateClockwise()">Rotate the hands clockwise</button>
 
-    <fieldset id="hand-record" class="hand-record" hidden>
-        <legend>Hand-record boards</legend>
+    <div id="hand-record" class="hand-record" hidden>
         <div id="hand-record-nav" class="hand-record-nav" hidden>
             <button type="button"
                     id="hand-record-prev"
@@ -71,7 +70,7 @@
                     disabled>▶</button>
         </div>
         <p id="hand-record-status" class="hand-record-status" aria-live="polite"></p>
-    </fieldset>
+    </div>
 
     <div id="play-bar" hidden>
         <button type="button" id="edit-hands" onclick="exitPlay()">Edit hands</button>

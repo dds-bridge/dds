@@ -110,9 +110,12 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertNotIn("hand-record-load", text)
         self.assertNotIn("Load PDF", text)
         self.assertNotIn("hand-record-file", text)
+        self.assertNotIn("Hand-record boards", text)
+        self.assertNotIn("<fieldset", text)
+        self.assertNotIn("<legend>", text)
         self.assertRegex(
             text,
-            r'<fieldset[^>]*id="hand-record"[^>]*\bhidden\b',
+            r'<div[^>]*id="hand-record"[^>]*\bhidden\b',
         )
         self.assertIn('id="hand-record-nav"', text)
         self.assertIn('onclick="handRecordPrev()"', text)

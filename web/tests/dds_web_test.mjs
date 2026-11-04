@@ -7198,7 +7198,7 @@ test("showHandRecordBoard hides the hand-record area for one board and shows it 
     assert.equal(document.element("hand-record-nav").hidden, false);
     assert.equal(
         document.element("hand-record-label").textContent,
-        "Board 17 (1 of 2)"
+        "Board 17 of 2"
     );
 });
 
@@ -7274,8 +7274,9 @@ test("showHandRecordBoard fills the diagram and updates nav", () => {
     assert.equal(document.element("hand-record-nav").hidden, false);
     assert.equal(
         document.element("hand-record-label").textContent,
-        "Board 17 (1 of 2)"
+        "Board 17 of 2"
     );
+    assert.equal(document.element("hand-record-status").textContent || "", "");
     assert.equal(document.element("hand-record-prev").disabled, true);
     assert.equal(document.element("hand-record-next").disabled, false);
 
@@ -7283,8 +7284,9 @@ test("showHandRecordBoard fills the diagram and updates nav", () => {
     assert.equal(document.element("north_spades").value, "AKQ");
     assert.equal(
         document.element("hand-record-label").textContent,
-        "Board 18 (2 of 2)"
+        "Board 18 of 2"
     );
+    assert.equal(document.element("hand-record-status").textContent || "", "");
     assert.equal(document.element("hand-record-prev").disabled, false);
     assert.equal(document.element("hand-record-next").disabled, true);
 

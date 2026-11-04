@@ -220,8 +220,7 @@ function updateHandRecordNav() {
     nav.hidden = false;
     const board = handRecordBoards[handRecordIndex];
     label.textContent =
-        "Board " + board.boardNumber
-        + " (" + (handRecordIndex + 1) + " of " + handRecordBoards.length + ")";
+        "Board " + board.boardNumber + " of " + handRecordBoards.length;
     prev.disabled = handRecordIndex <= 0;
     next.disabled = handRecordIndex >= handRecordBoards.length - 1;
     updateHandRecordAreaVisibility();
@@ -242,14 +241,7 @@ function showHandRecordBoard(index) {
     const board = handRecordBoards[handRecordIndex];
     fillFormWithTestData(handsToDottedDeal(board.hands));
     updateHandRecordNav();
-    if (handRecordBoards.length > 1) {
-        setHandRecordStatus(
-            "Loaded board " + board.boardNumber + ".",
-            false
-        );
-    } else {
-        setHandRecordStatus("", false);
-    }
+    setHandRecordStatus("", false);
 }
 
 function handRecordPrev() {
