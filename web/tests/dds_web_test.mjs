@@ -5706,6 +5706,101 @@ test("handleDealFileSelected ignores a superseded slower PDF import", async () =
     assert.equal(ctx.handRecordBoards[0].boardNumber, "1");
 });
 
+test("superseded PDF import does not clear a newer import's progress", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    let releaseSlowParse;
+    const slowPdfHands = {
+        north: { spades: "AKQJ", hearts: "AKQJ", diamonds: "T98", clubs: "T9" },
+        east: { spades: "5432", hearts: "5432", diamonds: "32", clubs: "432" },
+        south: { spades: "T98", hearts: "T9", diamonds: "AKQJ", clubs: "AKQJ" },
+        west: { spades: "76", hearts: "876", diamonds: "7654", clubs: "8765" },
+    };
+    ctx.loadAllBoardsFromHandRecordPdf = async (bytes) => {
+        if (bytes && bytes.byteLength === 1) {
+            await new Promise((resolve) => {
+                releaseSlowParse = resolve;
+            });
+            return [{ boardNumber: "99", hands: slowPdfHands }];
+        }
+        return [
+            {
+                boardNumber: "1",
+                hands: {
+                    north: {
+                        spades: "AJ7",
+                        hearts: "QT3",
+                        diamonds: "T7",
+                        clubs: "QJT86",
+                    },
+                    east: {
+                        spades: "82",
+                        hearts: "9764",
+                        diamonds: "K85",
+                        clubs: "A742",
+                    },
+                    south: {
+                        spades: "KQ64",
+                        hearts: "K",
+                        diamonds: "QJ642",
+                        clubs: "K95",
+                    },
+                    west: {
+                        spades: "T953",
+                        hearts: "AJ852",
+                        diamonds: "A93",
+                        clubs: "3",
+                    },
+                },
+            },
+        ];
+    };
+    let resolveFastRead;
+    const slowFile = {
+        name: "slow.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+    };
+    const fastFile = {
+        name: "fast.pdf",
+        type: "application/pdf",
+        arrayBuffer: () =>
+            new Promise((resolve) => {
+                resolveFastRead = resolve;
+            }),
+    };
+    const input = { files: [slowFile] };
+
+    const first = ctx.handleDealFileSelected(input);
+    await Promise.resolve();
+    await Promise.resolve();
+    input.files = [fastFile];
+    const second = ctx.handleDealFileSelected(input);
+    await Promise.resolve();
+    assert.match(
+        document.element("hand-record-status").textContent,
+        /Reading PDF/i
+    );
+    assert.equal(document.element("hand-record").hidden, false);
+
+    releaseSlowParse();
+    await first;
+
+    assert.match(
+        document.element("hand-record-status").textContent,
+        /Reading PDF/i
+    );
+    assert.equal(document.element("hand-record").hidden, false);
+
+    resolveFastRead(new Uint8Array([2, 3]).buffer);
+    await second;
+    assert.equal(document.element("north_spades").value, "AJ7");
+});
+
 test("loadHandRecordFromFile clears a prior single-board session before progress", async () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document, {

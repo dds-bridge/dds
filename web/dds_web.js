@@ -219,7 +219,15 @@ function updateHandRecordAreaVisibility() {
     );
 }
 
-function setHandRecordStatus(message, isError) {
+function setHandRecordStatus(message, isError, statusGeneration) {
+    // Optional generation: stale PDF loaders must not clobber a newer import's
+    // progress or clear it on abort.
+    if (
+        statusGeneration != null
+        && statusGeneration !== dealFileSelectionGeneration
+    ) {
+        return;
+    }
     const el = document.getElementById("hand-record-status");
     if (!el) {
         return;
@@ -272,7 +280,6 @@ function showHandRecordBoard(index) {
     updateHandRecordNav();
     setHandRecordStatus("", false);
 }
-
 function handRecordPrev() {
     if (handRecordIndex <= 0) {
         return;
@@ -299,7 +306,7 @@ function isHandRecordPdfFile(file) {
  * Read and parse a hand-record PDF. Does not apply boards to the diagram —
  * callers must do that after confirming the file selection is still current.
  * @param {File|{arrayBuffer:function():Promise<ArrayBuffer>,name?:string,type?:string}} file
- * @param {{isCurrent?:function():boolean}=} options
+ * @param {{isCurrent?:function():boolean, statusGeneration?:number}=} options
  * @returns {Promise<object[]|null>} parsed boards, or null if superseded mid-load
  */
 function loadHandRecordFromFile(file, options) {
@@ -312,24 +319,21 @@ function loadHandRecordFromFile(file, options) {
     const isCurrent = options && typeof options.isCurrent === "function"
         ? options.isCurrent
         : null;
+    const statusGeneration = options && options.statusGeneration != null
+        ? options.statusGeneration
+        : dealFileSelectionGeneration;
     function stillCurrent() {
         return !isCurrent || isCurrent();
     }
     function abortIfSuperseded() {
-        if (stillCurrent()) {
-            return false;
-        }
-        // Do not leave Reading/Parsing text over a newer successful import.
-        const status = document.getElementById("hand-record-status");
-        const text = status ? String(status.textContent || "") : "";
-        if (/Reading PDF|Parsing boards/i.test(text)) {
-            setHandRecordStatus("", false);
-        }
-        return true;
+        return !stillCurrent();
+    }
+    function setProgress(message) {
+        setHandRecordStatus(message, false, statusGeneration);
     }
     // Drop any prior session so progress chrome is visible for a re-import.
     clearHandRecordSession();
-    setHandRecordStatus("Reading PDF…", false);
+    setProgress("Reading PDF…");
     if (abortIfSuperseded()) {
         return Promise.resolve(null);
     }
@@ -345,7 +349,7 @@ function loadHandRecordFromFile(file, options) {
         if (abortIfSuperseded()) {
             return null;
         }
-        setHandRecordStatus("Parsing boards…", false);
+        setProgress("Parsing boards…");
         if (abortIfSuperseded()) {
             return null;
         }
@@ -390,6 +394,7 @@ async function handleDealFileSelected(input) {
     if (isHandRecordPdfFile(file)) {
         try {
             const boards = await loadHandRecordFromFile(file, {
+                statusGeneration: selectionGeneration,
                 isCurrent: function () {
                     return dealFileSelectionIsCurrent(
                         input,
@@ -417,7 +422,8 @@ async function handleDealFileSelected(input) {
             clearHandRecordSession();
             setHandRecordStatus(
                 String(err && err.message ? err.message : err),
-                true
+                true,
+                selectionGeneration
             );
             invalidateActiveDdTableRequest();
         }
