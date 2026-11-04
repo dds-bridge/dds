@@ -722,6 +722,46 @@ TEST(DdsCApiAnalysePlay, ContextIsReusableAcrossCalls)
     dds_c_destroy_solvercontext(ctx);
 }
 
+// dds_c_analyse_play forwards straight into the shared analyse_play()
+// implementation, which is where play.suit/play.rank/play.number are
+// validated (library/src/analyse_play_adapter.cpp) -- confirm that
+// validation is actually reachable through this entry point, since an
+// out-of-range suit/rank would otherwise index bit_map_rank[]/remainCards[]
+// out of bounds rather than raise something the try/catch here could stop.
+TEST(DdsCApiAnalysePlay, RejectsOutOfRangeSuitWithPlayFault)
+{
+    struct Deal dl = MakeReferenceDeal();
+    struct PlayTraceBin play = {};
+    play.number = 1;
+    play.suit[0] = 4;  // One past the last valid suit.
+    play.rank[0] = 2;
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay solved = {};
+    EXPECT_EQ(dds_c_analyse_play(ctx, &dl, &play, &solved), RETURN_PLAY_FAULT);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+TEST(DdsCApiAnalysePlay, RejectsOutOfRangeRankWithPlayFault)
+{
+    struct Deal dl = MakeReferenceDeal();
+    struct PlayTraceBin play = {};
+    play.number = 1;
+    play.suit[0] = 0;
+    play.rank[0] = 16;  // Past ace (14).
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay solved = {};
+    EXPECT_EQ(dds_c_analyse_play(ctx, &dl, &play, &solved), RETURN_PLAY_FAULT);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
 // ---------------------------------------------------------------------------
 // dds_c_convert_play_from_pbn: parses a PBN-format play trace into the
 // binary PlayTraceBin shared with dds_c_analyse_play. Needs no SolverContext.

@@ -21,6 +21,21 @@ auto analyse_play(
     const PlayTraceBin& play,
     SolvedPlay* solvedp) -> int
 {
+    // Validate every claimed play.suit/play.rank entry before any of it is
+    // used to index bit_map_rank[] or dl.remainCards[player][suit] below --
+    // those arrays are sized for valid suits/ranks only, so an out-of-range
+    // value is an out-of-bounds access, not something a caller could catch
+    // as a C++ exception.
+    if (play.number < 0 || play.number > 52)
+        return RETURN_PLAY_FAULT;
+    for (int i = 0; i < play.number; i++)
+    {
+        if (play.suit[i] < 0 || play.suit[i] >= DDS_SUITS)
+            return RETURN_PLAY_FAULT;
+        if (play.rank[i] < 2 || play.rank[i] > 14)
+            return RETURN_PLAY_FAULT;
+    }
+
     Deal dl = dl_in;
 
     MoveType move;
