@@ -251,7 +251,9 @@ C++ `analyse_play()` entry point directly.
 - `context` (SolverContext, optional): Reusable solver context for efficiency
 
 **Returns:**
-- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count for the side to play after `i` cards.
+- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count after `i`
+  cards, for the fixed partnership opposite `deal["first"]` (the hand that led to the first
+  trick) — not the side currently on lead, which alternates.
 
 ```python
 from dds3 import analyse_play
@@ -280,7 +282,9 @@ calls the `analyse_play()` entry point directly.
 - `context` (SolverContext, optional): Reusable solver context for efficiency
 
 **Returns:**
-- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count for the side to play after `i` cards.
+- dict with keys: `number` (int), `tricks` (list[int]) — `tricks[i]` is the trick count after `i`
+  cards, for the fixed partnership opposite `first` (the hand that led to the first trick) — not
+  the side currently on lead, which alternates.
 
 ```python
 from dds3 import analyse_play_pbn

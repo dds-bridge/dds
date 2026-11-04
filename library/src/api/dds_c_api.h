@@ -107,12 +107,14 @@ DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
                                      unsigned int cards[DDS_HANDS][DDS_SUITS]);
 
 /* Analyse a sequence of played cards (binary format) and determine the
-   double-dummy trick count for the side to play after each card. Reuses
-   ctx's transposition table across the initial solve and every subsequent
-   per-card search, so repeated calls on the same context benefit from a
-   warm TT. There is deliberately no *_pbn twin on this shim -- same
-   rationale as dds_c_solve_board / dds_c_calc_par: a PBN-based caller
-   converts once with dds_c_convert_from_pbn (deal) and
+   double-dummy trick count after each card, for the fixed partnership
+   opposite dl->first (the hand that led to the first trick) -- not the
+   side currently on lead, which alternates as the trace progresses.
+   Reuses ctx's transposition table across the initial solve and every
+   subsequent per-card search, so repeated calls on the same context
+   benefit from a warm TT. There is deliberately no *_pbn twin on this
+   shim -- same rationale as dds_c_solve_board / dds_c_calc_par: a
+   PBN-based caller converts once with dds_c_convert_from_pbn (deal) and
    dds_c_convert_play_from_pbn (play), then calls this entry point
    directly. */
 DLLEXPORT int dds_c_analyse_play(
