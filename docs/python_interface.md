@@ -241,7 +241,7 @@ print(result["score"], result["contracts"])
 #### `analyse_play(deal, play_suit, play_rank, context=None)`
 
 Returns the double-dummy trick count after each card of a played hand, binary format. Wraps the
-modern `analyse_play()` C++ entry point directly (no legacy C API involved).
+C++ `analyse_play()` entry point directly.
 
 **Parameters:**
 - `deal` (dict): Deal dict with keys `trump`, `first`, `remain_cards`, `current_trick_suit`,
@@ -268,8 +268,7 @@ print(result["tricks"])
 #### `analyse_play_pbn(remain_cards, play, trump=4, first=0, current_trick_suit=(0,0,0), current_trick_rank=(0,0,0), thread_index=0, context=None)`
 
 Returns the double-dummy trick count after each card of a played hand. Converts PBN to binary and
-calls the modern `analyse_play()` entry point directly — it no longer calls the legacy
-`AnalysePlayPBN` C API.
+calls the `analyse_play()` entry point directly.
 
 **Parameters:**
 - `remain_cards` (str): Full deal in PBN format before any card of `play`
@@ -277,8 +276,7 @@ calls the modern `analyse_play()` entry point directly — it no longer calls th
 - `trump` (int, default=4): Trump suit (0=♠, 1=♥, 2=♦, 3=♣, 4=NT)
 - `first` (int, default=0): Seat that leads (0=N, 1=E, 2=S, 3=W)
 - `current_trick_suit` / `current_trick_rank` (seq, default=(0,0,0)): Cards already in the trick
-- `thread_index` (int, default=0): Ignored (retained only for backward compatibility with the
-  legacy call signature); superseded by `context`
+- `thread_index` (int, default=0): Ignored; use `context` instead
 - `context` (SolverContext, optional): Reusable solver context for efficiency
 
 **Returns:**
