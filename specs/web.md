@@ -1,7 +1,7 @@
 ---
 capability: web
 owners: [web]
-last-updated: 2026-10-10
+last-updated: 2026-11-04
 ---
 
 # DDS Web
@@ -40,16 +40,20 @@ with mid-trick solves for legal cards.
   trick cards and requires the populated-slot count to match
   `(52 − remaining holdings) % 4`.
 - **The page is a static site plus JS glue.** `dds_web.html` / `dds_web.css` /
-  `dds_web.js` / `dds_web_deal_import.js` / `dds_web_core.js` /
-  `dds_web_solve.js` / `dds_web_play.js` load the module (`createDdsModule`),
-  marshal a deal into WASM memory, call `dds_web_calc_table` /
-  `dds_web_solve_leads` / `dds_web_solve_plays` via `ccall`, and read results
-  with `getValue`. Deal-file parsers live in `dds_web_deal_import.js` (PBN and
-  related formats accept equal-length hands of 1–13 cards, not only a full
-  deck); the deal model in `dds_web_core.js`; WASM queue / DD table / leads /
-  play-position solves in `dds_web_solve.js`; play state and trick UI in
-  `dds_web_play.js`; UI wiring in `dds_web.js`. Script order is import → core →
-  solve → play → app. `web_site` (`tests/web_site.py`) stages the site and provides
+  `dds_web.js` / `dds_web_deal_import.js` / `dds_web_pdf_import.js` /
+  `dds_web_core.js` / `dds_web_solve.js` / `dds_web_play.js` load the module
+  (`createDdsModule`), marshal a deal into WASM memory, call
+  `dds_web_calc_table` / `dds_web_solve_leads` / `dds_web_solve_plays` via
+  `ccall`, and read results with `getValue`. Deal-file parsers live in
+  `dds_web_deal_import.js` (PBN and related formats accept equal-length hands
+  of 1–13 cards, not only a full deck); hand-record PDF import lives in
+  `dds_web_pdf_import.js` for BridgeComposer / ACBL sheets and compass-anchored
+  layouts such as Madeira / MiBO (local PDF file → all numbered boards, with
+  prev/next navigation in the UI); the deal model in `dds_web_core.js`;
+  WASM queue / DD table / leads / play-position solves in `dds_web_solve.js`;
+  play state and trick UI in `dds_web_play.js`; UI wiring in `dds_web.js`.
+  Script order is import → pdf → core → solve → play → app. `web_site`
+  (`tests/web_site.py`) stages the site and provides
   `make_isolated_http_handler` (COOP/COEP) for system/e2e tests and
   `web/serve_web.py`. Helper scripts `gen_wasm_bin_js.py`, `patch_web_wasm.py`,
   `verify_wasm_js.py` generate and sanity-check the JS/wasm glue.
