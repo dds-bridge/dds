@@ -46,7 +46,8 @@ with mid-trick solves for legal cards.
   `dds_web_calc_table` / `dds_web_solve_leads` / `dds_web_solve_plays` via
   `ccall`, and read results with `getValue`. Deal-file parsers live in
   `dds_web_deal_import.js` (PBN and related formats accept equal-length hands
-  of 1–13 cards, not only a full deck); hand-record PDF import lives in
+  of 1–13 cards, not only a full deck; multi-deal PBN files load every `[Deal]`
+  with prev/next navigation); hand-record PDF import lives in
   `dds_web_pdf_import.js` for BridgeComposer / ACBL sheets and compass-anchored
   layouts such as Madeira / MiBO (via Import deal(s)… → all numbered boards, with
   prev/next navigation in the UI); the deal model in `dds_web_core.js`;

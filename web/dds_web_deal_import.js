@@ -8,7 +8,7 @@
 // Loaded before dds_web.js; exports parseFirstDealFromText on globalThis.
 
 /* eslint-env es6 */
-/* exported DIRECTIONS PIPS parseFirstDealFromText */
+/* exported DIRECTIONS PIPS parseFirstDealFromText parseAllDealsFromText */
 
 "use strict";
 
@@ -322,6 +322,53 @@
         return parsePbnDealString("N:" + hands.join(" "));
     }
 
+    function boardNumberFromPrecedingTags(preceding, fallback) {
+        const tags = preceding.match(/\[Board\s+"([^"]+)"\s*\]/gi);
+        if (!tags || tags.length === 0) {
+            return String(fallback);
+        }
+        const last = /\[Board\s+"([^"]+)"\s*\]/i.exec(tags[tags.length - 1]);
+        if (!last) {
+            return String(fallback);
+        }
+        const raw = last[1].trim();
+        if (/^\d+$/.test(raw)) {
+            return String(Number(raw));
+        }
+        return raw;
+    }
+
+    /**
+     * Extract every PBN [Deal] from text. When none are present, returns a
+     * one-element list from the first LIN / DLM / dtest / sol-style deal.
+     * @returns {{boardNumber:string, deal:{north:string,east:string,south:string,west:string}}[]}
+     */
+    function parseAllDealsFromText(text) {
+        const source = String(text == null ? "" : text);
+        const deals = [];
+        const dealTagRe = /\[Deal\s+"([^"]+)"\s*\]/gi;
+        let match;
+        while ((match = dealTagRe.exec(source)) !== null) {
+            const deal = parsePbnDealString(match[1]);
+            if (!deal) {
+                throw new Error("Malformed PBN Deal tag.");
+            }
+            deals.push({
+                boardNumber: boardNumberFromPrecedingTags(
+                    source.slice(0, match.index),
+                    deals.length + 1
+                ),
+                deal: deal,
+            });
+        }
+        if (deals.length > 0) {
+            return deals;
+        }
+
+        const deal = parseFirstDealFromText(source);
+        return [{ boardNumber: "1", deal: deal }];
+    }
+
     /**
      * Extract the first deal from PBN, LIN, DLM, dtest, or sol-style .txt content.
      * @returns {{north:string,east:string,south:string,west:string}}
@@ -386,4 +433,5 @@
     global.DIRECTIONS = DIRECTIONS;
     global.PIPS = PIPS;
     global.parseFirstDealFromText = parseFirstDealFromText;
+    global.parseAllDealsFromText = parseAllDealsFromText;
 })(typeof globalThis !== "undefined" ? globalThis : this);

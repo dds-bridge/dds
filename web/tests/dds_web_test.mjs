@@ -5329,6 +5329,64 @@ test("parseFirstDealFromText uses the first PBN deal when several are present", 
     assert.equal(deal.west, "53.K2.9852.QT832");
 });
 
+test("parseAllDealsFromText returns every PBN Deal tag in order", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Board "1"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "2"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "1");
+    assert.equal(deals[0].deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deals[1].boardNumber, "2");
+    assert.equal(deals[1].deal.north, "QT9.A8765432.KJ.");
+});
+
+test("parseAllDealsFromText numbers untitled PBN deals from 1", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Deal "${LIST1_PBN}"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "1");
+    assert.equal(deals[1].boardNumber, "2");
+});
+
+test("importDealFromText loads multiple PBN deals into board navigation", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const text = [
+        `[Board "3"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "4"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const err = ctx.importDealFromText(text);
+    assert.equal(err, "");
+    assert.equal(document.element("north_spades").value, "Q87");
+    assert.equal(document.element("hand-record").hidden, false);
+    assert.equal(document.element("hand-record-nav").hidden, false);
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 3 of 2"
+    );
+    ctx.handRecordNext();
+    assert.equal(document.element("north_spades").value, "QT9");
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 4 of 2"
+    );
+});
+
 test("parseFirstDealFromText reads a dtest .txt PBN line", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const text =

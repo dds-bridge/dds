@@ -152,18 +152,47 @@ function populateSampleDealsSelect() {
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
-// must be loaded first; importDealFromText uses global parseFirstDealFromText.
+// must be loaded first; importDealFromText uses global parseAllDealsFromText.
+
+function dottedDealToSuitHands(deal) {
+    const hands = {};
+    for (const direction of DIRECTIONS) {
+        const parts = String(deal[direction] || "").split(".");
+        hands[direction] = {
+            spades: parts[0] || "",
+            hearts: parts[1] || "",
+            diamonds: parts[2] || "",
+            clubs: parts[3] || "",
+        };
+    }
+    return hands;
+}
 
 function importDealFromText(text) {
     try {
-        const deal = parseFirstDealFromText(text);
-        clearHandRecordSession();
-        fillFormWithTestData([
-            deal.north,
-            deal.east,
-            deal.south,
-            deal.west,
-        ]);
+        const entries = parseAllDealsFromText(text);
+        if (entries.length === 0) {
+            return "No PBN, LIN, DLM, dtest, or sol-style deal found in the file.";
+        }
+        if (entries.length === 1) {
+            clearHandRecordSession();
+            const deal = entries[0].deal;
+            fillFormWithTestData([
+                deal.north,
+                deal.east,
+                deal.south,
+                deal.west,
+            ]);
+            return "";
+        }
+        handRecordBoards = entries.map(function (entry) {
+            return {
+                boardNumber: entry.boardNumber,
+                hands: dottedDealToSuitHands(entry.deal),
+            };
+        });
+        handRecordIndex = 0;
+        showHandRecordBoard(0);
         return "";
     } catch (err) {
         return err && err.message ? err.message : "Could not import deal.";
