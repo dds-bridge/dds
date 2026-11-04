@@ -31,16 +31,24 @@ def _repo_root(start: Path | None = None) -> Path:
     raise AssertionError("could not locate repository root from test file path")
 
 
+_TOP_LEVEL_ASSIGNMENT = re.compile(r"^[A-Za-z_]\w*\s*=", flags=re.MULTILINE)
+
+
 def _select_arm_block(text: str, variable: str, label: str) -> str:
     """The string-list body of the `"//:<label>": [...]` arm inside the
-    first `select({...})` found after `<variable> = `.
+    first `select({...})` found after `<variable> = `, scoped to that
+    variable's own assignment -- up to the next top-level `name = `
+    assignment, or end of file, so a label present only in some later
+    variable's select() is never mistaken for this one's.
     """
     var_match = re.search(rf"^{re.escape(variable)}\s*=", text, flags=re.MULTILINE)
     if var_match is None:
         raise AssertionError(f"expected a top-level `{variable} = ` assignment")
+    next_assignment = _TOP_LEVEL_ASSIGNMENT.search(text, pos=var_match.end())
+    scope_end = next_assignment.start() if next_assignment else len(text)
     arm_match = re.search(
         rf'"//:{re.escape(label)}":\s*\[(.*?)\]',
-        text[var_match.start() :],
+        text[var_match.start() : scope_end],
         flags=re.DOTALL,
     )
     if arm_match is None:
@@ -173,6 +181,19 @@ class TestSelectArmBlockHelperTolerance(unittest.TestCase):
         block = _select_arm_block(sample, "DDS_CPPOPTS", "build_macos")
         self.assertIn("-O3", block)
         self.assertNotIn("-flto=thin", block)
+
+    def test_does_not_leak_into_a_later_variables_select(self) -> None:
+        """A label missing from the named variable but present in a
+        variable declared later in the file must not be returned -- that
+        would e.g. let an ASAN-conflicting flag silently survive removal
+        from DDS_CPPOPTS's own arm by reading it back from DDS_LINKOPTS.
+        """
+        sample = (
+            'DDS_CPPOPTS = select({"//:build_macos": ["-O3"]})\n'
+            'DDS_LINKOPTS = select({"//:debug_build_macos_asan": []})\n'
+        )
+        with self.assertRaises(AssertionError):
+            _select_arm_block(sample, "DDS_CPPOPTS", "debug_build_macos_asan")
 
 
 if __name__ == "__main__":
