@@ -45,6 +45,9 @@
     <ClCompile Include="..\library\src\ab_stats.cpp">
       <Filter>library\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\library\src\analyse_play_adapter.cpp">
+      <Filter>library\src</Filter>
+    </ClCompile>
     <ClCompile Include="..\library\src\calc_dd_table.cpp">
       <Filter>library\src</Filter>
     </ClCompile>
@@ -166,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="..\library\src\ab_stats.hpp">
       <Filter>library\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\library\src\api\analyse_play.hpp">
+      <Filter>library\src\api</Filter>
     </ClInclude>
     <ClInclude Include="..\library\src\api\calc_dd_table.hpp">
       <Filter>library\src\api</Filter>
