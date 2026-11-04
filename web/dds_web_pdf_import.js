@@ -457,6 +457,44 @@
         return out;
     }
 
+    function pdfBytesMatchAt(bytes, offset, mark) {
+        if (offset < 0 || offset + mark.length > bytes.length) {
+            return false;
+        }
+        for (let k = 0; k < mark.length; k++) {
+            if (bytes[offset + k] !== mark[k]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Read a direct /Length integer from the dictionary just before `stream`.
+     * Indirect lengths (/Length 12 0 R) are not resolved here.
+     */
+    function pdfStreamLengthBefore(bytes, streamKeywordOffset) {
+        const lookback = Math.min(streamKeywordOffset, 512);
+        const dict = Array.from(
+            bytes.subarray(streamKeywordOffset - lookback, streamKeywordOffset),
+            function (b) {
+                return String.fromCharCode(b);
+            }
+        ).join("");
+        // Prefer the last /Length <int> in the dict (not /Length1 font sizes).
+        const re = /\/Length\s+(\d+)\b/g;
+        let match;
+        let last = null;
+        while ((match = re.exec(dict)) !== null) {
+            last = match;
+        }
+        if (!last) {
+            return null;
+        }
+        const length = parseInt(last[1], 10);
+        return Number.isFinite(length) && length >= 0 ? length : null;
+    }
+
     function pdfFindStreams(bytes) {
         const streams = [];
         const startMark = [0x73, 0x74, 0x72, 0x65, 0x61, 0x6d]; // stream
@@ -465,17 +503,15 @@
         while (i < bytes.length) {
             let found = -1;
             for (let j = i; j + startMark.length <= bytes.length; j++) {
-                let ok = true;
-                for (let k = 0; k < startMark.length; k++) {
-                    if (bytes[j + k] !== startMark[k]) {
-                        ok = false;
-                        break;
-                    }
+                if (!pdfBytesMatchAt(bytes, j, startMark)) {
+                    continue;
                 }
-                if (ok) {
-                    found = j;
-                    break;
+                // Skip the `stream` suffix inside `endstream`.
+                if (j >= 3 && pdfBytesMatchAt(bytes, j - 3, [0x65, 0x6e, 0x64])) {
+                    continue;
                 }
+                found = j;
+                break;
             }
             if (found < 0) {
                 break;
@@ -483,40 +519,64 @@
             let dataStart = found + startMark.length;
             if (bytes[dataStart] === 0x0d && bytes[dataStart + 1] === 0x0a) {
                 dataStart += 2;
-            } else if (bytes[dataStart] === 0x0a) {
+            } else if (bytes[dataStart] === 0x0a || bytes[dataStart] === 0x0d) {
                 dataStart += 1;
             }
-            let end = -1;
-            for (let j = dataStart; j + endMark.length <= bytes.length; j++) {
-                let ok = true;
-                for (let k = 0; k < endMark.length; k++) {
-                    if (bytes[j + k] !== endMark[k]) {
-                        ok = false;
+            const declaredLength = pdfStreamLengthBefore(bytes, found);
+            let dataEnd;
+            let end;
+            if (
+                declaredLength != null
+                && dataStart + declaredLength <= bytes.length
+            ) {
+                // Exact /Length bytes — do not trim; Adler-32 may end in 0x0a/0x0d/0x20.
+                dataEnd = dataStart + declaredLength;
+                end = dataEnd;
+                // Advance past optional whitespace and endstream.
+                while (
+                    end < bytes.length
+                    && (bytes[end] === 0x0a
+                        || bytes[end] === 0x0d
+                        || bytes[end] === 0x20)
+                ) {
+                    end++;
+                }
+                if (pdfBytesMatchAt(bytes, end, endMark)) {
+                    end += endMark.length;
+                } else {
+                    // Length present but endstream not where expected — fall back.
+                    end = -1;
+                }
+            } else {
+                end = -1;
+            }
+            if (end < 0) {
+                end = -1;
+                for (let j = dataStart; j + endMark.length <= bytes.length; j++) {
+                    if (pdfBytesMatchAt(bytes, j, endMark)) {
+                        end = j;
                         break;
                     }
                 }
-                if (ok) {
-                    end = j;
+                if (end < 0) {
                     break;
                 }
-            }
-            if (end < 0) {
-                break;
-            }
-            // PDF allows whitespace between the compressed bytes and `endstream`.
-            // Node zlib.inflateSync tolerates that trailing junk; browser
-            // DecompressionStream("deflate") rejects it — trim before inflate.
-            let dataEnd = end;
-            while (
-                dataEnd > dataStart
-                && (bytes[dataEnd - 1] === 0x0a
-                    || bytes[dataEnd - 1] === 0x0d
-                    || bytes[dataEnd - 1] === 0x20)
-            ) {
-                dataEnd--;
+                // No reliable /Length: trim producer whitespace before endstream,
+                // but only bytes that are pure separators (browser inflate is strict).
+                dataEnd = end;
+                while (
+                    dataEnd > dataStart
+                    && (bytes[dataEnd - 1] === 0x0a
+                        || bytes[dataEnd - 1] === 0x0d
+                        || bytes[dataEnd - 1] === 0x20)
+                ) {
+                    dataEnd--;
+                }
+                i = end + endMark.length;
+            } else {
+                i = end;
             }
             streams.push(bytes.subarray(dataStart, dataEnd));
-            i = end + endMark.length;
         }
         return streams;
     }

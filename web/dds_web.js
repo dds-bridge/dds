@@ -295,23 +295,69 @@ function isHandRecordPdfFile(file) {
     return file.type === "application/pdf" || name.endsWith(".pdf");
 }
 
-function loadHandRecordFromFile(file) {
+/**
+ * Read and parse a hand-record PDF. Does not apply boards to the diagram —
+ * callers must do that after confirming the file selection is still current.
+ * @param {File|{arrayBuffer:function():Promise<ArrayBuffer>,name?:string,type?:string}} file
+ * @param {{isCurrent?:function():boolean}=} options
+ * @returns {Promise<object[]|null>} parsed boards, or null if superseded mid-load
+ */
+function loadHandRecordFromFile(file, options) {
     const loadAll = globalThis.loadAllBoardsFromHandRecordPdf;
     if (typeof loadAll !== "function") {
         return Promise.reject(new Error(
             "PDF import unavailable (dds_web_pdf_import.js failed to load)"
         ));
     }
+    const isCurrent = options && typeof options.isCurrent === "function"
+        ? options.isCurrent
+        : null;
+    function stillCurrent() {
+        return !isCurrent || isCurrent();
+    }
+    function abortIfSuperseded() {
+        if (stillCurrent()) {
+            return false;
+        }
+        // Do not leave Reading/Parsing text over a newer successful import.
+        const status = document.getElementById("hand-record-status");
+        const text = status ? String(status.textContent || "") : "";
+        if (/Reading PDF|Parsing boards/i.test(text)) {
+            setHandRecordStatus("", false);
+        }
+        return true;
+    }
+    // Drop any prior session so progress chrome is visible for a re-import.
+    clearHandRecordSession();
     setHandRecordStatus("Reading PDF…", false);
+    if (abortIfSuperseded()) {
+        return Promise.resolve(null);
+    }
     return file.arrayBuffer().then(function (ab) {
+        if (abortIfSuperseded()) {
+            return null;
+        }
         return new Uint8Array(ab);
     }).then(function (bytes) {
+        if (bytes == null) {
+            return null;
+        }
+        if (abortIfSuperseded()) {
+            return null;
+        }
         setHandRecordStatus("Parsing boards…", false);
+        if (abortIfSuperseded()) {
+            return null;
+        }
         return loadAll(bytes);
     }).then(function (boards) {
-        handRecordBoards = boards;
-        handRecordIndex = 0;
-        showHandRecordBoard(0);
+        if (boards == null) {
+            return null;
+        }
+        if (abortIfSuperseded()) {
+            return null;
+        }
+        return boards;
     });
 }
 
@@ -343,10 +389,24 @@ async function handleDealFileSelected(input) {
 
     if (isHandRecordPdfFile(file)) {
         try {
-            await loadHandRecordFromFile(file);
+            const boards = await loadHandRecordFromFile(file, {
+                isCurrent: function () {
+                    return dealFileSelectionIsCurrent(
+                        input,
+                        file,
+                        selectionGeneration
+                    );
+                },
+            });
             if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
                 return;
             }
+            if (!boards) {
+                return;
+            }
+            handRecordBoards = boards;
+            handRecordIndex = 0;
+            showHandRecordBoard(0);
             if (result) {
                 result.innerHTML = "";
             }

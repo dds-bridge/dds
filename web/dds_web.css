@@ -46,6 +46,10 @@
   vertical-align: middle;
 }
 
+#hand-record-nav[hidden] {
+  display: none !important;
+}
+
 .hand-record-nav button {
   min-width: 2rem;
 }

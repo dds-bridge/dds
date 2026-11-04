@@ -5357,6 +5357,19 @@ test("parseAllDealsFromText numbers untitled PBN deals from 1", () => {
     assert.equal(deals[1].boardNumber, "2");
 });
 
+test("parseAllDealsFromText does not reuse a prior Board tag for an untitled deal", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Board "3"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "3");
+    assert.equal(deals[1].boardNumber, "2");
+});
+
 test("parseAllDealsFromText keeps only the first copy of identical PBN deals", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const text = [
@@ -5614,6 +5627,127 @@ test("handleDealFileSelected ignores a superseded slower file read", async () =>
     await first;
 
     assert.equal(document.element("north_spades").value, "AKQJ");
+});
+
+test("handleDealFileSelected ignores a superseded slower PDF import", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    let releaseSlow;
+    const slowBytes = new Promise((resolve) => {
+        releaseSlow = resolve;
+    });
+    const slowPdfHands = {
+        north: { spades: "AKQJ", hearts: "AKQJ", diamonds: "T98", clubs: "T9" },
+        east: { spades: "5432", hearts: "5432", diamonds: "32", clubs: "432" },
+        south: { spades: "T98", hearts: "T9", diamonds: "AKQJ", clubs: "AKQJ" },
+        west: { spades: "76", hearts: "876", diamonds: "7654", clubs: "8765" },
+    };
+    ctx.loadAllBoardsFromHandRecordPdf = async (bytes) => {
+        if (bytes && bytes.byteLength === 1) {
+            await slowBytes;
+            return [{ boardNumber: "99", hands: slowPdfHands }];
+        }
+        return [
+            {
+                boardNumber: "1",
+                hands: {
+                    north: {
+                        spades: "AJ7",
+                        hearts: "QT3",
+                        diamonds: "T7",
+                        clubs: "QJT86",
+                    },
+                    east: {
+                        spades: "82",
+                        hearts: "9764",
+                        diamonds: "K85",
+                        clubs: "A742",
+                    },
+                    south: {
+                        spades: "KQ64",
+                        hearts: "K",
+                        diamonds: "QJ642",
+                        clubs: "K95",
+                    },
+                    west: {
+                        spades: "T953",
+                        hearts: "AJ852",
+                        diamonds: "A93",
+                        clubs: "3",
+                    },
+                },
+            },
+        ];
+    };
+    const slowFile = {
+        name: "slow.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+    };
+    const fastFile = {
+        name: "fast.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new Uint8Array([2, 3]).buffer,
+    };
+    const input = { files: [slowFile] };
+
+    const first = ctx.handleDealFileSelected(input);
+    input.files = [fastFile];
+    await ctx.handleDealFileSelected(input);
+    releaseSlow();
+    await first;
+
+    assert.equal(document.element("north_spades").value, "AJ7");
+    assert.equal(ctx.handRecordBoards.length, 1);
+    assert.equal(ctx.handRecordBoards[0].boardNumber, "1");
+});
+
+test("loadHandRecordFromFile clears a prior single-board session before progress", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    ctx.handRecordBoards = [
+        {
+            boardNumber: "17",
+            hands: {
+                north: { spades: "942", hearts: "Q98532", diamonds: "43", clubs: "A8" },
+                east: { spades: "JT653", hearts: "", diamonds: "652", clubs: "JT976" },
+                south: { spades: "Q87", hearts: "KJ64", diamonds: "A8", clubs: "Q432" },
+                west: { spades: "AK", hearts: "AT7", diamonds: "KQJT97", clubs: "K5" },
+            },
+        },
+    ];
+    ctx.handRecordIndex = 0;
+    ctx.updateHandRecordNav();
+
+    let resolveParse;
+    const parseStarted = new Promise((resolve) => {
+        resolveParse = resolve;
+    });
+    ctx.loadAllBoardsFromHandRecordPdf = () => {
+        resolveParse();
+        return new Promise(() => {});
+    };
+
+    const pending = ctx.loadHandRecordFromFile({
+        name: "next.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new ArrayBuffer(4),
+    });
+    await parseStarted;
+
+    assert.equal(ctx.handRecordBoards.length, 0);
+    assert.match(document.element("hand-record-status").textContent, /Reading PDF|Parsing/i);
+    assert.equal(document.element("hand-record").hidden, false);
+    // Leave the hung parse; generation isolation is covered elsewhere.
+    void pending;
 });
 
 test("refreshDdTable clears Computing when abandoning a stale PBN", async () => {
@@ -7433,6 +7567,12 @@ test("loadAllBoardsFromHandRecordPdf returns multiple boards", async () => {
             Number(boards[i - 1].boardNumber) < Number(boards[i].boardNumber)
         );
     }
+});
+
+test("hand-record-nav[hidden] overrides author display:inline-flex", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    assert.match(css, /#hand-record-nav\[hidden\]\s*\{[^}]*display:\s*none/s);
 });
 
 test("loadAllBoardsFromHandRecordPdf returns all 36 ACBL boards", async () => {

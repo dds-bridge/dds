@@ -356,7 +356,12 @@
         const seen = {};
         const dealTagRe = /\[Deal\s+"([^"]+)"\s*\]/gi;
         let match;
+        // Board tags belong to the current PBN record only — do not scan the
+        // whole file prefix, or an earlier Board label bleeds onto untitled deals.
+        let recordStart = 0;
         while ((match = dealTagRe.exec(source)) !== null) {
+            const preceding = source.slice(recordStart, match.index);
+            recordStart = match.index + match[0].length;
             const deal = parsePbnDealString(match[1]);
             if (!deal) {
                 throw new Error("Malformed PBN Deal tag.");
@@ -368,7 +373,7 @@
             seen[key] = true;
             deals.push({
                 boardNumber: boardNumberFromPrecedingTags(
-                    source.slice(0, match.index),
+                    preceding,
                     deals.length + 1
                 ),
                 deal: deal,
