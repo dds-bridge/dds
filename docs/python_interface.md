@@ -7,11 +7,15 @@ The DDS (Double Dummy Solver) library provides a Python interface for analyzing 
 ## Building the Python Interface
 
 ### Prerequisites
-- Python 3.10+ (tested with 3.10, 3.11, 3.12, 3.14)
 - Bazel as pinned in [`.bazelversion`](../.bazelversion) (use
   [bazelisk](https://github.com/bazelbuild/bazelisk), which picks it up
-  automatically)
+  automatically) — no host Python install is required to *build*: Bazel
+  downloads its own hermetic CPython via `rules_python`.
 - C++ compiler (clang 15+ or GCC 11+)
+- To *use* the built wheel, a CPython 3.14 interpreter: `MODULE.bazel` pins
+  exactly one toolchain version (3.14), `_dds3` links the full CPython API
+  (not the stable `abi3` ABI), and `dds3_wheel` is tagged `cp314`/`cp314`
+  accordingly — pip will refuse to install it on any other CPython version.
 
 ### Build Instructions
 

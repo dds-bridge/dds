@@ -1,7 +1,7 @@
 ---
 capability: python-binding
 owners: [python]
-last-updated: 2026-07-18
+last-updated: 2026-11-03
 ---
 
 # Python Binding
@@ -51,7 +51,20 @@ context API and the flat API from [dds-public-api](dds-public-api.md).
 - **Wheels are built from the same package.** `dds3_wheel` (`py_wheel`,
   distribution `dds3`, version `1.0.0`, `strip_path_prefixes = ["python/"]`)
   packages `dds3_lib` + the staged extension; `dds3_wheel_dist` produces the
-  distributable `dist/`. Requires Python 3.10+.
+  distributable `dist/`. **The wheel is CPython-3.14-exact**
+  (`python_tag`/`abi` = `cp314`, matching `MODULE.bazel`'s single pinned
+  toolchain — `_dds3` links the full CPython API, not the stable `abi3`
+  ABI) and tagged per host OS via `select()` (`linux_x86_64`,
+  `macosx_11_0_arm64`, `win_amd64`); `pip` refuses the wheel outright on any
+  other CPython minor version or platform. Guarded by `ci_wheel_tags_test`
+  (the tags) and `ci_wheel_smoke_test` (CI actually `pip install`s and
+  imports the packaged wheel on all three host OSes). **Both wheel targets
+  are tagged `manual`**: the platform `select()` fails closed (no arm) on
+  host CPUs it doesn't tag for (e.g. Linux ARM64, Intel macOS), and without
+  `manual` a plain `bazelisk build //...`/`test //...` on one of those hosts
+  would fail at analysis time on this unrequested target. CI builds
+  `dds3_wheel_dist` explicitly by name on its three supported hosts, which
+  `manual` does not affect.
 - **Behavior tracks the C++ core.** The binding adds no solving logic of its own;
   the `py_test` suite exercises the main entry paths (smoke, solve, tables, par,
   analyze, convert_pbn, context reuse) against the same core. It is coverage of

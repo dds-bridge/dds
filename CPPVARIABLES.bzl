@@ -5,6 +5,11 @@ DDS_CPPOPTS = select({
         "-O3",
         "-flto=thin",
         "-mtune=generic",
+        # Matches dds3_wheel's macosx_11_0_arm64 platform tag
+        # (python/BUILD.bazel) -- without this, the real floor baked into
+        # the .so is whatever the host's default Xcode/SDK picks, which the
+        # tag would then misrepresent.
+        "-mmacosx-version-min=11.0",
         "-fPIC",
         "-Wpedantic",
         "-Wall",
@@ -12,6 +17,18 @@ DDS_CPPOPTS = select({
         "-Werror",
     ],
     "//:debug_build_macos": [
+        "-g",
+        "-mtune=generic",
+        "-mmacosx-version-min=11.0",
+        "-fPIC",
+        "-Wpedantic",
+        "-Wall",
+        "-Wno-character-conversion",
+        "-Werror",
+    ],
+    # Same as debug_build_macos but without -mmacosx-version-min: see the
+    # config_setting's comment in BUILD.bazel for why asan can't take it.
+    "//:debug_build_macos_asan": [
         "-g",
         "-mtune=generic",
         "-fPIC",
@@ -96,8 +113,11 @@ DDS_LOCAL_DEFINES = select({
 })
 
 DDS_LINKOPTS = select({
-    "//:build_macos": ["-flto=thin"],
-    "//:debug_build_macos": [],
+    "//:build_macos": ["-flto=thin", "-mmacosx-version-min=11.0"],
+    "//:debug_build_macos": ["-mmacosx-version-min=11.0"],
+    # No -mmacosx-version-min: see the debug_build_macos_asan arm in
+    # DDS_CPPOPTS above.
+    "//:debug_build_macos_asan": [],
     "//:build_linux": [],
     "//:debug_build_linux": [],
     "//conditions:default": [],

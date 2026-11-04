@@ -1,7 +1,7 @@
 ---
 capability: build-system
 owners: [//, CPPVARIABLES.bzl, wasm_compat.bzl]
-last-updated: 2026-10-10
+last-updated: 2026-11-03
 ---
 
 # Build System
@@ -36,6 +36,26 @@ than re-encoding toolchain knowledge.
   `@platforms//cpu:wasm32` (set by the `wasm_cc_binary` platform transition, not
   the host OS). Any target that wants per-platform flags does so through the
   `select()`s in `CPPVARIABLES.bzl` — it should not hand-roll `-O3`/`/O2`.
+- **`build_macos_arm64` and `build_linux_x86_64` are CPU-qualified siblings
+  of `build_macos` and `build_linux`**, for `select()`s that need to match a
+  specific architecture rather than any CPU of that OS (e.g.
+  [python-binding](python-binding.md)'s wheel `platform` tag, which has no
+  CPU-generic macOS or Linux value). Unlike `build_{macos,linux,windows}`,
+  neither has a `debug_build_*` twin.
+- **macOS targets pin a deployment target of 11.0.** `-mmacosx-version-min=11.0`
+  is set in both `DDS_CPPOPTS` and `DDS_LINKOPTS` for `build_macos` and
+  `debug_build_macos`, matching [python-binding](python-binding.md)'s
+  `dds3_wheel` `macosx_11_0_arm64` platform tag — the wheel's compiled
+  extension actually carries that `LC_BUILD_VERSION minos`, not just a tag
+  that assumes it. This does not extend to prebuilt external dependencies
+  (e.g. `googletest`), which keep their own default deployment target; a
+  macOS test binary linking both may emit a harmless `ld: warning: ...was
+  built for newer 'macOS' version...` without affecting the test result.
+  **Exception:** `--config=asan` does not get this flag (`debug_build_macos_asan`,
+  a config_setting more specific than `debug_build_macos`, matches instead and
+  omits it) — `local_config_apple_cc_toolchains` (the Xcode toolchain asan
+  switches to; see above) already emits its own `-target arm64-apple-macosX.Y`,
+  and clang errors under `-Werror` (`-Woverriding-option`) if both are set.
 - **Optimized builds are strict.** Non-debug macOS/Linux/WASM use `-O3` with
   `-Wall -Wpedantic -Werror`; Windows uses `/W4 /WX /permissive-` and takes
   `/O2`/`/Od` from Bazel's `compilation_mode` (do not restate them in

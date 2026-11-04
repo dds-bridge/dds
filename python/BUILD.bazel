@@ -113,6 +113,36 @@ py_test(
     ],
 )
 
+# Guard: dds3_wheel must carry CPython/platform tags, not py_wheel's
+# py3-none-any defaults, since _dds3 is a compiled extension.
+py_test(
+    name = "ci_wheel_tags_test",
+    size = "small",
+    main = "tests/ci_wheel_tags_test.py",
+    srcs = ["tests/ci_wheel_tags_test.py"],
+    data = ["BUILD.bazel"],
+)
+
+# Guard: CI actually `pip install`s the packaged wheel (not just Bazel's own
+# py_library layout) on all three host OSes.
+py_test(
+    name = "ci_wheel_smoke_test",
+    size = "small",
+    main = "tests/ci_wheel_smoke_test.py",
+    srcs = ["tests/ci_wheel_smoke_test.py"],
+    data = ["//.github/workflows:all_workflows"],
+)
+
+# Guard: macOS deployment target (CPPVARIABLES.bzl) must match the floor
+# dds3_wheel advertises in its macosx_<floor>_arm64 platform tag.
+py_test(
+    name = "ci_macos_deployment_target_test",
+    size = "small",
+    main = "tests/ci_macos_deployment_target_test.py",
+    srcs = ["tests/ci_macos_deployment_target_test.py"],
+    data = ["BUILD.bazel", "//:windows_cppopts_config_files"],
+)
+
 # Guard: MemorySanitizer config + Linux CI job stay wired together.
 py_test(
     name = "ci_msan_test",
@@ -300,18 +330,60 @@ py_test(
     ],
 )
 
+# _dds3 links against the full CPython API (no Py_LIMITED_API/abi3) for the
+# CPython version MODULE.bazel pins (python_version = "3.14"); the py_wheel
+# defaults (python_tag="py3", abi="none", platform="any") would mislabel this
+# compiled extension as a universal pure-Python wheel.
+#
+# manual: the platform select below has no arm for Linux ARM64 or Intel
+# macOS (by design -- see the arm comments), so on those hosts a plain
+# `bazelisk build //...`/`bazelisk test //...` would otherwise fail at
+# analysis time on this unrequested target. CI builds dds3_wheel_dist
+# explicitly by name (see e.g. ci_linux.yml) on its three supported hosts,
+# which is unaffected by manual.
 py_wheel(
     name = "dds3_wheel",
     distribution = "dds3",
     version = "1.0.0",
+    tags = ["manual"],
+    python_tag = "cp314",
+    abi = "cp314",
+    platform = select({
+        # CI builds on plain ubuntu-latest with this repo's own hermetic
+        # LLVM -- no manylinux sysroot or auditwheel step -- so a
+        # manylinux2014 tag would overclaim glibc-floor portability.
+        # linux_x86_64 is the honest, non-portable tag for how this is
+        # actually built. Keyed on the CPU-specific build_linux_x86_64, not
+        # build_linux (which matches any Linux CPU per
+        # specs/build-system.md): an aarch64 Linux build has no matching arm
+        # here and fails closed at analysis time, rather than silently
+        # mistagging an ARM extension as x86_64.
+        "//:build_linux_x86_64": "linux_x86_64",
+        # Keyed on the CPU-specific build_macos_arm64, not build_macos
+        # (which matches any macOS CPU per specs/build-system.md): an
+        # x86_64 mac build has no matching arm here and fails closed at
+        # analysis time, the same fail-closed behavior build_windows
+        # already has for non-x86_64, rather than silently mistagging.
+        # 11.0 is enforced, not assumed: CPPVARIABLES.bzl sets
+        # -mmacosx-version-min=11.0 for both compile and link on
+        # build_macos/debug_build_macos, so the .so's actual LC_BUILD_VERSION
+        # minos matches this tag (verified via `otool -l`) rather than
+        # floating with whatever SDK the runner's Xcode happens to default
+        # to. Guarded by ci_macos_deployment_target_test.
+        "//:build_macos_arm64": "macosx_11_0_arm64",
+        "//:build_windows": "win_amd64",
+    }),
     deps = [":dds3_lib", ":_dds3_in_package"],
     strip_path_prefixes = ["python/"],
     entry_points = {},
 )
 
+# manual for the same reason as dds3_wheel above: it wraps dds3_wheel, whose
+# platform select fails closed (no arm) on Linux ARM64 or Intel macOS.
 py_wheel_dist(
     name = "dds3_wheel_dist",
     out = "dist",
     wheel = ":dds3_wheel",
+    tags = ["manual"],
 )
 

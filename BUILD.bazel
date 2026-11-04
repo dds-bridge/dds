@@ -13,6 +13,34 @@ config_setting(
     values = {"compilation_mode": "dbg"},
 )
 
+# More specific than debug_build_macos (a strict superset of its conditions,
+# so select() resolves it instead rather than erroring as ambiguous):
+# --config=asan on macOS (build:asan_macos in .bazelrc) swaps in
+# local_config_apple_cc_toolchains, whose generated compile command already
+# carries its own `-target arm64-apple-macosX.Y`. CPPVARIABLES.bzl must not
+# also set -mmacosx-version-min there -- clang treats the combination as a
+# hard error under -Werror (-Woverriding-option).
+config_setting(
+    name = "debug_build_macos_asan",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
+    values = {"compilation_mode": "dbg"},
+    define_values = {"macos_asan": "true"},
+)
+
+# More specific than build_macos (any CPU): needed where a select() arm must
+# pick a CPU-qualified value (e.g. python/BUILD.bazel's macOS wheel platform
+# tag) and a wrong-arch match would silently mislabel the output rather than
+# failing closed like build_windows does for non-x86_64.
+config_setting(
+    name = "build_macos_arm64",
+    constraint_values = [
+        "@platforms//os:osx",
+        "@platforms//cpu:arm64",
+    ],
+)
+
 config_setting(
     name = "build_linux",
     constraint_values = [
@@ -26,6 +54,18 @@ config_setting(
         "@platforms//os:linux",
     ],
     values = {"compilation_mode": "dbg"},
+)
+
+# More specific than build_linux (any CPU): needed where a select() arm must
+# pick a CPU-qualified value (e.g. python/BUILD.bazel's Linux wheel platform
+# tag) and a wrong-arch match would silently mislabel the output rather than
+# failing closed like build_windows does for non-x86_64.
+config_setting(
+    name = "build_linux_x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
 )
 
 config_setting(
