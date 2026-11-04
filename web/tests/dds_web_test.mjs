@@ -192,7 +192,6 @@ function createMockDocument(initialValues = {}) {
     makeElement("play-score");
     makeElement("edit-hands");
     makeElement("result-table-hint");
-    makeElement("hand-record-file");
     makeElement("hand-record-nav");
     makeElement("hand-record-prev");
     makeElement("hand-record-next");
@@ -7032,15 +7031,7 @@ test("handsToDottedDeal formats NESW dotted holdings", () => {
     );
 });
 
-test("handleHandRecordFileSelected ignores an empty file input", async () => {
-    const document = createMockDocument();
-    const ctx = loadDdsWeb(document);
-    await ctx.handleHandRecordFileSelected({ files: [] });
-    assert.equal(ctx.handRecordBoards.length, 0);
-    assert.equal(document.element("north_spades").value, "");
-});
-
-test("handleHandRecordFileSelected loads boards after a file is chosen", async () => {
+test("handleDealFileSelected loads a hand-record PDF through Import deal(s)…", async () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document, {
         scheduleDealSolve() {
@@ -7083,11 +7074,16 @@ test("handleHandRecordFileSelected loads boards after a file is chosen", async (
     const input = {
         files: [
             {
+                name: "s261105m_1.pdf",
+                type: "application/pdf",
                 arrayBuffer: async () => new ArrayBuffer(8),
+                text: async () => {
+                    throw new Error("PDF must not be read as text");
+                },
             },
         ],
     };
-    await ctx.handleHandRecordFileSelected(input);
+    await ctx.handleDealFileSelected(input);
     assert.equal(document.element("north_spades").value, "AJ7");
     assert.equal(
         document.element("hand-record-label").textContent,
@@ -7095,6 +7091,12 @@ test("handleHandRecordFileSelected loads boards after a file is chosen", async (
     );
     assert.equal(document.element("hand-record-status").textContent, "Loaded board 1.");
     assert.equal(document.element("hand-record-nav").hidden, false);
+    // A trailing solve may paint WASM/Computing status; PDF import itself
+    // must not leave a parse error in #result.
+    assert.doesNotMatch(
+        document.element("result").innerHTML,
+        /hand-record|BridgeComposer|compass|Could not read the selected PDF/i
+    );
 });
 
 test("showHandRecordBoard fills the diagram and updates nav", () => {

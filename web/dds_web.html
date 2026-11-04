@@ -42,10 +42,10 @@
     </p>
 
     <button type="button" onclick="clearTestData()">Clear entries</button>
-    <button type="button" onclick="chooseDealFile()">Import deal…</button>
+    <button type="button" onclick="chooseDealFile()">Import deal(s)…</button>
     <input id="import-deal-file"
            type="file"
-           accept=".pbn,.lin,.dlm,.txt,text/plain"
+           accept=".pbn,.lin,.dlm,.txt,.pdf,text/plain,application/pdf"
            hidden
            onchange="handleDealFileSelected(this)">
     <select id="sample-deals"
@@ -56,15 +56,7 @@
     <button type="button" onclick="rotateClockwise()">Rotate the hands clockwise</button>
 
     <fieldset class="hand-record">
-        <legend>Load from hand-record PDF</legend>
-        <label>
-            PDF file
-            <input id="hand-record-file"
-                   type="file"
-                   accept="application/pdf,.pdf"
-                   aria-label="Hand-record PDF file"
-                   onchange="handleHandRecordFileSelected(this)">
-        </label>
+        <legend>Hand-record boards</legend>
         <div id="hand-record-nav" class="hand-record-nav" hidden>
             <button type="button"
                     id="hand-record-prev"
@@ -233,9 +225,9 @@
         <details>
             <summary>Can I load a tournament hand-record PDF?</summary>
             <p>
-                Yes. Choose a downloaded hand-record PDF (BridgeComposer / ACBL
-                or compass layouts such as Madeira / MiBO). It loads
-                automatically; use the arrows to step through numbered boards.
+                Yes. Use Import deal(s)… and pick a hand-record PDF
+                (BridgeComposer / ACBL or compass layouts such as Madeira /
+                MiBO). Use the arrows to step through numbered boards.
             </p>
         </details>
     </section>

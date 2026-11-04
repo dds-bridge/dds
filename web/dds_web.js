@@ -70,7 +70,6 @@
             fillFormWithTestData
             handleSampleDealSelected
             populateSampleDealsSelect
-            handleHandRecordFileSelected
             handRecordPrev
             handRecordNext
             showHandRecordBoard
@@ -243,12 +242,15 @@ function handRecordNext() {
     showHandRecordBoard(handRecordIndex + 1);
 }
 
-function handleHandRecordFileSelected(input) {
-    const file = input && input.files && input.files[0];
+function isHandRecordPdfFile(file) {
     if (!file) {
-        return Promise.resolve();
+        return false;
     }
+    const name = String(file.name || "").toLowerCase();
+    return file.type === "application/pdf" || name.endsWith(".pdf");
+}
 
+function loadHandRecordFromFile(file) {
     setHandRecordStatus("Reading PDF…", false);
     return file.arrayBuffer().then(function (ab) {
         return new Uint8Array(ab);
@@ -259,12 +261,6 @@ function handleHandRecordFileSelected(input) {
         handRecordBoards = boards;
         handRecordIndex = 0;
         showHandRecordBoard(0);
-    }).catch(function (error) {
-        clearHandRecordSession();
-        setHandRecordStatus(
-            String(error && error.message ? error.message : error),
-            true
-        );
     });
 }
 
@@ -279,6 +275,12 @@ function chooseDealFile() {
 
 let dealFileSelectionGeneration = 0;
 
+function dealFileSelectionIsCurrent(input, file, selectionGeneration) {
+    return selectionGeneration === dealFileSelectionGeneration
+        && input.files
+        && input.files[0] === file;
+}
+
 async function handleDealFileSelected(input) {
     const file = input && input.files && input.files[0];
     if (!file) {
@@ -287,14 +289,34 @@ async function handleDealFileSelected(input) {
 
     const selectionGeneration = ++dealFileSelectionGeneration;
     const result = document.getElementById("result");
+
+    if (isHandRecordPdfFile(file)) {
+        try {
+            await loadHandRecordFromFile(file);
+            if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
+                return;
+            }
+            if (result) {
+                result.innerHTML = "";
+            }
+        } catch (err) {
+            if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
+                return;
+            }
+            clearHandRecordSession();
+            setHandRecordStatus(
+                String(err && err.message ? err.message : err),
+                true
+            );
+            invalidateActiveDdTableRequest();
+        }
+        return;
+    }
+
     try {
         const text = await file.text();
         // A newer pick (or cleared selection) supersedes this read.
-        if (
-            selectionGeneration !== dealFileSelectionGeneration
-            || !input.files
-            || input.files[0] !== file
-        ) {
+        if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
             return;
         }
         const err = importDealFromText(text);
@@ -309,11 +331,7 @@ async function handleDealFileSelected(input) {
             result.innerHTML = "";
         }
     } catch (err) {
-        if (
-            selectionGeneration !== dealFileSelectionGeneration
-            || !input.files
-            || input.files[0] !== file
-        ) {
+        if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
             return;
         }
         invalidateActiveDdTableRequest();

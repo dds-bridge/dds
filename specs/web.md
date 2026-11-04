@@ -48,7 +48,7 @@ with mid-trick solves for legal cards.
   `dds_web_deal_import.js` (PBN and related formats accept equal-length hands
   of 1–13 cards, not only a full deck); hand-record PDF import lives in
   `dds_web_pdf_import.js` for BridgeComposer / ACBL sheets and compass-anchored
-  layouts such as Madeira / MiBO (local PDF file → all numbered boards, with
+  layouts such as Madeira / MiBO (via Import deal(s)… → all numbered boards, with
   prev/next navigation in the UI); the deal model in `dds_web_core.js`;
   WASM queue / DD table / leads / play-position solves in `dds_web_solve.js`;
   play state and trick UI in `dds_web_play.js`; UI wiring in `dds_web.js`.

@@ -89,25 +89,27 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
     def test_import_deal_button_and_file_input(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertIn('onclick="chooseDealFile()"', text)
+        self.assertIn(">Import deal(s)…</button>", text)
+        self.assertNotIn(">Import deal…</button>", text)
         self.assertRegex(
             text,
             r'<input[^>]*id="import-deal-file"[^>]*type="file"',
         )
         self.assertIn("handleDealFileSelected(this)", text)
         self.assertIn(".pbn,.lin,.dlm,.txt", text)
+        self.assertRegex(text, r'accept="[^"]*\.pdf[^"]*"')
+        self.assertNotIn("hand-record-file", text)
+        self.assertNotIn("Choose File", text)
+        self.assertNotIn("handleHandRecordFileSelected", text)
 
-    def test_hand_record_pdf_file_and_nav_controls(self) -> None:
+    def test_hand_record_pdf_nav_controls(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertNotIn("hand-record-url", text)
         self.assertNotIn("PDF URL", text)
         self.assertNotIn("CORS", text)
         self.assertNotIn("hand-record-load", text)
         self.assertNotIn("Load PDF", text)
-        self.assertRegex(
-            text,
-            r'<input[^>]*id="hand-record-file"[^>]*type="file"',
-        )
-        self.assertIn("handleHandRecordFileSelected(this)", text)
+        self.assertNotIn("hand-record-file", text)
         self.assertIn('id="hand-record-nav"', text)
         self.assertIn('onclick="handRecordPrev()"', text)
         self.assertIn('onclick="handRecordNext()"', text)
