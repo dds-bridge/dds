@@ -7435,6 +7435,34 @@ test("loadAllBoardsFromHandRecordPdf returns multiple boards", async () => {
     }
 });
 
+test("loadAllBoardsFromHandRecordPdf returns all 36 ACBL boards", async () => {
+    // Multi-page BridgeComposer sheets reuse absolute Td coordinates per page.
+    // Merging streams without a page offset used to drop/collide boards so only
+    // a mid-range subset (e.g. 10–15) survived.
+    const pdfPath = findHandRecordPdfPath("262ROTH5F1.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+
+    assert.equal(boards.length, 36);
+    // Spread into this realm — vm sandbox arrays confuse assert.deepEqual.
+    assert.deepEqual(
+        [...boards.map((board) => board.boardNumber)],
+        Array.from({ length: 36 }, (_, i) => String(i + 1))
+    );
+    assert.equal(boards[0].hands.north.spades, "K75");
+    assert.equal(boards[1].hands.north.spades, "T2");
+    assert.equal(boards[16].hands.north.spades, "942");
+    assert.equal(boards[35].hands.south.spades, "AKQJT");
+});
+
 test("extractPdfTextItems rejects trailing junk like browser DecompressionStream", async () => {
     const pdfPath = findHandRecordPdfPath();
     if (!pdfPath) {

@@ -82,7 +82,9 @@
         if (relX >= 650 && relX <= 950 && relY > 280 && relY <= 720) {
             return "east";
         }
-        if (relX >= 250 && relX <= 550 && relY > 600 && relY <= 1050) {
+        // South ends near relY 906; footer/diagram suit marks around 986+ must
+        // not overwrite south holdings (they sit in the same X column).
+        if (relX >= 250 && relX <= 550 && relY > 600 && relY <= 950) {
             return "south";
         }
         return null;
@@ -638,6 +640,10 @@
         });
         return Promise.all(inflated).then(function (decodedList) {
             const items = [];
+            // BridgeComposer / ACBL multi-page sheets reuse the same absolute Td
+            // space on every page. Concatenating streams without a per-page
+            // offset collapses board cells (e.g. 1 with 19) and drops most boards.
+            let pageYOffset = 0;
             for (const decoded of decodedList) {
                 if (!decoded) {
                     continue;
@@ -657,7 +663,20 @@
                 if (!hasText) {
                     continue;
                 }
-                items.push.apply(items, extractPdfTextItemsFromContent(decoded));
+                const pageItems = extractPdfTextItemsFromContent(decoded);
+                let pageMaxY = 0;
+                for (let i = 0; i < pageItems.length; i++) {
+                    const item = pageItems[i];
+                    if (item.y > pageMaxY) {
+                        pageMaxY = item.y;
+                    }
+                    items.push({
+                        x: item.x,
+                        y: item.y + pageYOffset,
+                        text: item.text
+                    });
+                }
+                pageYOffset += pageMaxY + CELL_H;
             }
             if (items.length === 0) {
                 throw new Error("no extractable text streams in PDF");
