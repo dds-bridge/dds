@@ -251,12 +251,18 @@ function isHandRecordPdfFile(file) {
 }
 
 function loadHandRecordFromFile(file) {
+    const loadAll = globalThis.loadAllBoardsFromHandRecordPdf;
+    if (typeof loadAll !== "function") {
+        return Promise.reject(new Error(
+            "PDF import unavailable (dds_web_pdf_import.js failed to load)"
+        ));
+    }
     setHandRecordStatus("Reading PDF…", false);
     return file.arrayBuffer().then(function (ab) {
         return new Uint8Array(ab);
     }).then(function (bytes) {
         setHandRecordStatus("Parsing boards…", false);
-        return loadAllBoardsFromHandRecordPdf(bytes);
+        return loadAll(bytes);
     }).then(function (boards) {
         handRecordBoards = boards;
         handRecordIndex = 0;

@@ -7031,6 +7031,26 @@ test("handsToDottedDeal formats NESW dotted holdings", () => {
     );
 });
 
+test("handleDealFileSelected reports when PDF import helper is missing", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.loadAllBoardsFromHandRecordPdf = undefined;
+    await ctx.handleDealFileSelected({
+        files: [
+            {
+                name: "boards.pdf",
+                type: "application/pdf",
+                arrayBuffer: async () => new ArrayBuffer(8),
+            },
+        ],
+    });
+    assert.match(
+        document.element("hand-record-status").textContent,
+        /dds_web_pdf_import\.js/
+    );
+    assert.ok(document.element("hand-record-status").classList.contains("error"));
+});
+
 test("handleDealFileSelected loads a hand-record PDF through Import deal(s)…", async () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document, {
