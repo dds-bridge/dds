@@ -39,12 +39,14 @@ _SolveAllChunksBin
 _SolveAllChunksPBN
 _SolveBoard
 _SolveBoardPBN
+_dds_c_analyse_play
 _dds_c_calc_dd_table
 _dds_c_calc_dd_table_pbn
 _dds_c_calc_par
 _dds_c_clear_tt
 _dds_c_configure_tt
 _dds_c_convert_from_pbn
+_dds_c_convert_play_from_pbn
 _dds_c_convert_to_dealer_text_format
 _dds_c_convert_to_sides_text_format
 _dds_c_create_solvercontext

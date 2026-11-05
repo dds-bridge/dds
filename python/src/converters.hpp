@@ -35,6 +35,9 @@ auto pbn_to_deal(
     const pybind11::sequence& current_trick_rank) -> DealPBN;
 auto dict_to_dd_table_deal(const pybind11::dict& table_input) -> DdTableDeal;
 auto dict_to_dd_table_results(const pybind11::dict& table_input) -> DdTableResults;
+auto sequences_to_play_trace_bin(
+    const pybind11::sequence& play_suit,
+    const pybind11::sequence& play_rank) -> PlayTraceBin;
 
 auto future_tricks_to_dict(const FutureTricks& future_tricks) -> pybind11::dict;
 auto dd_table_results_to_dict(const DdTableResults& table_results) -> pybind11::dict;

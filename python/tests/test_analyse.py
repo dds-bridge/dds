@@ -3,7 +3,9 @@
 import unittest
 
 from dds3 import (
+    SolverContext,
     analyse_all_plays_pbn,
+    analyse_play,
     analyse_play_pbn,
     calc_dd_table,
     dealer_par,
@@ -12,6 +14,26 @@ from dds3 import (
 
 # A full 52-card deal in PBN (from docs/python_interface.md).
 DEAL = "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3"
+
+# A laydown deal (North all spades, East all hearts, South all diamonds, West
+# all clubs) in both binary and PBN form, matching the C++ dds_c_api_test.cpp
+# reference board, so a play on one representation can be cross-checked
+# against the same play on the other.
+REFERENCE_DEAL_BIN = {
+    "trump": 0,  # Spades
+    "first": 0,  # North
+    "remain_cards": [
+        [0x7FFC, 0, 0, 0],
+        [0, 0x7FFC, 0, 0],
+        [0, 0, 0x7FFC, 0],
+        [0, 0, 0, 0x7FFC],
+    ],
+    "current_trick_suit": (0, 0, 0),
+    "current_trick_rank": (0, 0, 0),
+}
+REFERENCE_DEAL_PBN = (
+    "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432"
+)
 
 # Rank bitmask constants.
 R2, R3, R4, R5, R6, R7, R8 = 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080, 0x0100
@@ -60,6 +82,32 @@ class TestAnalysePlay(unittest.TestCase):
     def test_analyse_all_plays_missing_play(self) -> None:
         with self.assertRaises(KeyError):
             analyse_all_plays_pbn([{"remain_cards": DEAL}])
+
+    def test_analyse_play_basic(self) -> None:
+        # North leads the spade 2 on the reference (binary) deal.
+        result = analyse_play(REFERENCE_DEAL_BIN, play_suit=[0], play_rank=[2])
+        self.assertIn("number", result)
+        self.assertIn("tricks", result)
+        self.assertIsInstance(result["tricks"], list)
+        self.assertEqual(len(result["tricks"]), result["number"])
+
+    def test_analyse_play_matches_analyse_play_pbn(self) -> None:
+        # Same deal and play, binary vs. PBN representation: must agree.
+        bin_result = analyse_play(REFERENCE_DEAL_BIN, play_suit=[0], play_rank=[2])
+        pbn_result = analyse_play_pbn(REFERENCE_DEAL_PBN, play="S2", trump=0, first=0)
+        self.assertEqual(bin_result["number"], pbn_result["number"])
+        self.assertEqual(bin_result["tricks"], pbn_result["tricks"])
+
+    def test_analyse_play_with_context(self) -> None:
+        ctx = SolverContext()
+        with_context = analyse_play(
+            REFERENCE_DEAL_BIN, play_suit=[0], play_rank=[2], context=ctx)
+        without_context = analyse_play(REFERENCE_DEAL_BIN, play_suit=[0], play_rank=[2])
+        self.assertEqual(with_context, without_context)
+
+    def test_analyse_play_mismatched_lengths(self) -> None:
+        with self.assertRaises(ValueError):
+            analyse_play(REFERENCE_DEAL_BIN, play_suit=[0, 1], play_rank=[2])
 
 
 class TestDealerPar(unittest.TestCase):

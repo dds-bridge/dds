@@ -41,12 +41,14 @@
     SolveAllChunksPBN;
     SolveBoard;
     SolveBoardPBN;
+    dds_c_analyse_play;
     dds_c_calc_dd_table;
     dds_c_calc_dd_table_pbn;
     dds_c_calc_par;
     dds_c_clear_tt;
     dds_c_configure_tt;
     dds_c_convert_from_pbn;
+    dds_c_convert_play_from_pbn;
     dds_c_convert_to_dealer_text_format;
     dds_c_convert_to_sides_text_format;
     dds_c_create_solvercontext;

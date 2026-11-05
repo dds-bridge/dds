@@ -163,25 +163,6 @@ struct ParTextResults
 };
 
 
-struct PlayTraceBin
-{
-    int number;
-    int suit[52];
-    int rank[52];
-};
-
-struct PlayTracePBN
-{
-    int number;
-    char cards[106];
-};
-
-struct SolvedPlay
-{
-    int number;
-    int tricks[53];
-};
-
 struct PlayTracesBin
 {
     int no_of_boards;

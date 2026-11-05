@@ -15,7 +15,8 @@
 /// This is the subset of the legacy data types that appear in
 /// `dds_c_api.h` signatures (`struct Deal`, `struct FutureTricks`,
 /// `struct DdTableDeal`, `struct DdTableDealPBN`, `struct DdTableResults`,
-/// `struct ParResults`). It is split out from `dds_data_types.hpp` so the
+/// `struct ParResults`, `struct PlayTraceBin`, `struct PlayTracePBN`,
+/// `struct SolvedPlay`). It is split out from `dds_data_types.hpp` so the
 /// C-ABI shim can pull in exactly what it passes by pointer and nothing
 /// else. Every remaining legacy and internal type lives in
 /// `dds_data_types.hpp`, which includes this header.
@@ -78,4 +79,23 @@ struct ParResults
      which side that starts the bidding. */
     char par_score[2][16];
     char par_contracts_string[2][128];
+};
+
+struct PlayTraceBin
+{
+    int number;
+    int suit[52];
+    int rank[52];
+};
+
+struct PlayTracePBN
+{
+    int number;
+    char cards[106];
+};
+
+struct SolvedPlay
+{
+    int number;
+    int tricks[53];
 };

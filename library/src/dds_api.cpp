@@ -96,3 +96,8 @@ DLLEXPORT auto dds_calc_par(
     return calc_par(*ctx, table_deal, vulnerable, table_results, par_results);
 }
 
+DLLEXPORT auto dds_analyse_play(DDS_SOLVER_CTX ctx, const Deal& dl, const PlayTraceBin& play, SolvedPlay* solvedp) -> int
+{
+    return analyse_play(*ctx, dl, play, solvedp);
+}
+

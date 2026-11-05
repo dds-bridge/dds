@@ -1,5 +1,6 @@
 try:
     from ._dds3 import analyse_all_plays_pbn
+    from ._dds3 import analyse_play
     from ._dds3 import analyse_play_pbn
     from ._dds3 import api_root
     from ._dds3 import calc_all_tables_pbn
@@ -19,6 +20,7 @@ try:
 except ImportError:
     # Fallback for environments where _dds3 is available as a top-level module
     from _dds3 import analyse_all_plays_pbn
+    from _dds3 import analyse_play
     from _dds3 import analyse_play_pbn
     from _dds3 import api_root
     from _dds3 import calc_all_tables_pbn
@@ -38,6 +40,7 @@ except ImportError:
 
 __all__ = [
     "analyse_all_plays_pbn",
+    "analyse_play",
     "analyse_play_pbn",
     "api_root",
     "calc_all_tables_pbn",

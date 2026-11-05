@@ -92,11 +92,14 @@ TEST(DdsCApiNullHandle, IntReturningEntryPointsFailFast)
     struct FutureTricks fut = {};
     struct DdTableResults results = {};
     struct ParResults par = {};
+    struct PlayTraceBin play = {};
+    struct SolvedPlay solved = {};
 
     EXPECT_EQ(dds_c_solve_board(nullptr, &dl, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table(nullptr, &table_deal, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(nullptr, &pbn_deal, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_par(nullptr, &table_deal, 0, &results, &par), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_analyse_play(nullptr, &dl, &play, &solved), RETURN_UNKNOWN_FAULT);
 }
 
 // Context-free utilities: must reject null data pointers.
@@ -154,12 +157,18 @@ TEST(DdsCApiNullArgument, PointerArgumentsAreValidated)
     struct DdTableResults results = {};
     struct DdTableDealPBN pbn_deal = {};
     const struct DdTableDeal table_deal = MakeReferenceTableDeal();
+    const struct Deal dl = MakeReferenceDeal();
     struct FutureTricks fut = {};
+    struct PlayTraceBin play = {};
+    struct SolvedPlay solved = {};
 
     EXPECT_EQ(dds_c_solve_board(ctx, nullptr, -1, 1, 1, &fut), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, nullptr, &results), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_dd_table_pbn(ctx, &pbn_deal, nullptr), RETURN_UNKNOWN_FAULT);
     EXPECT_EQ(dds_c_calc_par(ctx, &table_deal, 0, &results, nullptr), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_analyse_play(ctx, nullptr, &play, &solved), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_analyse_play(ctx, &dl, nullptr, &solved), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_analyse_play(ctx, &dl, &play, nullptr), RETURN_UNKNOWN_FAULT);
 
     // A null message must be ignored rather than passed through to strlen.
     dds_c_log_append(ctx, nullptr);
@@ -655,6 +664,186 @@ TEST(DdsCApiInfo, ErrorMessageMapsKnownCode)
     char line[80] = {};
     dds_c_error_message(RETURN_NO_FAULT, line);
     EXPECT_STREQ(line, TEXT_NO_FAULT);
+}
+
+// ---------------------------------------------------------------------------
+// dds_c_analyse_play: context-aware play analysis. Cross-checked against the
+// legacy AnalysePlayBin (both ultimately call the same analyse_play()), which
+// proves the shim forwards correctly without re-deriving the solver's
+// trick-count arithmetic here.
+// ---------------------------------------------------------------------------
+
+TEST(DdsCApiAnalysePlay, MatchesLegacyAnalysePlayBin)
+{
+    struct Deal dl = MakeReferenceDeal();
+
+    struct PlayTraceBin play = {};
+    play.number = 1;
+    play.suit[0] = 0;  // Spades
+    play.rank[0] = 2;  // North's lowest spade
+
+    struct SolvedPlay legacy_solved = {};
+    ASSERT_EQ(AnalysePlayBin(dl, play, &legacy_solved, 0), RETURN_NO_FAULT);
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay shim_solved = {};
+    ASSERT_EQ(dds_c_analyse_play(ctx, &dl, &play, &shim_solved), RETURN_NO_FAULT);
+
+    EXPECT_EQ(shim_solved.number, legacy_solved.number);
+    for (int i = 0; i <= legacy_solved.number; ++i)
+        EXPECT_EQ(shim_solved.tricks[i], legacy_solved.tricks[i]) << "tricks[" << i << "]";
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+TEST(DdsCApiAnalysePlay, ContextIsReusableAcrossCalls)
+{
+    struct Deal dl = MakeReferenceDeal();
+    struct PlayTraceBin play = {};
+    play.number = 1;
+    play.suit[0] = 0;
+    play.rank[0] = 2;
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay first = {};
+    ASSERT_EQ(dds_c_analyse_play(ctx, &dl, &play, &first), RETURN_NO_FAULT);
+
+    struct SolvedPlay second = {};
+    ASSERT_EQ(dds_c_analyse_play(ctx, &dl, &play, &second), RETURN_NO_FAULT);
+
+    EXPECT_EQ(first.number, second.number);
+    for (int i = 0; i <= first.number; ++i)
+        EXPECT_EQ(first.tricks[i], second.tricks[i]) << "tricks[" << i << "]";
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+// dds_c_analyse_play forwards straight into the shared analyse_play()
+// implementation, which is where play.suit/play.rank/play.number are
+// validated (library/src/analyse_play_adapter.cpp) -- confirm that
+// validation is actually reachable through this entry point, since an
+// out-of-range suit/rank would otherwise index bit_map_rank[]/remainCards[]
+// out of bounds rather than raise something the try/catch here could stop.
+TEST(DdsCApiAnalysePlay, RejectsOutOfRangeSuitWithPlayFault)
+{
+    struct Deal dl = MakeReferenceDeal();
+    struct PlayTraceBin play = {};
+    play.number = 1;
+    play.suit[0] = 4;  // One past the last valid suit.
+    play.rank[0] = 2;
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay solved = {};
+    EXPECT_EQ(dds_c_analyse_play(ctx, &dl, &play, &solved), RETURN_PLAY_FAULT);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+TEST(DdsCApiAnalysePlay, RejectsOutOfRangeRankWithPlayFault)
+{
+    struct Deal dl = MakeReferenceDeal();
+    struct PlayTraceBin play = {};
+    play.number = 1;
+    play.suit[0] = 0;
+    play.rank[0] = 16;  // Past ace (14).
+
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay solved = {};
+    EXPECT_EQ(dds_c_analyse_play(ctx, &dl, &play, &solved), RETURN_PLAY_FAULT);
+
+    dds_c_destroy_solvercontext(ctx);
+}
+
+// ---------------------------------------------------------------------------
+// dds_c_convert_play_from_pbn: parses a PBN-format play trace into the
+// binary PlayTraceBin shared with dds_c_analyse_play. Needs no SolverContext.
+// ---------------------------------------------------------------------------
+
+TEST(DdsCApiConvertPlayFromPbn, ProducesTheExpectedBinaryTrace)
+{
+    struct PlayTracePBN pbn_play = {};
+    pbn_play.number = 3;
+    std::snprintf(pbn_play.cards, sizeof pbn_play.cards, "%s", "S6HAD2");
+
+    struct PlayTraceBin bin_play = {};
+    ASSERT_EQ(dds_c_convert_play_from_pbn(&pbn_play, &bin_play), RETURN_NO_FAULT);
+
+    EXPECT_EQ(bin_play.number, 3);
+    const int expected_suit[3] = {0, 1, 2};
+    const int expected_rank[3] = {6, 14, 2};
+    for (int i = 0; i < 3; ++i) {
+        EXPECT_EQ(bin_play.suit[i], expected_suit[i]) << "suit[" << i << "]";
+        EXPECT_EQ(bin_play.rank[i], expected_rank[i]) << "rank[" << i << "]";
+    }
+}
+
+TEST(DdsCApiConvertPlayFromPbn, RejectsNullArguments)
+{
+    struct PlayTracePBN pbn_play = {};
+    struct PlayTraceBin bin_play = {};
+
+    EXPECT_EQ(dds_c_convert_play_from_pbn(nullptr, &bin_play), RETURN_UNKNOWN_FAULT);
+    EXPECT_EQ(dds_c_convert_play_from_pbn(&pbn_play, nullptr), RETURN_UNKNOWN_FAULT);
+}
+
+TEST(DdsCApiConvertPlayFromPbn, RejectsMalformedSuitWithPlayFault)
+{
+    struct PlayTracePBN pbn_play = {};
+    pbn_play.number = 1;
+    std::snprintf(pbn_play.cards, sizeof pbn_play.cards, "%s", "X6");
+
+    struct PlayTraceBin bin_play = {};
+    EXPECT_EQ(dds_c_convert_play_from_pbn(&pbn_play, &bin_play), RETURN_PLAY_FAULT);
+}
+
+TEST(DdsCApiConvertPlayFromPbn, RejectsOutOfRangeCardCount)
+{
+    struct PlayTracePBN pbn_play = {};
+    pbn_play.number = 53;  // > 52, out of range per convert_play_from_pbn.
+
+    struct PlayTraceBin bin_play = {};
+    EXPECT_EQ(dds_c_convert_play_from_pbn(&pbn_play, &bin_play), RETURN_PLAY_FAULT);
+}
+
+// The converter's output feeds directly into dds_c_analyse_play: converting
+// then analysing must match analysing an equivalent hand-built PlayTraceBin.
+TEST(DdsCApiConvertPlayFromPbn, ConvertedPlayAnalysesLikeTheBinaryTwin)
+{
+    struct PlayTracePBN pbn_play = {};
+    pbn_play.number = 1;
+    std::snprintf(pbn_play.cards, sizeof pbn_play.cards, "%s", "S2");
+
+    struct PlayTraceBin converted_play = {};
+    ASSERT_EQ(dds_c_convert_play_from_pbn(&pbn_play, &converted_play), RETURN_NO_FAULT);
+
+    struct PlayTraceBin manual_play = {};
+    manual_play.number = 1;
+    manual_play.suit[0] = 0;
+    manual_play.rank[0] = 2;
+
+    struct Deal dl = MakeReferenceDeal();
+    DDS_C_SOLVER_CTX ctx = dds_c_create_solvercontext_default();
+    ASSERT_NE(ctx, nullptr);
+
+    struct SolvedPlay converted_result = {};
+    ASSERT_EQ(dds_c_analyse_play(ctx, &dl, &converted_play, &converted_result), RETURN_NO_FAULT);
+
+    struct SolvedPlay manual_result = {};
+    ASSERT_EQ(dds_c_analyse_play(ctx, &dl, &manual_play, &manual_result), RETURN_NO_FAULT);
+
+    EXPECT_EQ(converted_result.number, manual_result.number);
+    for (int i = 0; i <= manual_result.number; ++i)
+        EXPECT_EQ(converted_result.tricks[i], manual_result.tricks[i]) << "tricks[" << i << "]";
+
+    dds_c_destroy_solvercontext(ctx);
 }
 
 }  // namespace

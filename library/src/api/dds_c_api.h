@@ -106,6 +106,32 @@ DLLEXPORT int dds_c_calc_dd_table_pbn(DDS_C_SOLVER_CTX ctx,
 DLLEXPORT int dds_c_convert_from_pbn(const char* pbn_deal,
                                      unsigned int cards[DDS_HANDS][DDS_SUITS]);
 
+/* Analyse a sequence of played cards (binary format) and determine the
+   double-dummy trick count after each card, for the fixed partnership
+   opposite dl->first (the hand that led to the first trick) -- not the
+   side currently on lead, which alternates as the trace progresses.
+   Reuses ctx's transposition table across the initial solve and every
+   subsequent per-card search, so repeated calls on the same context
+   benefit from a warm TT. There is deliberately no *_pbn twin on this
+   shim -- same rationale as dds_c_solve_board / dds_c_calc_par: a
+   PBN-based caller converts once with dds_c_convert_from_pbn (deal) and
+   dds_c_convert_play_from_pbn (play), then calls this entry point
+   directly. */
+DLLEXPORT int dds_c_analyse_play(
+    DDS_C_SOLVER_CTX ctx,
+    const struct Deal* dl,
+    const struct PlayTraceBin* play,
+    struct SolvedPlay* solved);
+
+/* Parse a PBN-format play trace (two characters per card: suit letter
+   S/H/D/C followed by rank 2-9/T/J/Q/K/A) into the binary PlayTraceBin
+   consumed by dds_c_analyse_play. Needs no SolverContext. Returns
+   RETURN_PLAY_FAULT if pbn_play->number is out of [0, 52] or any card is
+   malformed, else RETURN_NO_FAULT. */
+DLLEXPORT int dds_c_convert_play_from_pbn(
+    const struct PlayTracePBN* pbn_play,
+    struct PlayTraceBin* bin_play);
+
 /* Transposition-table configuration. */
 DLLEXPORT void dds_c_configure_tt(DDS_C_SOLVER_CTX ctx, int tt_kind,
                                     int def_mb, int max_mb);

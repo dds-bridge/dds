@@ -25,6 +25,7 @@ cc_library(
 cc_library(
     name = "api_definitions",
     hdrs = [
+        "analyse_play.hpp",
         "calc_dd_table.hpp",
         "calc_par.hpp",
         "dds.h",

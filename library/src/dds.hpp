@@ -13,6 +13,7 @@
 #include <dds/dds.h>
 #endif
 
+#include <api/analyse_play.hpp>
 #include <api/calc_dd_table.hpp>
 #include <api/calc_par.hpp>
 #include <api/solve_board.hpp>

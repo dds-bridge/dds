@@ -67,6 +67,7 @@
   <ItemGroup>
     <ClCompile Include="..\library\src\ab_search.cpp" />
     <ClCompile Include="..\library\src\ab_stats.cpp" />
+    <ClCompile Include="..\library\src\analyse_play_adapter.cpp" />
     <ClCompile Include="..\library\src\calc_dd_table.cpp" />
     <ClCompile Include="..\library\src\calc_par.cpp" />
     <ClCompile Include="..\library\src\calc_tables.cpp" />
@@ -107,6 +108,7 @@
   <ItemGroup>
     <ClInclude Include="..\library\src\ab_search.hpp" />
     <ClInclude Include="..\library\src\ab_stats.hpp" />
+    <ClInclude Include="..\library\src\api\analyse_play.hpp" />
     <ClInclude Include="..\library\src\api\calc_dd_table.hpp" />
     <ClInclude Include="..\library\src\api\calc_par.hpp" />
     <ClInclude Include="..\library\src\api\dds.h" />
