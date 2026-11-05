@@ -3921,6 +3921,49 @@ test("ArrowDown moves focus between menuitems in the open menu", () => {
     assert.equal(document.activeElement, about);
 });
 
+test("Escape does nothing when no menu is open so dialogs can dismiss", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar } = attachDdsMenuForKeyboard(document);
+    // Match HTML: Sample Deals panel starts hidden / collapsed.
+    document.element("menu-sample-deals-panel").hidden = true;
+    document.element("menu-sample-deals").setAttribute("aria-expanded", "false");
+    ctx.mountMenubar(menubar);
+
+    let prevented = false;
+    document.dispatch("keydown", {
+        key: "Escape",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
+});
+
+test("Arrow keys are ignored when focus is outside the open menubar", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, about, faq } = attachDdsMenuForKeyboard(document);
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), true);
+
+    // Focus leaves the menubar (e.g. Tab into a hand input).
+    const outside = document.element("north_spades");
+    outside.focus();
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+    assert.equal(document.activeElement, outside);
+    assert.notEqual(document.activeElement, faq);
+    assert.notEqual(document.activeElement, about);
+});
+
 test("dds_web html does not cache-bust css or js with query params", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));

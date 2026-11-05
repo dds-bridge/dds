@@ -424,15 +424,30 @@ function mountMenubar(menubar) {
 
     function sampleSubmenuIsOpen() {
         const submenu = document.getElementById("menu-sample-deals-panel");
-        return !!(submenu && !submenu.hidden);
+        const trigger = document.getElementById("menu-sample-deals");
+        if (!submenu || submenu.hidden) {
+            return false;
+        }
+        // Prefer the trigger's expanded state when present so a stray visible
+        // panel without an open File menu does not capture Escape.
+        if (trigger && trigger.getAttribute) {
+            return trigger.getAttribute("aria-expanded") === "true";
+        }
+        return true;
     }
 
     function onKeyDown(event) {
         const key = event.key;
         const menu = openMenu();
+        const submenuOpen = sampleSubmenuIsOpen();
 
         if (key === "Escape") {
-            if (sampleSubmenuIsOpen()) {
+            // Do not swallow Escape when nothing menu-related is open — About
+            // and other native dialogs need it to dismiss.
+            if (!menu && !submenuOpen) {
+                return;
+            }
+            if (submenuOpen) {
                 setSampleSubmenuOpen(false);
                 const sampleTrigger = document.getElementById("menu-sample-deals");
                 if (sampleTrigger && typeof sampleTrigger.focus === "function") {
@@ -443,7 +458,7 @@ function mountMenubar(menubar) {
                 }
                 return;
             }
-            const trigger = menu ? menu.querySelector(".menu-label") : null;
+            const trigger = menu.querySelector(".menu-label");
             closeAll();
             if (trigger && typeof trigger.focus === "function") {
                 trigger.focus();
@@ -458,15 +473,20 @@ function mountMenubar(menubar) {
             return;
         }
 
+        const active = document.activeElement;
+        // Arrow navigation applies only while focus remains inside the menubar.
+        if (!active || !menubar.contains(active)) {
+            return;
+        }
+
         const mainPanel = menu.querySelector(".menu-panel:not(.menu-submenu)");
         const submenu = document.getElementById("menu-sample-deals-panel");
-        const active = document.activeElement;
         const inSubmenu = !!(
-            sampleSubmenuIsOpen()
+            submenuOpen
             && submenu
             && (
-                (active && submenu.contains && submenu.contains(active))
-                || (active && active.id === "menu-sample-deals")
+                (submenu.contains && submenu.contains(active))
+                || active.id === "menu-sample-deals"
             )
         );
         const panel = inSubmenu && key !== "ArrowRight" ? submenu : mainPanel;
@@ -486,7 +506,7 @@ function mountMenubar(menubar) {
             return;
         }
         if (key === "ArrowRight") {
-            if (active && active.id === "menu-sample-deals") {
+            if (active.id === "menu-sample-deals") {
                 if (typeof event.preventDefault === "function") {
                     event.preventDefault();
                 }
@@ -499,7 +519,7 @@ function mountMenubar(menubar) {
             return;
         }
         if (key === "ArrowLeft") {
-            if (sampleSubmenuIsOpen()) {
+            if (submenuOpen) {
                 if (typeof event.preventDefault === "function") {
                     event.preventDefault();
                 }
