@@ -347,6 +347,10 @@
         return playState != null;
     }
 
+    function canUndoPlay() {
+        return !!(playState && playState.history && playState.history.length > 0);
+    }
+
     function targetTricksFromCell(cell) {
         if (!cell) {
             return null;
@@ -429,6 +433,10 @@
                     input.disabled = !!active;
                 }
             }
+        }
+
+        if (typeof global.updateEditMenuEnablement === "function") {
+            global.updateEditMenuEnablement();
         }
     }
 
@@ -611,6 +619,9 @@
         }
         playState.pendingDiffs = null;
         renderPlayUi();
+        if (typeof global.updateEditMenuEnablement === "function") {
+            global.updateEditMenuEnablement();
+        }
         // Bump before scheduling so an in-flight solve for the prior history
         // cannot repaint badges or auto-play onto the new position (undo race).
         if (typeof global.leadTricksRequestId === "number") {
@@ -715,6 +726,7 @@
     global.handlePlayHistoryUndo = handlePlayHistoryUndo;
     global.renderPlayUi = renderPlayUi;
     global.isPlayMode = isPlayMode;
+    global.canUndoPlay = canUndoPlay;
     global.playBadgeMapFromPending = playBadgeMapFromPending;
     global.targetTricksFromCell = targetTricksFromCell;
     global.applyAutoPlayIfForced = applyAutoPlayIfForced;

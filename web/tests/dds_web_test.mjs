@@ -186,7 +186,6 @@ function createMockDocument(initialValues = {}) {
     makeElement("deck-status");
     makeElement("trick-status");
     makeElement("contract-status");
-    makeElement("sample-deals");
     makeElement("play-bar");
     makeElement("play-hint");
     makeElement("play-score");
@@ -198,6 +197,32 @@ function createMockDocument(initialValues = {}) {
     makeElement("hand-record-next");
     makeElement("hand-record-label");
     makeElement("hand-record-status");
+    makeElement("menubar");
+    makeElement("menu-undo").disabled = true;
+    makeElement("menu-edit-hands").disabled = true;
+    makeElement("menu-sample-deals");
+    const samplePanel = makeElement("menu-sample-deals-panel");
+    samplePanel.children = [];
+    samplePanel._textContent = "";
+    samplePanel.appendChild = function (child) {
+        this.children.push(child);
+        return child;
+    };
+    Object.defineProperty(samplePanel, "textContent", {
+        get() {
+            return this._textContent || "";
+        },
+        set(value) {
+            this._textContent = value;
+            if (value === "") {
+                this.children = [];
+            }
+        },
+        configurable: true,
+    });
+    makeElement("dds-about-dialog");
+    makeElement("dds-about-body");
+    makeElement("faq");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -302,13 +327,41 @@ function createMockDocument(initialValues = {}) {
             }
         },
         createElement(tagName) {
-            return {
+            const el = {
                 tagName: String(tagName).toUpperCase(),
+                type: "",
                 value: "",
                 textContent: "",
                 disabled: false,
                 selected: false,
+                dataset: {},
+                attributes: {},
+                setAttribute(name, value) {
+                    this.attributes[name] = String(value);
+                    if (name === "role") {
+                        this.role = String(value);
+                    }
+                },
+                getAttribute(name) {
+                    return this.attributes[name] ?? null;
+                },
             };
+            return el;
+        },
+        querySelector(selector) {
+            if (selector === ".menubar") {
+                return store.get("menubar") ?? null;
+            }
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector === ".menu-shortcut[data-keys]") {
+                return [];
+            }
+            if (selector === ".menu") {
+                return [];
+            }
+            return [];
         },
         getElementById(id) {
             return store.get(id) ?? null;
@@ -423,11 +476,9 @@ function loadDdsWeb(document, extras = {}) {
     return context;
 }
 
-/** Load a Sample deals dropdown entry via the page's select handler. */
+/** Load a sample deal via the File → Sample Deals path. */
 function loadSampleDeal(ctx, id) {
-    const select = ctx.document.element("sample-deals");
-    select.value = id;
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById(id);
 }
 
 function cardsFromKeys(ctx, keys) {
@@ -766,73 +817,54 @@ test("loadSampleDeal part_score populates inputs", () => {
     assert.equal(document.element("west_clubs").value, "T5");
 });
 
-test("handleSampleDealSelected loads part_score and resets the select", () => {
+test("loadSampleDealById loads part_score", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.value = "part_score";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("part_score");
 
     assert.equal(document.element("north_spades").value, "AQ85");
     assert.equal(document.element("west_clubs").value, "T5");
-    assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected loads ns_make_7 deal", () => {
+test("loadSampleDealById loads ns_make_7 deal", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.value = "ns_make_7";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("ns_make_7");
 
     assert.equal(document.element("north_spades").value, "AKQJ");
-    assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected loads everyone_makes_3N deal", () => {
+test("loadSampleDealById loads everyone_makes_3N deal", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.value = "everyone_makes_3N";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("everyone_makes_3N");
 
     assert.equal(document.element("north_spades").value, "QT9");
-    assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected ignores empty selection", () => {
+test("loadSampleDealById ignores unknown ids", () => {
     const document = createMockDocument({ north_spades: "AK" });
-    const select = document.element("sample-deals");
-    select.value = "";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("");
+    ctx.loadSampleDealById("nope");
 
     assert.equal(document.element("north_spades").value, "AK");
 });
 
-test("handleSampleDealSelected can reload the same sample after an edit", () => {
-    // Arrange: load part-score, then edit a holding so the deal no longer matches.
+test("loadSampleDealById can reload the same sample after an edit", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
     const ctx = loadDdsWeb(document);
-    select.value = "part_score";
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("part_score");
     assert.equal(document.element("north_spades").value, "AQ85");
-    assert.equal(select.value, "");
 
     document.element("north_spades").value = "A";
+    ctx.loadSampleDealById("part_score");
 
-    // Act: choose the same sample again (possible because the select reset).
-    select.value = "part_score";
-    ctx.handleSampleDealSelected(select);
-
-    // Assert
     assert.equal(document.element("north_spades").value, "AQ85");
-    assert.equal(select.value, "");
 });
 
 test("fillFormWithTestData does not require a double-dummy button", async () => {
@@ -1322,39 +1354,33 @@ test("sample deals live in dds_web_sample_deals.js not dds_web.js", () => {
     );
     const app = readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8");
 
-    // Assert: the sample-deals file is data only; the select handler is UI glue.
+    // Assert: the sample-deals file is data only; the menu loader is UI glue.
     assert.match(samples, /SAMPLE_DEALS/);
     assert.match(samples, /AQ85\.AK976\.5\.J87/);
     assert.match(samples, /AKQJ\.AKQJ\.T98\.T9/);
     assert.match(samples, /QT9\.A8765432\.KJ\./);
-    assert.doesNotMatch(samples, /handleSampleDealSelected/);
+    assert.doesNotMatch(samples, /loadSampleDealById/);
     assert.doesNotMatch(samples, /fillFormWithTestData/);
     assert.doesNotMatch(app, /AQ85\.AK976\.5\.J87/);
-    assert.match(app, /handleSampleDealSelected/);
+    assert.match(app, /loadSampleDealById/);
     assert.match(app, /SAMPLE_DEALS/);
 });
 
-test("pageLoad fills sample-deals select from SAMPLE_DEALS", () => {
-    // Arrange: HTML keeps only the placeholder; options come from SAMPLE_DEALS.
+test("pageLoad fills Sample Deals submenu from SAMPLE_DEALS", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.innerHTML =
-        '<option value="" selected disabled>Sample deals…</option>';
+    const panel = document.element("menu-sample-deals-panel");
     const ctx = loadDdsWeb(document);
 
-    // Act
     ctx.pageLoad();
 
-    // Assert: one option per SAMPLE_DEALS entry, plus the placeholder.
     const ids = Object.keys(ctx.SAMPLE_DEALS);
-    assert.equal(select.options.length, ids.length + 1);
-    assert.equal(select.options[0].value, "");
-    assert.equal(select.options[0].textContent, "Sample deals…");
+    assert.equal(panel.children.length, ids.length);
     for (let i = 0; i < ids.length; i++) {
         const id = ids[i];
-        const option = select.options[i + 1];
-        assert.equal(option.value, id);
-        assert.equal(option.textContent, ctx.SAMPLE_DEALS[id].name);
+        const item = panel.children[i];
+        assert.equal(item.dataset.sampleId, id);
+        assert.equal(item.textContent, ctx.SAMPLE_DEALS[id].name);
+        assert.equal(item.role || item.attributes.role, "menuitem");
     }
 });
 
@@ -3597,56 +3623,39 @@ test("result-cell-selected highlight is defined in CSS", () => {
     assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
 });
 
-test("sample-deals select uses the same background as native buttons", () => {
+test("menubar CSS styles dropdown panels and labels", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*background(?:-color)?:\s*#efefef/is
-    );
+    assert.match(css, /\.menubar\s*\{/s);
+    assert.match(css, /\.menu-panel\s*\{/s);
+    assert.match(css, /\.menu-label\s*\{/s);
+    assert.match(css, /\.menu-submenu\s*\{/s);
+    assert.doesNotMatch(css, /#sample-deals/);
 });
 
-test("sample-deals select matches native toolbar button height chrome", () => {
-    // Shared toolbar rule sizes buttons and the Sample deals select together.
-    const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+test("showAboutDialog fills the About body with the product blurb", () => {
+    const document = createMockDocument();
+    const dialog = document.element("dds-about-dialog");
+    dialog.showModal = () => {
+        dialog.open = true;
+    };
+    const ctx = loadDdsWeb(document);
+
+    ctx.showAboutDialog();
 
     assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*box-sizing:\s*border-box/is
+        document.element("dds-about-body").textContent,
+        /front end for DDS/
     );
     assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*height:\s*20px/is
-    );
-});
-
-test("sample-deals select uses the same border as native buttons", () => {
-    // Flat 1px solid border (no outset shadow), matching bridge-solver toolbar.
-    const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
-
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*border:\s*1px\s+solid\s+#767676/is
-    );
-});
-
-test("sample-deals select uses the same rectangular shape as native buttons", () => {
-    // appearance:none + shared radius; only the select keeps a dropdown chevron.
-    const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
-
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*appearance:\s*none/is
+        document.element("dds-about-body").textContent,
+        /Adam Wildavsky wrote this web front end/
     );
     assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*border-radius:\s*2px/is
+        document.element("dds-about-body").textContent,
+        /Bo Haglund wrote the original version of DDS/
     );
-    assert.match(css, /#sample-deals\s*\{[^}]*background-image:\s*url\(/is);
 });
 
 test("dds_web html does not cache-bust css or js with query params", () => {

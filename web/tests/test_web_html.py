@@ -88,8 +88,8 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
 
     def test_import_deal_button_and_file_input(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
-        self.assertIn('onclick="chooseDealFile()"', text)
-        self.assertIn(">Import deal(s)…</button>", text)
+        self.assertIn('id="menu-import-deals"', text)
+        self.assertIn("Import Deal(s)…", text)
         self.assertNotIn(">Import deal…</button>", text)
         self.assertRegex(
             text,
@@ -101,6 +101,9 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertNotIn("hand-record-file", text)
         self.assertNotIn("Choose File", text)
         self.assertNotIn("handleHandRecordFileSelected", text)
+        self.assertNotIn('onclick="chooseDealFile()"', text)
+        self.assertNotIn("Clear entries</button>", text)
+        self.assertNotIn("Rotate the hands clockwise", text)
 
     def test_hand_record_pdf_nav_controls(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
@@ -123,27 +126,41 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn('id="hand-record-label"', text)
         self.assertIn('id="hand-record-status"', text)
 
-    def test_sample_deals_dropdown_replaces_three_test_deal_buttons(self) -> None:
+    def test_menubar_replaces_toolbar_and_sample_select(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(text, r'<nav[^>]*class="menubar"[^>]*role="menubar"')
+        self.assertIn('data-menu="dds"', text)
+        self.assertIn(">DDS</button>", text)
+        self.assertIn('id="menu-about"', text)
+        self.assertIn(">About…</button>", text)
+        self.assertIn('id="menu-how-to"', text)
+        self.assertIn(">FAQ</button>", text)
+        self.assertIn('id="menu-source-code"', text)
+        self.assertIn(">Source code</button>", text)
+        self.assertIn('id="menu-report-issue"', text)
+        self.assertIn('data-menu="file"', text)
+        self.assertIn('id="menu-sample-deals"', text)
+        self.assertIn("Sample Deals", text)
+        self.assertIn('id="menu-sample-deals-panel"', text)
+        self.assertIn('data-menu="edit"', text)
+        self.assertIn('id="menu-undo"', text)
+        self.assertIn('id="menu-rotate"', text)
+        self.assertIn('id="menu-clear"', text)
+        self.assertIn("Clear Entries", text)
+        self.assertIn('id="menu-edit-hands"', text)
+        self.assertNotIn("<select", text)
+        self.assertNotIn('id="sample-deals"', text)
+        self.assertNotIn("handleSampleDealSelected(this)", text)
+        self.assertNotIn("site-repo", text)
+        self.assertNotIn("Source on GitHub", text)
+        # About is the first DDS menu item.
+        dds_about = text.index('id="menu-about"')
+        dds_how = text.index('id="menu-how-to"')
+        self.assertLess(dds_about, dds_how)
+        # Sample deal labels still come from SAMPLE_DEALS at pageLoad.
         self.assertNotIn("fillFormWithGrandSlamTestData()", text)
-        self.assertNotIn("fillFormWithEveryoneMakes3nTestData()", text)
-        self.assertNotIn("fillFormWithPartScoreTestData()", text)
-        self.assertNotIn("NS make 7 test deal", text)
-        self.assertNotIn("Everyone makes 3N test deal", text)
-        self.assertNotIn("Part-score test deal", text)
-        self.assertRegex(
-            text,
-            r'<select[^>]*id="sample-deals"[^>]*>',
-        )
-        self.assertIn("handleSampleDealSelected(this)", text)
-        self.assertIn("Sample deals…", text)
-        # Deal labels/values come from SAMPLE_DEALS at pageLoad, not hard-coded HTML.
         self.assertNotIn('value="ns_make_7"', text)
-        self.assertNotIn('value="everyone_makes_3N"', text)
-        self.assertNotIn('value="part_score"', text)
         self.assertNotIn("NS make 7", text)
-        self.assertNotIn("Everyone makes 3N", text)
-        self.assertNotIn(">Part-score<", text)
 
 
 class DdsWebHtmlCoiTest(unittest.TestCase):
@@ -220,8 +237,7 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(pdf_at, core_at)
 
     def test_loads_sample_deals_script_before_dds_web_js(self) -> None:
-        # SAMPLE_DEALS is pure data; load before UI so handleSampleDealSelected
-        # can read it.
+        # SAMPLE_DEALS is pure data; load before UI so the File menu can read it.
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertRegex(
             text,

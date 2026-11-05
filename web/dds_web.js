@@ -68,8 +68,10 @@
             chooseDealFile
             handleDealFileSelected
             fillFormWithTestData
-            handleSampleDealSelected
-            populateSampleDealsSelect
+            loadSampleDealById
+            populateSampleDealsMenu
+            mountMenubar
+            updateEditMenuEnablement
             handRecordPrev
             handRecordNext
             showHandRecordBoard
@@ -108,8 +110,20 @@ function fillFormWithTestData(nesw) {
     updateActionButtons();
 }
 
-function handleSampleDealSelected(select) {
-    const sample = SAMPLE_DEALS[select.value];
+const DDS_ABOUT_TEXT =
+    "DDS Web is a front end for DDS, a double-dummy bridge solver. "
+    + "Enter or import a deal and the page fills a table of maximum tricks by "
+    + "declarer and strain assuming optimal play and defense. "
+    + "Click on a cell and you can play through the contract card by card. "
+    + "Solving runs entirely in your browser via WebAssembly.\n\n"
+    + "Bo Haglund wrote the original version of DDS. "
+    + "Adam Wildavsky wrote this web front end.";
+
+const DDS_REPO_URL = "https://github.com/dds-bridge/dds";
+const DDS_ISSUES_URL = "https://github.com/dds-bridge/dds/issues";
+
+function loadSampleDealById(id) {
+    const sample = SAMPLE_DEALS[id];
     if (!sample) {
         return;
     }
@@ -122,33 +136,283 @@ function handleSampleDealSelected(select) {
         deal.south,
         deal.west,
     ]);
-    // Restore the placeholder so the control reads like a button again and the
-    // same sample can be re-selected after editing.
-    select.value = "";
 }
 
-function populateSampleDealsSelect() {
-    const select = document.getElementById("sample-deals");
-    if (!select) {
+function populateSampleDealsMenu() {
+    const panel = document.getElementById("menu-sample-deals-panel");
+    if (!panel) {
         return;
     }
-    // Rebuild from SAMPLE_DEALS so the menu tracks the data file.
-    while (select.options.length > 0) {
-        select.remove(0);
-    }
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Sample deals…";
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    select.appendChild(placeholder);
+    panel.textContent = "";
     for (const id of Object.keys(SAMPLE_DEALS)) {
         const deal = SAMPLE_DEALS[id];
-        const option = document.createElement("option");
-        option.value = id;
-        option.textContent = deal.name;
-        select.appendChild(option);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.setAttribute("role", "menuitem");
+        item.dataset.sampleId = id;
+        item.textContent = deal.name;
+        panel.appendChild(item);
     }
+}
+
+function isMacPlatform(nav) {
+    const n = nav || (typeof navigator !== "undefined" ? navigator : {});
+    const platform = n.platform || "";
+    const ua = n.userAgent || "";
+    return /Mac|iPhone|iPad|iPod/.test(platform) || /Mac OS X/.test(ua);
+}
+
+function formatMenuShortcut(spec, options) {
+    const mac = options && options.mac != null ? options.mac : isMacPlatform();
+    const parts = String(spec).toLowerCase().split("+").map(function (p) {
+        return p.trim();
+    }).filter(Boolean);
+    const hasMod = parts.indexOf("mod") >= 0;
+    const hasShift = parts.indexOf("shift") >= 0;
+    const hasAlt = parts.indexOf("alt") >= 0;
+    const key = parts.find(function (p) {
+        return p !== "mod" && p !== "shift" && p !== "alt" && p !== "ctrl";
+    });
+    function formatKey(k) {
+        if (!k) {
+            return "";
+        }
+        return k.length === 1 ? k.toUpperCase() : k;
+    }
+    if (mac) {
+        let out = "";
+        if (hasAlt) {
+            out += "⌥";
+        }
+        if (hasShift) {
+            out += "⇧";
+        }
+        if (hasMod) {
+            out += "⌘";
+        }
+        out += formatKey(key);
+        return out;
+    }
+    const bits = [];
+    if (hasMod) {
+        bits.push("Ctrl");
+    }
+    if (hasAlt) {
+        bits.push("Alt");
+    }
+    if (hasShift) {
+        bits.push("Shift");
+    }
+    const keyLabel = formatKey(key);
+    if (keyLabel) {
+        bits.push(keyLabel);
+    }
+    return bits.join("+");
+}
+
+function applyMenuShortcuts(root) {
+    if (!root || !root.querySelectorAll) {
+        return;
+    }
+    const mac = isMacPlatform();
+    const nodes = root.querySelectorAll(".menu-shortcut[data-keys]");
+    for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        const spec = el.getAttribute("data-keys");
+        if (!spec) {
+            continue;
+        }
+        el.textContent = formatMenuShortcut(spec, { mac: mac });
+    }
+}
+
+function setMenuOpen(menu, open) {
+    if (!menu) {
+        return;
+    }
+    menu.classList.toggle("is-open", open);
+    const panel = menu.querySelector(".menu-panel:not(.menu-submenu)");
+    const label = menu.querySelector(".menu-label");
+    if (panel) {
+        panel.hidden = !open;
+    }
+    if (label) {
+        label.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    if (!open) {
+        const submenu = menu.querySelector(".menu-submenu");
+        const submenuTrigger = menu.querySelector("#menu-sample-deals");
+        if (submenu) {
+            submenu.hidden = true;
+        }
+        if (submenuTrigger) {
+            submenuTrigger.setAttribute("aria-expanded", "false");
+        }
+    }
+}
+
+function setSampleSubmenuOpen(open) {
+    const submenu = document.getElementById("menu-sample-deals-panel");
+    const trigger = document.getElementById("menu-sample-deals");
+    if (submenu) {
+        submenu.hidden = !open;
+    }
+    if (trigger) {
+        trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+}
+
+function showAboutDialog() {
+    const dialog = document.getElementById("dds-about-dialog");
+    const body = document.getElementById("dds-about-body");
+    if (!dialog) {
+        return;
+    }
+    if (body) {
+        body.textContent = DDS_ABOUT_TEXT;
+    }
+    if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+    } else {
+        dialog.setAttribute("open", "");
+    }
+}
+
+function updateEditMenuEnablement() {
+    const undo = document.getElementById("menu-undo");
+    const editHands = document.getElementById("menu-edit-hands");
+    const playing = typeof isPlayMode === "function" && isPlayMode();
+    if (editHands) {
+        editHands.disabled = !playing;
+    }
+    if (undo) {
+        const canUndo = typeof canUndoPlay === "function" && canUndoPlay();
+        undo.disabled = !canUndo;
+    }
+}
+
+function mountMenubar(menubar) {
+    if (!menubar) {
+        return function () {};
+    }
+    const menus = menubar.querySelectorAll
+        ? Array.prototype.slice.call(menubar.querySelectorAll(".menu"))
+        : [];
+
+    function closeAll() {
+        for (let i = 0; i < menus.length; i++) {
+            setMenuOpen(menus[i], false);
+        }
+        setSampleSubmenuOpen(false);
+    }
+
+    function onMenubarClick(event) {
+        const target = event.target;
+        if (!target || !target.closest) {
+            return;
+        }
+        const label = target.closest(".menu-label");
+        if (label && menubar.contains(label)) {
+            event.preventDefault();
+            const menu = label.closest(".menu");
+            const willOpen = !menu.classList.contains("is-open");
+            closeAll();
+            if (willOpen) {
+                setMenuOpen(menu, true);
+            }
+            return;
+        }
+
+        const sampleTrigger = target.closest("#menu-sample-deals");
+        if (sampleTrigger && menubar.contains(sampleTrigger)) {
+            event.preventDefault();
+            const submenu = document.getElementById("menu-sample-deals-panel");
+            const willOpen = !!(submenu && submenu.hidden);
+            setSampleSubmenuOpen(willOpen);
+            return;
+        }
+
+        const item = target.closest("[role=\"menuitem\"]");
+        if (!item || !menubar.contains(item) || item.disabled) {
+            return;
+        }
+
+        const sampleId = item.dataset && item.dataset.sampleId;
+        if (sampleId) {
+            loadSampleDealById(sampleId);
+            closeAll();
+            return;
+        }
+
+        if (item.id === "menu-about") {
+            showAboutDialog();
+        } else if (item.id === "menu-how-to") {
+            const faq = document.getElementById("faq");
+            if (faq && typeof faq.scrollIntoView === "function") {
+                faq.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        } else if (item.id === "menu-source-code") {
+            window.open(DDS_REPO_URL, "_blank", "noopener,noreferrer");
+        } else if (item.id === "menu-report-issue") {
+            window.open(DDS_ISSUES_URL, "_blank", "noopener,noreferrer");
+        } else if (item.id === "menu-import-deals") {
+            chooseDealFile();
+        } else if (item.id === "menu-undo") {
+            if (typeof undoPlay === "function") {
+                undoPlay();
+            }
+        } else if (item.id === "menu-rotate") {
+            rotateClockwise();
+        } else if (item.id === "menu-clear") {
+            clearTestData();
+        } else if (item.id === "menu-edit-hands") {
+            if (typeof exitPlay === "function") {
+                exitPlay();
+            }
+        }
+        closeAll();
+    }
+
+    function onDocumentPointerDown(event) {
+        if (menubar.contains(event.target)) {
+            return;
+        }
+        closeAll();
+    }
+
+    function onKeyDown(event) {
+        if (event.key !== "Escape") {
+            return;
+        }
+        closeAll();
+    }
+
+    function onOpenShortcut(event) {
+        if (!event || event.shiftKey || event.altKey) {
+            return;
+        }
+        const key = event.key && String(event.key).toLowerCase();
+        if (key !== "o") {
+            return;
+        }
+        if (!(event.metaKey || event.ctrlKey)) {
+            return;
+        }
+        event.preventDefault();
+        chooseDealFile();
+    }
+
+    menubar.addEventListener("click", onMenubarClick);
+    document.addEventListener("pointerdown", onDocumentPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onOpenShortcut);
+
+    return function () {
+        menubar.removeEventListener("click", onMenubarClick);
+        document.removeEventListener("pointerdown", onDocumentPointerDown);
+        document.removeEventListener("keydown", onKeyDown);
+        document.removeEventListener("keydown", onOpenShortcut);
+    };
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
@@ -2351,7 +2615,12 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
-    populateSampleDealsSelect();
+    populateSampleDealsMenu();
+    applyMenuShortcuts(document);
+    mountMenubar(document.querySelector
+        ? document.querySelector(".menubar")
+        : document.getElementById("menubar"));
+    updateEditMenuEnablement();
 
     for (const element of hand_elements()) {
         element.addEventListener("input", handleHandSuitInput);
