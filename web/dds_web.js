@@ -297,7 +297,33 @@ function focusAdjacentMenubarItem(panel, current, delta) {
     }
 }
 
-function showAboutDialog() {
+function focusForKeyboard(el) {
+    if (!el || typeof el.focus !== "function") {
+        return;
+    }
+    try {
+        el.focus({ focusVisible: true });
+    } catch (err) {
+        el.focus();
+    }
+    // Some engines ignore focusVisible on programmatic focus (and mouse
+    // dismissal of a dialog does not set :focus-visible). Force a visible
+    // ring until the next blur so keyboard users can see where they landed.
+    if (el.classList && el.classList.add) {
+        el.classList.add("focus-visible-fallback");
+        const clear = function () {
+            el.classList.remove("focus-visible-fallback");
+            if (el.removeEventListener) {
+                el.removeEventListener("blur", clear);
+            }
+        };
+        if (el.addEventListener) {
+            el.addEventListener("blur", clear);
+        }
+    }
+}
+
+function showAboutDialog(returnFocus) {
     const dialog = document.getElementById("dds-about-dialog");
     const body = document.getElementById("dds-about-body");
     if (!dialog) {
@@ -305,6 +331,27 @@ function showAboutDialog() {
     }
     if (body) {
         body.textContent = DDS_ABOUT_TEXT;
+    }
+    // Explicitly restore visible keyboard focus on close. Relying on
+    // showModal's implicit return target fails when that target was a
+    // menuitem that is now inside a hidden panel, and mouse dismissal of
+    // OK does not set :focus-visible on the restored element. Defer past
+    // the UA's own focus restoration so we win the final focus.
+    if (returnFocus) {
+        const onClose = function () {
+            dialog.removeEventListener("close", onClose);
+            const restore = function () {
+                focusForKeyboard(returnFocus);
+            };
+            if (typeof requestAnimationFrame === "function") {
+                requestAnimationFrame(restore);
+            } else {
+                setTimeout(restore, 0);
+            }
+        };
+        dialog.addEventListener("close", onClose);
+        // Seed showModal's remembered control with the visible label.
+        focusForKeyboard(returnFocus);
     }
     if (typeof dialog.showModal === "function") {
         dialog.showModal();
@@ -379,17 +426,14 @@ function mountMenubar(menubar) {
         }
 
         if (item.id === "menu-about") {
-            // Focus the visible menu label before showModal so the dialog's
-            // return-focus target is not a menuitem inside a now-hidden panel.
             const ownerMenu = item.closest ? item.closest(".menu") : null;
             const trigger = ownerMenu
                 ? ownerMenu.querySelector(".menu-label")
                 : null;
             closeAll();
-            if (trigger && typeof trigger.focus === "function") {
-                trigger.focus();
-            }
-            showAboutDialog();
+            // Hand the visible DDS label to showAboutDialog so close restores
+            // keyboard-visible focus there, not to the hidden About menuitem.
+            showAboutDialog(trigger);
             return;
         }
         if (

@@ -3631,6 +3631,7 @@ test("menubar CSS styles dropdown panels and labels", () => {
     assert.match(css, /\.menu-panel\s*\{/s);
     assert.match(css, /\.menu-label\s*\{/s);
     assert.match(css, /\.menu-submenu\s*\{/s);
+    assert.match(css, /\.menu-label\.focus-visible-fallback\s*\{/s);
     assert.doesNotMatch(css, /#sample-deals/);
 });
 
@@ -3658,18 +3659,67 @@ test("showAboutDialog fills the About body with the product blurb", () => {
     );
 });
 
-test("opening About from the menu focuses the DDS label before showModal", () => {
-    // Arrange: keyboard users land on About… then activate it. If showModal
-    // captures that hidden menuitem as return focus, OK/Escape leaves no
-    // visible focus after the menu closes.
+test("opening About from the menu restores visible focus to the DDS label on close", async () => {
+    // Arrange: activating About… closes the menu first. If return focus stays
+    // on the hidden menuitem (or is restored without focusVisible), OK/Escape
+    // leaves no visible keyboard focus.
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     const { menubar, menu, label, about, panel } = attachDdsMenuForKeyboard(document);
     const dialog = document.element("dds-about-dialog");
-    let focusedWhenShowModal = null;
+    const closeListeners = [];
+    dialog.addEventListener = (type, listener) => {
+        if (type === "close") {
+            closeListeners.push(listener);
+        }
+    };
+    dialog.removeEventListener = (type, listener) => {
+        if (type === "close") {
+            const idx = closeListeners.indexOf(listener);
+            if (idx >= 0) {
+                closeListeners.splice(idx, 1);
+            }
+        }
+    };
     dialog.showModal = () => {
-        focusedWhenShowModal = document.activeElement;
         dialog.open = true;
+    };
+    dialog.close = () => {
+        dialog.open = false;
+        for (const listener of closeListeners.slice()) {
+            listener();
+        }
+    };
+    let focusOpts = null;
+    label.focus = (opts) => {
+        focusOpts = opts || null;
+        document.activeElement = label;
+    };
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    const blurListeners = [];
+    label.addEventListener = (type, listener) => {
+        if (type === "blur") {
+            blurListeners.push(listener);
+        }
+    };
+    label.removeEventListener = (type, listener) => {
+        if (type === "blur") {
+            const idx = blurListeners.indexOf(listener);
+            if (idx >= 0) {
+                blurListeners.splice(idx, 1);
+            }
+        }
     };
     ctx.mountMenubar(menubar);
     menubar.dispatch("click", {
@@ -3679,17 +3729,26 @@ test("opening About from the menu focuses the DDS label before showModal", () =>
     assert.equal(menu.classList.contains("is-open"), true);
     about.focus();
 
-    // Act
+    // Act: open About, then dismiss (OK / Escape both fire close).
     menubar.dispatch("click", {
         target: about,
         preventDefault() {},
     });
-
-    // Assert: menu closed and the visible DDS label is the dialog return target.
     assert.equal(menu.classList.contains("is-open"), false);
     assert.equal(panel.hidden, true);
-    assert.equal(focusedWhenShowModal, label);
     assert.equal(dialog.open, true);
+    // Opening seeds the visible label so showModal does not remember About….
+    assert.equal(document.activeElement, label);
+    assert.equal(label.classList.contains("focus-visible-fallback"), true);
+
+    dialog.close();
+    // close schedules restore on rAF; the mock sandbox uses setTimeout.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Assert: visible keyboard focus returns to the DDS menu label.
+    assert.equal(document.activeElement, label);
+    assert.equal(focusOpts && focusOpts.focusVisible, true);
+    assert.equal(label.classList.contains("focus-visible-fallback"), true);
 });
 
 test("selecting Sample Deals opens its submenu automatically", () => {
