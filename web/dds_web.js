@@ -83,10 +83,25 @@
 
 "use strict";
 
+// Last suit input that held focus. About dismiss returns here so the blinking
+// hand-caret and keypresses stay aligned (restoring only the menu label left a
+// stale caret on North while keys went nowhere).
+let lastFocusedHandInput = null;
+
+function noteHandInputFocus() {
+    if (isHandInput(document.activeElement)) {
+        lastFocusedHandInput = document.activeElement;
+    }
+}
+
 function focusNorthSpades() {
     // To allow the user to quickly enter a deal
 
-    document.getElementById("north_spades").focus();
+    const input = document.getElementById("north_spades");
+    if (input && typeof input.focus === "function") {
+        input.focus();
+    }
+    noteHandInputFocus();
 }
 
 function fillFormWithTestData(nesw) {
@@ -331,6 +346,36 @@ function menuLabelForItem(item) {
     return ownerMenu ? ownerMenu.querySelector(".menu-label") : null;
 }
 
+function aboutRestoreTarget(returnFocus) {
+    // Prefer the suit input the user was editing so Escape from About does not
+    // leave a blinking hand-caret while focus sits on the DDS menu label.
+    if (
+        lastFocusedHandInput
+        && isHandInput(lastFocusedHandInput)
+        && document.getElementById(lastFocusedHandInput.id) === lastFocusedHandInput
+    ) {
+        return lastFocusedHandInput;
+    }
+    return returnFocus || null;
+}
+
+function focusAboutRestoreTarget(target) {
+    if (!target) {
+        return;
+    }
+    if (isHandInput(target)) {
+        if (typeof target.focus === "function") {
+            target.focus();
+        }
+        noteHandInputFocus();
+    } else {
+        focusForKeyboard(target);
+    }
+    // Keep the glyph caret in sync with activeElement (selectionchange alone
+    // does not always fire for programmatic focus moves).
+    updateHandCardDisplays(collectHands());
+}
+
 function showAboutDialog(returnFocus) {
     const dialog = document.getElementById("dds-about-dialog");
     const body = document.getElementById("dds-about-body");
@@ -341,30 +386,34 @@ function showAboutDialog(returnFocus) {
         body.textContent = DDS_ABOUT_TEXT;
     }
 
+    // Snapshot before blur/showModal so we can return to the editing field.
+    noteHandInputFocus();
+    const restoreTarget = aboutRestoreTarget(returnFocus);
+
     // Restore visible keyboard focus after dismiss. showModal would otherwise
     // remember the About menuitem that closeAll() just hid. Some engines
     // (and some automation hosts) close the dialog without firing "close",
     // so also poll dialog.open.
     let restored = false;
     const restore = function () {
-        if (restored || !returnFocus) {
+        if (restored || !restoreTarget) {
             return;
         }
         restored = true;
-        focusForKeyboard(returnFocus);
+        focusAboutRestoreTarget(restoreTarget);
         // Fight late UA focus restoration.
         let attempts = 0;
         const reassert = function () {
-            if (document.activeElement === returnFocus || attempts >= 5) {
+            if (document.activeElement === restoreTarget || attempts >= 5) {
                 return;
             }
             attempts += 1;
-            focusForKeyboard(returnFocus);
+            focusAboutRestoreTarget(restoreTarget);
             setTimeout(reassert, 10);
         };
         setTimeout(reassert, 10);
     };
-    if (returnFocus) {
+    if (restoreTarget) {
         const onClose = function () {
             dialog.removeEventListener("close", onClose);
             setTimeout(restore, 0);
@@ -388,7 +437,7 @@ function showAboutDialog(returnFocus) {
     // Autofocus does not always paint :focus-visible; force a ring on OK.
     focusForKeyboard(document.getElementById("dds-about-ok"));
 
-    if (returnFocus) {
+    if (restoreTarget) {
         const watch = function () {
             if (!dialog.open) {
                 setTimeout(restore, 0);
@@ -1942,10 +1991,14 @@ function handleCardDragEnd(_event) {
 }
 
 function handleSuitSelectionChange() {
-    if (!isHandInput(document.activeElement)) {
-        return;
-    }
+    // Always redraw: when focus leaves a suit input the caret must clear, or a
+    // blinking insertion point remains while keypresses go to the new target.
+    noteHandInputFocus();
+    updateHandCardDisplays(collectHands());
+}
 
+function handleDocumentFocusIn() {
+    noteHandInputFocus();
     updateHandCardDisplays(collectHands());
 }
 
@@ -2925,6 +2978,7 @@ function pageLoad() {
         document.addEventListener("beforeinput", handlePlayHistoryUndo);
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
+    document.addEventListener("focusin", handleDocumentFocusIn);
     if (typeof window !== "undefined" && window.addEventListener) {
         window.addEventListener("resize", fitDiagramFonts);
     }

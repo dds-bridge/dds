@@ -2543,6 +2543,33 @@ test("typing at the caret inserts a pip at the insertion point", () => {
     assert.ok(a < q && q < eight);
 });
 
+test("leaving a suit input clears the hand-caret so it cannot outlive focus", () => {
+    // Arrange: caret is painted only while a suit input is focused. If focus
+    // moves elsewhere (About dismiss → menu label) and the caret stays, the
+    // blinking insertion point lies about where keypresses go.
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(2, 2);
+    ctx.updateHandCardDisplays(ctx.collectHands());
+    assert.match(
+        document.element("north_spades_cards").innerHTML,
+        /hand-caret/
+    );
+
+    // Act: focus leaves the suit input (menu label, About OK, etc.).
+    document.activeElement = document.body;
+    ctx.handleSuitSelectionChange();
+
+    // Assert: no insertion caret without keyboard focus on that suit.
+    assert.doesNotMatch(
+        document.element("north_spades_cards").innerHTML,
+        /hand-caret/
+    );
+});
+
 test("handleHandSuitClick focuses the suit input at end of the holding", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AK" });
@@ -3730,7 +3757,8 @@ test("menu commands restore visible focus to their menu label after closing", ()
 test("opening About from the menu restores visible focus to the DDS label on close", async () => {
     // Arrange: activating About… closes the menu first. If return focus stays
     // on the hidden menuitem (or is restored without focusVisible), OK/Escape
-    // leaves no visible keyboard focus.
+    // leaves no visible keyboard focus. When no suit input was focused first,
+    // land on the DDS label.
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
     const { menubar, menu, label, about, panel } = attachDdsMenuForKeyboard(document);
@@ -3852,6 +3880,105 @@ test("opening About from the menu restores visible focus to the DDS label on clo
     assert.equal(document.activeElement, label);
     assert.equal(focusOpts && focusOpts.focusVisible, true);
     assert.equal(label.classList.contains("focus-visible-fallback"), true);
+});
+
+test("dismissing About restores the prior suit input so typing matches the caret", async () => {
+    // Arrange: user was editing North spades, opened About from the menu, then
+    // dismissed. Focus must return to that suit input (not the DDS label) so the
+    // blinking hand-caret and keypresses agree.
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(1, 1);
+    ctx.updateHandCardDisplays(ctx.collectHands());
+    assert.match(document.element("north_spades_cards").innerHTML, /hand-caret/);
+
+    const { menubar, label, about } = attachDdsMenuForKeyboard(document);
+    const dialog = document.element("dds-about-dialog");
+    const closeListeners = [];
+    dialog.addEventListener = (type, listener) => {
+        if (type === "close") {
+            closeListeners.push(listener);
+        }
+    };
+    dialog.removeEventListener = (type, listener) => {
+        if (type === "close") {
+            const idx = closeListeners.indexOf(listener);
+            if (idx >= 0) {
+                closeListeners.splice(idx, 1);
+            }
+        }
+    };
+    const ok = document.element("dds-about-ok");
+    ok.blur = () => {
+        if (document.activeElement === ok) {
+            document.activeElement = document.body;
+        }
+    };
+    about.blur = () => {
+        if (document.activeElement === about) {
+            document.activeElement = document.body;
+        }
+    };
+    input.blur = () => {
+        if (document.activeElement === input) {
+            document.activeElement = document.body;
+        }
+    };
+    dialog.showModal = () => {
+        dialog.open = true;
+        document.activeElement = ok;
+    };
+    dialog.close = () => {
+        dialog.open = false;
+        for (const listener of closeListeners.slice()) {
+            listener();
+        }
+    };
+    label.focus = () => {
+        document.activeElement = label;
+    };
+    ok.focus = () => {
+        document.activeElement = ok;
+    };
+    ok.addEventListener = () => {};
+    ok.removeEventListener = () => {};
+    label.addEventListener = () => {};
+    label.removeEventListener = () => {};
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+
+    ctx.mountMenubar(menubar);
+    // Open DDS menu from the suit input (blur remembers last hand focus).
+    document.dispatch("focusin", {});
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    label.focus();
+    document.dispatch("focusin", {});
+    about.focus();
+    menubar.dispatch("click", { target: about, preventDefault() {} });
+    assert.equal(dialog.open, true);
+
+    // Act
+    dialog.close();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Allow reassert + caret sync timers.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    // Assert: back on the suit input with a live caret (keys would insert pips).
+    assert.equal(document.activeElement, input);
+    assert.match(document.element("north_spades_cards").innerHTML, /hand-caret/);
 });
 
 test("selecting Sample Deals opens its submenu automatically", () => {
