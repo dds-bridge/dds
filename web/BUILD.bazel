@@ -93,6 +93,9 @@ py_test(
         "//hands:everyone_makes_3N.pbn",
         "//hands:ns_make_7.pbn",
         "//hands:part_score.pbn",
+        "//hands:smallest_ever_double_dummy_problem.pbn",
+        "//hands:thomas1.pbn",
+        "//hands:thomas2.pbn",
     ],
 )
 
