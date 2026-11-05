@@ -323,6 +323,14 @@ function focusForKeyboard(el) {
     }
 }
 
+function menuLabelForItem(item) {
+    if (!item || !item.closest) {
+        return null;
+    }
+    const ownerMenu = item.closest(".menu");
+    return ownerMenu ? ownerMenu.querySelector(".menu-label") : null;
+}
+
 function showAboutDialog(returnFocus) {
     const dialog = document.getElementById("dds-about-dialog");
     const body = document.getElementById("dds-about-body");
@@ -332,22 +340,39 @@ function showAboutDialog(returnFocus) {
     if (body) {
         body.textContent = DDS_ABOUT_TEXT;
     }
-    // Explicitly restore visible keyboard focus on close. Relying on
-    // showModal's implicit return target fails when that target was a
-    // menuitem that is now inside a hidden panel. Do not focus the return
-    // target before showModal — that paints a focus ring behind the open
-    // dialog (blur often does not clear it when focus moves into the
-    // top layer). Blur instead so the UA does not remember the hidden item.
+
+    // Restore visible keyboard focus after dismiss. showModal would otherwise
+    // remember the About menuitem that closeAll() just hid. Some engines
+    // (and some automation hosts) close the dialog without firing "close",
+    // so also poll dialog.open.
+    let restored = false;
+    const restore = function () {
+        if (restored || !returnFocus) {
+            return;
+        }
+        restored = true;
+        focusForKeyboard(returnFocus);
+        // Fight late UA focus restoration.
+        let attempts = 0;
+        const reassert = function () {
+            if (document.activeElement === returnFocus || attempts >= 5) {
+                return;
+            }
+            attempts += 1;
+            focusForKeyboard(returnFocus);
+            setTimeout(reassert, 10);
+        };
+        setTimeout(reassert, 10);
+    };
     if (returnFocus) {
         const onClose = function () {
             dialog.removeEventListener("close", onClose);
-            // Run after the UA's own focus restoration.
-            setTimeout(function () {
-                focusForKeyboard(returnFocus);
-            }, 0);
+            setTimeout(restore, 0);
         };
         dialog.addEventListener("close", onClose);
     }
+
+    // Drop focus from the (soon-hidden) menuitem before the dialog opens.
     if (
         document.activeElement
         && document.activeElement !== document.body
@@ -359,6 +384,27 @@ function showAboutDialog(returnFocus) {
         dialog.showModal();
     } else {
         dialog.setAttribute("open", "");
+    }
+    // Autofocus does not always paint :focus-visible; force a ring on OK.
+    focusForKeyboard(document.getElementById("dds-about-ok"));
+
+    if (returnFocus) {
+        const watch = function () {
+            if (!dialog.open) {
+                setTimeout(restore, 0);
+                return;
+            }
+            if (typeof requestAnimationFrame === "function") {
+                requestAnimationFrame(watch);
+            } else {
+                setTimeout(watch, 16);
+            }
+        };
+        if (typeof requestAnimationFrame === "function") {
+            requestAnimationFrame(watch);
+        } else {
+            setTimeout(watch, 16);
+        }
     }
 }
 
@@ -420,18 +466,17 @@ function mountMenubar(menubar) {
             return;
         }
 
+        const trigger = menuLabelForItem(item);
+
         const sampleId = item.dataset && item.dataset.sampleId;
         if (sampleId) {
             loadSampleDealById(sampleId);
             closeAll();
+            focusForKeyboard(trigger);
             return;
         }
 
         if (item.id === "menu-about") {
-            const ownerMenu = item.closest ? item.closest(".menu") : null;
-            const trigger = ownerMenu
-                ? ownerMenu.querySelector(".menu-label")
-                : null;
             closeAll();
             // Hand the visible DDS label to showAboutDialog so close restores
             // keyboard-visible focus there, not to the hidden About menuitem.
@@ -445,6 +490,7 @@ function mountMenubar(menubar) {
         ) {
             // Anchor menuitems — close the menu and let the browser follow href.
             closeAll();
+            focusForKeyboard(trigger);
             return;
         }
         if (item.id === "menu-import-deals") {
@@ -463,6 +509,9 @@ function mountMenubar(menubar) {
             }
         }
         closeAll();
+        // Menu panels are display:none when closed; leave focus on a visible
+        // label so keyboard users are not stranded on a hidden menuitem.
+        focusForKeyboard(trigger);
     }
 
     function onDocumentPointerDown(event) {

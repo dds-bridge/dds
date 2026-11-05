@@ -222,6 +222,7 @@ function createMockDocument(initialValues = {}) {
     });
     makeElement("dds-about-dialog");
     makeElement("dds-about-body");
+    makeElement("dds-about-ok");
     makeElement("faq");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
@@ -3631,7 +3632,7 @@ test("menubar CSS styles dropdown panels and labels", () => {
     assert.match(css, /\.menu-panel\s*\{/s);
     assert.match(css, /\.menu-label\s*\{/s);
     assert.match(css, /\.menu-submenu\s*\{/s);
-    assert.match(css, /\.menu-label\.focus-visible-fallback\s*\{/s);
+    assert.match(css, /\.focus-visible-fallback\s*\{/s);
     assert.doesNotMatch(css, /#sample-deals/);
 });
 
@@ -3659,6 +3660,73 @@ test("showAboutDialog fills the About body with the product blurb", () => {
     );
 });
 
+test("menu commands restore visible focus to their menu label after closing", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, about, panel } = attachDdsMenuForKeyboard(document);
+    // Reuse About fixture; rotate is another command that closes the menu.
+    const rotate = {
+        id: "menu-rotate",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+        focus() {
+            document.activeElement = this;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return this.attributes[name] ?? null;
+        },
+    };
+    const oldContains = menu.contains.bind(menu);
+    menu.contains = (node) => oldContains(node) || node === rotate;
+    const oldMenubarContains = menubar.contains.bind(menubar);
+    menubar.contains = (node) => oldMenubarContains(node) || node === rotate;
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    label.addEventListener = () => {};
+    label.removeEventListener = () => {};
+    label.focus = () => {
+        document.activeElement = label;
+    };
+    ctx.rotateClockwise = () => {};
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    assert.equal(menu.classList.contains("is-open"), true);
+    rotate.focus();
+
+    menubar.dispatch("click", { target: rotate, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(panel.hidden, true);
+    assert.equal(document.activeElement, label);
+    assert.equal(label.classList.contains("focus-visible-fallback"), true);
+    // Silence unused fixture binding in some runners.
+    assert.equal(typeof about.focus, "function");
+});
+
 test("opening About from the menu restores visible focus to the DDS label on close", async () => {
     // Arrange: activating About… closes the menu first. If return focus stays
     // on the hidden menuitem (or is restored without focusVisible), OK/Escape
@@ -3681,8 +3749,21 @@ test("opening About from the menu restores visible focus to the DDS label on clo
             }
         }
     };
+    const ok = document.element("dds-about-ok");
+    ok.blur = () => {
+        if (document.activeElement === ok) {
+            document.activeElement = document.body;
+        }
+    };
+    about.blur = () => {
+        if (document.activeElement === about) {
+            document.activeElement = document.body;
+        }
+    };
     dialog.showModal = () => {
         dialog.open = true;
+        // Mimic autofocus moving into the dialog.
+        document.activeElement = ok;
     };
     dialog.close = () => {
         dialog.open = false;
@@ -3695,6 +3776,27 @@ test("opening About from the menu restores visible focus to the DDS label on clo
         focusOpts = opts || null;
         document.activeElement = label;
     };
+    ok.focus = (opts) => {
+        document.activeElement = ok;
+        if (opts && opts.focusVisible && ok.classList && ok.classList.add) {
+            ok.classList.add("focus-visible-fallback");
+        }
+    };
+    ok.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    ok.addEventListener = () => {};
+    ok.removeEventListener = () => {};
+
     label.classList = {
         _names: new Set(),
         add(name) {
@@ -3737,7 +3839,9 @@ test("opening About from the menu restores visible focus to the DDS label on clo
     assert.equal(menu.classList.contains("is-open"), false);
     assert.equal(panel.hidden, true);
     assert.equal(dialog.open, true);
-    // While open, do not leave a focus ring on the return target behind the dialog.
+    // While open, focus should be on OK with a visible ring — not on DDS behind
+    // the dialog, and not on the hidden About menuitem.
+    assert.equal(document.activeElement && document.activeElement.id, "dds-about-ok");
     assert.equal(label.classList.contains("focus-visible-fallback"), false);
 
     dialog.close();
