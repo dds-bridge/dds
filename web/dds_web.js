@@ -334,24 +334,26 @@ function showAboutDialog(returnFocus) {
     }
     // Explicitly restore visible keyboard focus on close. Relying on
     // showModal's implicit return target fails when that target was a
-    // menuitem that is now inside a hidden panel, and mouse dismissal of
-    // OK does not set :focus-visible on the restored element. Defer past
-    // the UA's own focus restoration so we win the final focus.
+    // menuitem that is now inside a hidden panel. Do not focus the return
+    // target before showModal — that paints a focus ring behind the open
+    // dialog (blur often does not clear it when focus moves into the
+    // top layer). Blur instead so the UA does not remember the hidden item.
     if (returnFocus) {
         const onClose = function () {
             dialog.removeEventListener("close", onClose);
-            const restore = function () {
+            // Run after the UA's own focus restoration.
+            setTimeout(function () {
                 focusForKeyboard(returnFocus);
-            };
-            if (typeof requestAnimationFrame === "function") {
-                requestAnimationFrame(restore);
-            } else {
-                setTimeout(restore, 0);
-            }
+            }, 0);
         };
         dialog.addEventListener("close", onClose);
-        // Seed showModal's remembered control with the visible label.
-        focusForKeyboard(returnFocus);
+    }
+    if (
+        document.activeElement
+        && document.activeElement !== document.body
+        && typeof document.activeElement.blur === "function"
+    ) {
+        document.activeElement.blur();
     }
     if (typeof dialog.showModal === "function") {
         dialog.showModal();

@@ -3737,12 +3737,11 @@ test("opening About from the menu restores visible focus to the DDS label on clo
     assert.equal(menu.classList.contains("is-open"), false);
     assert.equal(panel.hidden, true);
     assert.equal(dialog.open, true);
-    // Opening seeds the visible label so showModal does not remember About….
-    assert.equal(document.activeElement, label);
-    assert.equal(label.classList.contains("focus-visible-fallback"), true);
+    // While open, do not leave a focus ring on the return target behind the dialog.
+    assert.equal(label.classList.contains("focus-visible-fallback"), false);
 
     dialog.close();
-    // close schedules restore on rAF; the mock sandbox uses setTimeout.
+    // close schedules restore on setTimeout(0).
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Assert: visible keyboard focus returns to the DDS menu label.
