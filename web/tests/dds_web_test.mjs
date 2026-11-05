@@ -3658,6 +3658,40 @@ test("showAboutDialog fills the About body with the product blurb", () => {
     );
 });
 
+test("opening About from the menu focuses the DDS label before showModal", () => {
+    // Arrange: keyboard users land on About… then activate it. If showModal
+    // captures that hidden menuitem as return focus, OK/Escape leaves no
+    // visible focus after the menu closes.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, about, panel } = attachDdsMenuForKeyboard(document);
+    const dialog = document.element("dds-about-dialog");
+    let focusedWhenShowModal = null;
+    dialog.showModal = () => {
+        focusedWhenShowModal = document.activeElement;
+        dialog.open = true;
+    };
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), true);
+    about.focus();
+
+    // Act
+    menubar.dispatch("click", {
+        target: about,
+        preventDefault() {},
+    });
+
+    // Assert: menu closed and the visible DDS label is the dialog return target.
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(panel.hidden, true);
+    assert.equal(focusedWhenShowModal, label);
+    assert.equal(dialog.open, true);
+});
+
 test("selecting Sample Deals opens its submenu automatically", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);

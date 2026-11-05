@@ -379,8 +379,20 @@ function mountMenubar(menubar) {
         }
 
         if (item.id === "menu-about") {
+            // Focus the visible menu label before showModal so the dialog's
+            // return-focus target is not a menuitem inside a now-hidden panel.
+            const ownerMenu = item.closest ? item.closest(".menu") : null;
+            const trigger = ownerMenu
+                ? ownerMenu.querySelector(".menu-label")
+                : null;
+            closeAll();
+            if (trigger && typeof trigger.focus === "function") {
+                trigger.focus();
+            }
             showAboutDialog();
-        } else if (
+            return;
+        }
+        if (
             item.id === "menu-how-to"
             || item.id === "menu-source-code"
             || item.id === "menu-report-issue"
@@ -388,7 +400,8 @@ function mountMenubar(menubar) {
             // Anchor menuitems — close the menu and let the browser follow href.
             closeAll();
             return;
-        } else if (item.id === "menu-import-deals") {
+        }
+        if (item.id === "menu-import-deals") {
             chooseDealFile();
         } else if (item.id === "menu-undo") {
             if (typeof undoPlay === "function") {
