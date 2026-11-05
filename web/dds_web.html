@@ -37,9 +37,17 @@
             <button type="button" class="menu-label" aria-haspopup="menu" aria-expanded="false">DDS</button>
             <div class="menu-panel" role="menu" hidden>
                 <button type="button" role="menuitem" id="menu-about">About…</button>
-                <button type="button" role="menuitem" id="menu-how-to">FAQ</button>
-                <button type="button" role="menuitem" id="menu-source-code">Source code</button>
-                <button type="button" role="menuitem" id="menu-report-issue">Report an issue or request a feature</button>
+                <a role="menuitem" id="menu-how-to" href="dds_web_faq.html">FAQ</a>
+                <a role="menuitem"
+                   id="menu-source-code"
+                   href="https://github.com/dds-bridge/dds"
+                   target="_blank"
+                   rel="noopener noreferrer">Source code</a>
+                <a role="menuitem"
+                   id="menu-report-issue"
+                   href="https://github.com/dds-bridge/dds/issues"
+                   target="_blank"
+                   rel="noopener noreferrer">Report an issue or request a feature</a>
             </div>
         </div>
         <div class="menu" data-menu="file">
@@ -229,51 +237,6 @@
         </div>
     </div>
     </div>
-
-    <section id="faq" class="faq" aria-labelledby="faq-heading">
-        <h2 id="faq-heading">FAQ</h2>
-        <details>
-            <summary>What is DDS Web?</summary>
-            <p>
-                DDS Web is a browser demo of
-                <a href="https://github.com/dds-bridge/dds"
-                   target="_blank"
-                   rel="noopener noreferrer">DDS</a>,
-                a double dummy originally written by Bo Haglund. It runs entirely
-                client-side via WebAssembly: enter a deal (or import one),
-                and the page fills a double-dummy table of max tricks by
-                declarer and strain.
-            </p>
-        </details>
-        <details>
-            <summary>Does my deal leave my browser?</summary>
-            <p>
-                No. Cards, imports, and solve results stay on your device.
-                The solver module is downloaded once with the page; nothing
-                is sent to a server to analyze a deal.
-            </p>
-        </details>
-        <details>
-            <summary>How do I play through a contract?</summary>
-            <p>
-                After the double-dummy table appears, click a cell to enter
-                play for that declarer and strain (or that seat on lead for a
-                partial deal). Drag or click a highlighted card to play it;
-                each card shows the contract outcome with best play and
-                defense. Undo with ⌘/Ctrl-Z, or choose Edit hands to leave
-                play mode.
-            </p>
-        </details>
-        <details>
-            <summary>Can I load a tournament hand-record PDF?</summary>
-            <p>
-                Yes. Use File → Import Deal(s)… and pick a hand-record PDF
-                (BridgeComposer / ACBL or compass layouts such as Madeira /
-                MiBO) or a multi-deal PBN file. Use the arrows to step through
-                numbered boards.
-            </p>
-        </details>
-    </section>
 
     <script src="dds_web_wasm_bin.js"></script>
     <script src="dds_web_wasm.js"></script>

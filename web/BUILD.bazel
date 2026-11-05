@@ -104,6 +104,7 @@ py_test(
     data = [
         "coi-serviceworker.js",
         "dds_web.html",
+        "dds_web_faq.html",
     ],
 )
 
@@ -147,6 +148,7 @@ py_test(
         "coi-serviceworker.js",
         "dds_web.css",
         "dds_web.html",
+        "dds_web_faq.html",
         "dds_web.js",
         "dds_web_deal_import.js",
         "dds_web_pdf_import.js",
@@ -175,6 +177,7 @@ py_test(
         "coi-serviceworker.js",
         "dds_web.css",
         "dds_web.html",
+        "dds_web_faq.html",
         "dds_web.js",
         "dds_web_deal_import.js",
         "dds_web_pdf_import.js",

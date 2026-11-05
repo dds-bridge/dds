@@ -38,23 +38,36 @@ class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
             r'rel="[^"]*\bnoopener\b[^"]*"[^>]*>',
         )
 
-    def test_faq_section_with_common_questions(self) -> None:
-        text = HTML_PATH.read_text(encoding="utf-8")
-        self.assertRegex(
-            text,
+    def test_faq_lives_on_its_own_page(self) -> None:
+        main = HTML_PATH.read_text(encoding="utf-8")
+        faq_path = WEB_ROOT / "dds_web_faq.html"
+        self.assertTrue(faq_path.is_file(), msg="dds_web_faq.html must exist")
+        faq = faq_path.read_text(encoding="utf-8")
+        self.assertNotRegex(
+            main,
             r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*>',
-            msg="dds_web.html must include an FAQ landmark",
+            msg="dds_web.html must not embed the FAQ section",
         )
-        self.assertRegex(text, r"(?is)<h2[^>]*>\s*FAQ\s*</h2>")
-        # Cover the questions visitors actually ask about a browser solver.
+        self.assertRegex(
+            faq,
+            r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*>',
+            msg="dds_web_faq.html must include an FAQ landmark",
+        )
+        self.assertRegex(faq, r"(?is)<h1[^>]*>\s*FAQ\s*</h1>")
+        self.assertRegex(
+            faq,
+            r'(?is)<a\b[^>]*href="dds_web\.html"[^>]*>',
+            msg="FAQ page must link back to the solver",
+        )
         for question in (
             "What is DDS Web?",
             "Does my deal leave my browser?",
             "How do I play through a contract?",
             "Can I load a tournament hand-record PDF?",
         ):
-            self.assertIn(question, text)
-        self.assertNotIn("Why won't solving start?", text)
+            self.assertIn(question, faq)
+            self.assertNotIn(question, main)
+        self.assertNotIn("Why won't solving start?", faq)
 
 
 class DdsWebHtmlCharsetTest(unittest.TestCase):
@@ -134,10 +147,21 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn('id="menu-about"', text)
         self.assertIn(">About…</button>", text)
         self.assertIn('id="menu-how-to"', text)
-        self.assertIn(">FAQ</button>", text)
-        self.assertIn('id="menu-source-code"', text)
-        self.assertIn(">Source code</button>", text)
-        self.assertIn('id="menu-report-issue"', text)
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-how-to"[^>]*href="dds_web_faq\.html"[^>]*>\s*FAQ\s*</a>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-source-code"[^>]*'
+            r'href="https://github\.com/dds-bridge/dds"[^>]*>\s*Source code\s*</a>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-report-issue"[^>]*'
+            r'href="https://github\.com/dds-bridge/dds/issues"[^>]*>',
+        )
+
         self.assertIn('data-menu="file"', text)
         self.assertIn('id="menu-sample-deals"', text)
         self.assertIn("Sample Deals", text)
@@ -157,6 +181,8 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         dds_about = text.index('id="menu-about"')
         dds_how = text.index('id="menu-how-to"')
         self.assertLess(dds_about, dds_how)
+        # FAQ is a separate page, not an in-page scroll target.
+        self.assertNotIn('id="faq"', text)
         # Sample deal labels still come from SAMPLE_DEALS at pageLoad.
         self.assertNotIn("fillFormWithGrandSlamTestData()", text)
         self.assertNotIn('value="ns_make_7"', text)

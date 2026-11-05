@@ -119,9 +119,6 @@ const DDS_ABOUT_TEXT =
     + "Bo Haglund wrote the original version of DDS. "
     + "Adam Wildavsky wrote this web front end.";
 
-const DDS_REPO_URL = "https://github.com/dds-bridge/dds";
-const DDS_ISSUES_URL = "https://github.com/dds-bridge/dds/issues";
-
 function loadSampleDealById(id) {
     const sample = SAMPLE_DEALS[id];
     if (!sample) {
@@ -345,15 +342,14 @@ function mountMenubar(menubar) {
 
         if (item.id === "menu-about") {
             showAboutDialog();
-        } else if (item.id === "menu-how-to") {
-            const faq = document.getElementById("faq");
-            if (faq && typeof faq.scrollIntoView === "function") {
-                faq.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-        } else if (item.id === "menu-source-code") {
-            window.open(DDS_REPO_URL, "_blank", "noopener,noreferrer");
-        } else if (item.id === "menu-report-issue") {
-            window.open(DDS_ISSUES_URL, "_blank", "noopener,noreferrer");
+        } else if (
+            item.id === "menu-how-to"
+            || item.id === "menu-source-code"
+            || item.id === "menu-report-issue"
+        ) {
+            // Anchor menuitems — close the menu and let the browser follow href.
+            closeAll();
+            return;
         } else if (item.id === "menu-import-deals") {
             chooseDealFile();
         } else if (item.id === "menu-undo") {
