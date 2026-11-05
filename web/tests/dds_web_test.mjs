@@ -3684,6 +3684,243 @@ test("Sample Deals submenu expands under its parent in CSS", () => {
     assert.doesNotMatch(css, /\.menu-submenu\s*\{[^}]*left:\s*100%/s);
 });
 
+/**
+ * Build a minimal DDS-menu tree on the mock menubar for keyboard tests.
+ * Returns { menubar, label, about, faq }.
+ */
+function attachDdsMenuForKeyboard(document) {
+    const menubar = document.element("menubar");
+    const label = {
+        className: "menu-label",
+        attributes: { "aria-expanded": "false", "aria-haspopup": "menu" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                ? this.attributes[name]
+                : null;
+        },
+        closest(selector) {
+            if (selector === ".menu-label") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+    };
+    const about = {
+        id: "menu-about",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return this.attributes[name] ?? null;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+        dataset: {},
+    };
+    const faq = {
+        id: "menu-how-to",
+        role: "menuitem",
+        disabled: false,
+        href: "dds_web_faq.html",
+        attributes: { role: "menuitem" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return this.attributes[name] ?? null;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+        dataset: {},
+    };
+    const panel = {
+        className: "menu-panel",
+        hidden: true,
+        role: "menu",
+        querySelectorAll(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return [about, faq];
+            }
+            return [];
+        },
+        contains(node) {
+            return node === about || node === faq;
+        },
+    };
+    const menu = {
+        className: "menu",
+        classList: {
+            _open: false,
+            contains(name) {
+                return name === "is-open" ? this._open : false;
+            },
+            toggle(name, force) {
+                if (name === "is-open") {
+                    this._open = !!force;
+                }
+            },
+            add(name) {
+                if (name === "is-open") {
+                    this._open = true;
+                }
+            },
+            remove(name) {
+                if (name === "is-open") {
+                    this._open = false;
+                }
+            },
+        },
+        querySelector(selector) {
+            if (selector === ".menu-panel:not(.menu-submenu)" || selector === ".menu-panel") {
+                return panel;
+            }
+            if (selector === ".menu-label") {
+                return label;
+            }
+            if (selector === ".menu-submenu" || selector === "#menu-sample-deals") {
+                return null;
+            }
+            return null;
+        },
+        contains(node) {
+            return node === label || node === about || node === faq || node === panel;
+        },
+    };
+    // classList.toggle on menu uses menu.classList — bind _open to menu
+    menu.classList.toggle = function (name, force) {
+        if (name === "is-open") {
+            this._open = force === undefined ? !this._open : !!force;
+            menu.classList._open = this._open;
+        }
+    };
+    menu.classList.contains = function (name) {
+        return name === "is-open" ? this._open : false;
+    };
+
+    menubar.querySelectorAll = (selector) => {
+        if (selector === ".menu") {
+            return [menu];
+        }
+        return [];
+    };
+    menubar.querySelector = (selector) => {
+        if (selector === ".menu" || selector === '[data-menu="dds"]') {
+            return menu;
+        }
+        return null;
+    };
+    menubar.contains = (node) =>
+        node === menubar
+        || node === label
+        || node === about
+        || node === faq
+        || node === panel
+        || menu.contains(node);
+    menubar.addEventListener = document.addEventListener.bind(document);
+    // Re-route menubar listeners onto the document mock's element map via a local map.
+    const localListeners = new Map();
+    menubar.addEventListener = (type, listener) => {
+        const list = localListeners.get(type) ?? [];
+        list.push(listener);
+        localListeners.set(type, list);
+    };
+    menubar.removeEventListener = (type, listener) => {
+        const list = localListeners.get(type) ?? [];
+        localListeners.set(
+            type,
+            list.filter((fn) => fn !== listener)
+        );
+    };
+    menubar.dispatch = (type, event) => {
+        for (const listener of localListeners.get(type) ?? []) {
+            listener(event);
+        }
+    };
+
+    return { menubar, menu, label, panel, about, faq };
+}
+
+test("Escape closes the open menu and restores focus to its label", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, panel, about } = attachDdsMenuForKeyboard(document);
+
+    ctx.mountMenubar(menubar);
+    // Open as a click on the DDS label would.
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), true);
+    assert.equal(panel.hidden, false);
+
+    about.focus();
+    document.dispatch("keydown", {
+        key: "Escape",
+        preventDefault() {},
+    });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.activeElement, label);
+});
+
+test("ArrowDown moves focus between menuitems in the open menu", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, label, about, faq } = attachDdsMenuForKeyboard(document);
+
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    about.focus();
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+    assert.equal(document.activeElement, faq);
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+    assert.equal(document.activeElement, about);
+});
+
 test("dds_web html does not cache-bust css or js with query params", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));

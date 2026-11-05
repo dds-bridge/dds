@@ -259,6 +259,44 @@ function setSampleSubmenuOpen(open) {
     }
 }
 
+function menubarItemsInPanel(panel) {
+    if (!panel || !panel.querySelectorAll) {
+        return [];
+    }
+    const nodes = panel.querySelectorAll('[role="menuitem"]');
+    const items = [];
+    for (let i = 0; i < nodes.length; i++) {
+        const item = nodes[i];
+        if (item.disabled) {
+            continue;
+        }
+        // When scanning a parent panel, skip items that live in a nested submenu.
+        if (item.closest) {
+            const nested = item.closest(".menu-submenu");
+            if (nested && nested !== panel) {
+                continue;
+            }
+        }
+        items.push(item);
+    }
+    return items;
+}
+
+function focusAdjacentMenubarItem(panel, current, delta) {
+    const items = menubarItemsInPanel(panel);
+    if (!items.length) {
+        return;
+    }
+    let index = items.indexOf(current);
+    if (index < 0) {
+        index = delta > 0 ? -1 : 0;
+    }
+    const next = items[(index + delta + items.length) % items.length];
+    if (next && typeof next.focus === "function") {
+        next.focus();
+    }
+}
+
 function showAboutDialog() {
     const dialog = document.getElementById("dds-about-dialog");
     const body = document.getElementById("dds-about-body");
@@ -375,11 +413,103 @@ function mountMenubar(menubar) {
         closeAll();
     }
 
+    function openMenu() {
+        for (let i = 0; i < menus.length; i++) {
+            if (menus[i].classList.contains("is-open")) {
+                return menus[i];
+            }
+        }
+        return null;
+    }
+
+    function sampleSubmenuIsOpen() {
+        const submenu = document.getElementById("menu-sample-deals-panel");
+        return !!(submenu && !submenu.hidden);
+    }
+
     function onKeyDown(event) {
-        if (event.key !== "Escape") {
+        const key = event.key;
+        const menu = openMenu();
+
+        if (key === "Escape") {
+            if (sampleSubmenuIsOpen()) {
+                setSampleSubmenuOpen(false);
+                const sampleTrigger = document.getElementById("menu-sample-deals");
+                if (sampleTrigger && typeof sampleTrigger.focus === "function") {
+                    sampleTrigger.focus();
+                }
+                if (typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                return;
+            }
+            const trigger = menu ? menu.querySelector(".menu-label") : null;
+            closeAll();
+            if (trigger && typeof trigger.focus === "function") {
+                trigger.focus();
+            }
+            if (typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
             return;
         }
-        closeAll();
+
+        if (!menu) {
+            return;
+        }
+
+        const mainPanel = menu.querySelector(".menu-panel:not(.menu-submenu)");
+        const submenu = document.getElementById("menu-sample-deals-panel");
+        const active = document.activeElement;
+        const inSubmenu = !!(
+            sampleSubmenuIsOpen()
+            && submenu
+            && (
+                (active && submenu.contains && submenu.contains(active))
+                || (active && active.id === "menu-sample-deals")
+            )
+        );
+        const panel = inSubmenu && key !== "ArrowRight" ? submenu : mainPanel;
+
+        if (key === "ArrowDown") {
+            if (typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            focusAdjacentMenubarItem(panel || mainPanel, active, 1);
+            return;
+        }
+        if (key === "ArrowUp") {
+            if (typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            focusAdjacentMenubarItem(panel || mainPanel, active, -1);
+            return;
+        }
+        if (key === "ArrowRight") {
+            if (active && active.id === "menu-sample-deals") {
+                if (typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                setSampleSubmenuOpen(true);
+                const first = menubarItemsInPanel(submenu)[0];
+                if (first && typeof first.focus === "function") {
+                    first.focus();
+                }
+            }
+            return;
+        }
+        if (key === "ArrowLeft") {
+            if (sampleSubmenuIsOpen()) {
+                if (typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                setSampleSubmenuOpen(false);
+                const sampleTrigger = document.getElementById("menu-sample-deals");
+                if (sampleTrigger && typeof sampleTrigger.focus === "function") {
+                    sampleTrigger.focus();
+                }
+            }
+        }
     }
 
     function onOpenShortcut(event) {

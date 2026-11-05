@@ -151,6 +151,21 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
             text,
             r'(?is)<a\b[^>]*id="menu-how-to"[^>]*href="dds_web_faq\.html"[^>]*>\s*FAQ\s*</a>',
         )
+        # Keep the solver session: FAQ opens in another tab.
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-how-to"[^>]*target="_blank"[^>]*>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-how-to"[^>]*rel="[^"]*\bnoopener\b[^"]*"[^>]*>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<dialog\b[^>]*id="dds-about-dialog"[^>]*'
+            r'aria-labelledby="dds-about-title"[^>]*>',
+        )
+
         self.assertRegex(
             text,
             r'(?is)<a\b[^>]*id="menu-source-code"[^>]*'

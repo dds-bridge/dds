@@ -37,7 +37,11 @@
             <button type="button" class="menu-label" aria-haspopup="menu" aria-expanded="false">DDS</button>
             <div class="menu-panel" role="menu" hidden>
                 <button type="button" role="menuitem" id="menu-about">About…</button>
-                <a role="menuitem" id="menu-how-to" href="dds_web_faq.html">FAQ</a>
+                <a role="menuitem"
+                   id="menu-how-to"
+                   href="dds_web_faq.html"
+                   target="_blank"
+                   rel="noopener noreferrer">FAQ</a>
                 <a role="menuitem"
                    id="menu-source-code"
                    href="https://github.com/dds-bridge/dds"
@@ -92,7 +96,9 @@
            hidden
            onchange="handleDealFileSelected(this)">
 
-    <dialog id="dds-about-dialog" class="dds-dialog">
+    <dialog id="dds-about-dialog"
+            class="dds-dialog"
+            aria-labelledby="dds-about-title">
         <form method="dialog" class="dds-dialog-form">
             <h2 id="dds-about-title">About</h2>
             <p id="dds-about-body" class="dds-dialog-body"></p>
