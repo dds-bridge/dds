@@ -326,9 +326,8 @@ function mountMenubar(menubar) {
         const sampleTrigger = target.closest("#menu-sample-deals");
         if (sampleTrigger && menubar.contains(sampleTrigger)) {
             event.preventDefault();
-            const submenu = document.getElementById("menu-sample-deals-panel");
-            const willOpen = !!(submenu && submenu.hidden);
-            setSampleSubmenuOpen(willOpen);
+            // Selecting Sample Deals always opens the flyout (macOS submenu).
+            setSampleSubmenuOpen(true);
             return;
         }
 
@@ -402,13 +401,41 @@ function mountMenubar(menubar) {
         chooseDealFile();
     }
 
+    function fileMenuIsOpen() {
+        const fileMenu = menubar.querySelector
+            ? menubar.querySelector('[data-menu="file"]')
+            : null;
+        return !!(fileMenu && fileMenu.classList.contains("is-open"));
+    }
+
+    function onMenubarPointerOver(event) {
+        const target = event.target;
+        if (!target || !target.closest || !fileMenuIsOpen()) {
+            return;
+        }
+        if (
+            target.closest("#menu-sample-deals")
+            || target.closest("#menu-sample-deals-panel")
+            || target.closest(".menu-item-submenu")
+        ) {
+            setSampleSubmenuOpen(true);
+            return;
+        }
+        // Hovering other File items dismisses the Sample Deals flyout.
+        if (target.closest('[data-menu="file"]')) {
+            setSampleSubmenuOpen(false);
+        }
+    }
+
     menubar.addEventListener("click", onMenubarClick);
+    menubar.addEventListener("pointerover", onMenubarPointerOver);
     document.addEventListener("pointerdown", onDocumentPointerDown);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("keydown", onOpenShortcut);
 
     return function () {
         menubar.removeEventListener("click", onMenubarClick);
+        menubar.removeEventListener("pointerover", onMenubarPointerOver);
         document.removeEventListener("pointerdown", onDocumentPointerDown);
         document.removeEventListener("keydown", onKeyDown);
         document.removeEventListener("keydown", onOpenShortcut);

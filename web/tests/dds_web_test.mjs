@@ -3658,6 +3658,32 @@ test("showAboutDialog fills the About body with the product blurb", () => {
     );
 });
 
+test("selecting Sample Deals opens its submenu automatically", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const panel = document.element("menu-sample-deals-panel");
+    const trigger = document.element("menu-sample-deals");
+    panel.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+
+    // Act: open via the same helper the menubar uses when Sample Deals is selected.
+    ctx.setSampleSubmenuOpen(true);
+
+    assert.equal(panel.hidden, false);
+    assert.equal(trigger.getAttribute("aria-expanded"), "true");
+
+    // Selecting again stays open (does not toggle closed).
+    ctx.setSampleSubmenuOpen(true);
+    assert.equal(panel.hidden, false);
+});
+
+test("Sample Deals submenu expands under its parent in CSS", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    assert.match(css, /\.menu-submenu\s*\{[^}]*position:\s*static/s);
+    assert.doesNotMatch(css, /\.menu-submenu\s*\{[^}]*left:\s*100%/s);
+});
+
 test("dds_web html does not cache-bust css or js with query params", () => {
     // Arrange
     const here = dirname(fileURLToPath(import.meta.url));

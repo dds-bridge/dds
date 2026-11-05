@@ -135,13 +135,20 @@
 
 .menu-item-submenu {
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Expand under Sample Deals when that item is selected (not a side flyout). */
 .menu-submenu {
-  top: 0;
-  left: 100%;
-  margin-left: 0.15rem;
-  min-width: 12rem;
+  position: static;
+  top: auto;
+  left: auto;
+  margin: 0.1rem 0 0.15rem 0.65rem;
+  min-width: 0;
+  width: auto;
+  box-shadow: none;
+  border: 1px solid #ddd;
 }
 
 .dds-dialog {
