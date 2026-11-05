@@ -124,11 +124,14 @@ py_test(
     data = [
         "dds_web.js",
         "dds_web_deal_import.js",
+        "dds_web_pdf_import.js",
         "dds_web_core.js",
         "dds_web_solve.js",
         "dds_web_play.js",
         "dds_web_sample_deals.js",
         "tests/dds_web_test.mjs",
+        "tests/testdata/262ROTH5F1.pdf",
+        "tests/testdata/s261105m_1.pdf",
     ],
 )
 
@@ -146,6 +149,7 @@ py_test(
         "dds_web.html",
         "dds_web.js",
         "dds_web_deal_import.js",
+        "dds_web_pdf_import.js",
         "dds_web_core.js",
         "dds_web_solve.js",
         "dds_web_play.js",
@@ -173,6 +177,7 @@ py_test(
         "dds_web.html",
         "dds_web.js",
         "dds_web_deal_import.js",
+        "dds_web_pdf_import.js",
         "dds_web_core.js",
         "dds_web_solve.js",
         "dds_web_play.js",

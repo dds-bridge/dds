@@ -42,10 +42,10 @@
     </p>
 
     <button type="button" onclick="clearTestData()">Clear entries</button>
-    <button type="button" onclick="chooseDealFile()">Import deal…</button>
+    <button type="button" onclick="chooseDealFile()">Import deal(s)…</button>
     <input id="import-deal-file"
            type="file"
-           accept=".pbn,.lin,.dlm,.txt,text/plain"
+           accept=".pbn,.lin,.dlm,.txt,.pdf,text/plain,application/pdf"
            hidden
            onchange="handleDealFileSelected(this)">
     <select id="sample-deals"
@@ -54,6 +54,23 @@
         <option value="" selected disabled>Sample deals…</option>
     </select>
     <button type="button" onclick="rotateClockwise()">Rotate the hands clockwise</button>
+
+    <div id="hand-record" class="hand-record" hidden>
+        <div id="hand-record-nav" class="hand-record-nav" hidden>
+            <button type="button"
+                    id="hand-record-prev"
+                    onclick="handRecordPrev()"
+                    aria-label="Previous board"
+                    disabled>◀</button>
+            <span id="hand-record-label" aria-live="polite"></span>
+            <button type="button"
+                    id="hand-record-next"
+                    onclick="handRecordNext()"
+                    aria-label="Next board"
+                    disabled>▶</button>
+        </div>
+        <p id="hand-record-status" class="hand-record-status" aria-live="polite"></p>
+    </div>
 
     <div id="play-bar" hidden>
         <button type="button" id="edit-hands" onclick="exitPlay()">Edit hands</button>
@@ -204,11 +221,21 @@
                 play mode.
             </p>
         </details>
+        <details>
+            <summary>Can I load a tournament hand-record PDF?</summary>
+            <p>
+                Yes. Use Import deal(s)… and pick a hand-record PDF
+                (BridgeComposer / ACBL or compass layouts such as Madeira /
+                MiBO) or a multi-deal PBN file. Use the arrows to step through
+                numbered boards.
+            </p>
+        </details>
     </section>
 
     <script src="dds_web_wasm_bin.js"></script>
     <script src="dds_web_wasm.js"></script>
     <script src="dds_web_deal_import.js"></script>
+    <script src="dds_web_pdf_import.js"></script>
     <script src="dds_web_core.js"></script>
     <script src="dds_web_solve.js"></script>
     <script src="dds_web_play.js"></script>

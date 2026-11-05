@@ -192,6 +192,12 @@ function createMockDocument(initialValues = {}) {
     makeElement("play-score");
     makeElement("edit-hands");
     makeElement("result-table-hint");
+    makeElement("hand-record").hidden = true;
+    makeElement("hand-record-nav");
+    makeElement("hand-record-prev");
+    makeElement("hand-record-next");
+    makeElement("hand-record-label");
+    makeElement("hand-record-status");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -337,6 +343,14 @@ function runDdsWebScripts(context) {
         ),
         context,
         { filename: "dds_web_deal_import.js" }
+    );
+    runInContext(
+        readFileSync(
+            findWebJsPath("dds_web_pdf_import.js", "DDS_WEB_PDF_IMPORT_JS"),
+            "utf8"
+        ),
+        context,
+        { filename: "dds_web_pdf_import.js" }
     );
     runInContext(
         readFileSync(findWebJsPath("dds_web_core.js", "DDS_WEB_CORE_JS"), "utf8"),
@@ -5315,6 +5329,117 @@ test("parseFirstDealFromText uses the first PBN deal when several are present", 
     assert.equal(deal.west, "53.K2.9852.QT832");
 });
 
+test("parseAllDealsFromText returns every PBN Deal tag in order", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Board "1"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "2"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "1");
+    assert.equal(deals[0].deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deals[1].boardNumber, "2");
+    assert.equal(deals[1].deal.north, "QT9.A8765432.KJ.");
+});
+
+test("parseAllDealsFromText numbers untitled PBN deals from 1", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Deal "${LIST1_PBN}"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "1");
+    assert.equal(deals[1].boardNumber, "2");
+});
+
+test("parseAllDealsFromText does not reuse a prior Board tag for an untitled deal", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Board "3"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "3");
+    assert.equal(deals[1].boardNumber, "2");
+});
+
+test("parseAllDealsFromText keeps only the first copy of identical PBN deals", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const text = [
+        `[Board "1"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "2"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "3"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+        `[Board "4"]`,
+        `[Deal "${LIST1_PBN}"]`,
+    ].join("\n");
+    const deals = ctx.parseAllDealsFromText(text);
+    assert.equal(deals.length, 2);
+    assert.equal(deals[0].boardNumber, "1");
+    assert.equal(deals[0].deal.north, "Q87.T8.AKJT64.J6");
+    assert.equal(deals[1].boardNumber, "3");
+    assert.equal(deals[1].deal.north, "QT9.A8765432.KJ.");
+});
+
+test("importDealFromText treats a PBN of only duplicate deals as a single deal", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const text = [
+        `[Board "1"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "2"]`,
+        `[Deal "${LIST1_PBN}"]`,
+    ].join("\n");
+    const err = ctx.importDealFromText(text);
+    assert.equal(err, "");
+    assert.equal(document.element("north_spades").value, "Q87");
+    assert.equal(document.element("hand-record").hidden, true);
+    assert.equal(document.element("hand-record-nav").hidden, true);
+});
+
+test("importDealFromText loads multiple PBN deals into board navigation", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const text = [
+        `[Board "3"]`,
+        `[Deal "${LIST1_PBN}"]`,
+        `[Board "4"]`,
+        `[Deal "${EVERYONE_3N_PBN}"]`,
+    ].join("\n");
+    const err = ctx.importDealFromText(text);
+    assert.equal(err, "");
+    assert.equal(document.element("north_spades").value, "Q87");
+    assert.equal(document.element("hand-record").hidden, false);
+    assert.equal(document.element("hand-record-nav").hidden, false);
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 3 of 2"
+    );
+    ctx.handRecordNext();
+    assert.equal(document.element("north_spades").value, "QT9");
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 4 of 2"
+    );
+});
+
 test("parseFirstDealFromText reads a dtest .txt PBN line", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const text =
@@ -5502,6 +5627,222 @@ test("handleDealFileSelected ignores a superseded slower file read", async () =>
     await first;
 
     assert.equal(document.element("north_spades").value, "AKQJ");
+});
+
+test("handleDealFileSelected ignores a superseded slower PDF import", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    let releaseSlow;
+    const slowBytes = new Promise((resolve) => {
+        releaseSlow = resolve;
+    });
+    const slowPdfHands = {
+        north: { spades: "AKQJ", hearts: "AKQJ", diamonds: "T98", clubs: "T9" },
+        east: { spades: "5432", hearts: "5432", diamonds: "32", clubs: "432" },
+        south: { spades: "T98", hearts: "T9", diamonds: "AKQJ", clubs: "AKQJ" },
+        west: { spades: "76", hearts: "876", diamonds: "7654", clubs: "8765" },
+    };
+    ctx.loadAllBoardsFromHandRecordPdf = async (bytes) => {
+        if (bytes && bytes.byteLength === 1) {
+            await slowBytes;
+            return [{ boardNumber: "99", hands: slowPdfHands }];
+        }
+        return [
+            {
+                boardNumber: "1",
+                hands: {
+                    north: {
+                        spades: "AJ7",
+                        hearts: "QT3",
+                        diamonds: "T7",
+                        clubs: "QJT86",
+                    },
+                    east: {
+                        spades: "82",
+                        hearts: "9764",
+                        diamonds: "K85",
+                        clubs: "A742",
+                    },
+                    south: {
+                        spades: "KQ64",
+                        hearts: "K",
+                        diamonds: "QJ642",
+                        clubs: "K95",
+                    },
+                    west: {
+                        spades: "T953",
+                        hearts: "AJ852",
+                        diamonds: "A93",
+                        clubs: "3",
+                    },
+                },
+            },
+        ];
+    };
+    const slowFile = {
+        name: "slow.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+    };
+    const fastFile = {
+        name: "fast.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new Uint8Array([2, 3]).buffer,
+    };
+    const input = { files: [slowFile] };
+
+    const first = ctx.handleDealFileSelected(input);
+    input.files = [fastFile];
+    await ctx.handleDealFileSelected(input);
+    releaseSlow();
+    await first;
+
+    assert.equal(document.element("north_spades").value, "AJ7");
+    assert.equal(ctx.handRecordBoards.length, 1);
+    assert.equal(ctx.handRecordBoards[0].boardNumber, "1");
+});
+
+test("superseded PDF import does not clear a newer import's progress", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    let releaseSlowParse;
+    const slowPdfHands = {
+        north: { spades: "AKQJ", hearts: "AKQJ", diamonds: "T98", clubs: "T9" },
+        east: { spades: "5432", hearts: "5432", diamonds: "32", clubs: "432" },
+        south: { spades: "T98", hearts: "T9", diamonds: "AKQJ", clubs: "AKQJ" },
+        west: { spades: "76", hearts: "876", diamonds: "7654", clubs: "8765" },
+    };
+    ctx.loadAllBoardsFromHandRecordPdf = async (bytes) => {
+        if (bytes && bytes.byteLength === 1) {
+            await new Promise((resolve) => {
+                releaseSlowParse = resolve;
+            });
+            return [{ boardNumber: "99", hands: slowPdfHands }];
+        }
+        return [
+            {
+                boardNumber: "1",
+                hands: {
+                    north: {
+                        spades: "AJ7",
+                        hearts: "QT3",
+                        diamonds: "T7",
+                        clubs: "QJT86",
+                    },
+                    east: {
+                        spades: "82",
+                        hearts: "9764",
+                        diamonds: "K85",
+                        clubs: "A742",
+                    },
+                    south: {
+                        spades: "KQ64",
+                        hearts: "K",
+                        diamonds: "QJ642",
+                        clubs: "K95",
+                    },
+                    west: {
+                        spades: "T953",
+                        hearts: "AJ852",
+                        diamonds: "A93",
+                        clubs: "3",
+                    },
+                },
+            },
+        ];
+    };
+    let resolveFastRead;
+    const slowFile = {
+        name: "slow.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+    };
+    const fastFile = {
+        name: "fast.pdf",
+        type: "application/pdf",
+        arrayBuffer: () =>
+            new Promise((resolve) => {
+                resolveFastRead = resolve;
+            }),
+    };
+    const input = { files: [slowFile] };
+
+    const first = ctx.handleDealFileSelected(input);
+    await Promise.resolve();
+    await Promise.resolve();
+    input.files = [fastFile];
+    const second = ctx.handleDealFileSelected(input);
+    await Promise.resolve();
+    assert.match(
+        document.element("hand-record-status").textContent,
+        /Reading PDF/i
+    );
+    assert.equal(document.element("hand-record").hidden, false);
+
+    releaseSlowParse();
+    await first;
+
+    assert.match(
+        document.element("hand-record-status").textContent,
+        /Reading PDF/i
+    );
+    assert.equal(document.element("hand-record").hidden, false);
+
+    resolveFastRead(new Uint8Array([2, 3]).buffer);
+    await second;
+    assert.equal(document.element("north_spades").value, "AJ7");
+});
+
+test("loadHandRecordFromFile clears a prior single-board session before progress", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    ctx.handRecordBoards = [
+        {
+            boardNumber: "17",
+            hands: {
+                north: { spades: "942", hearts: "Q98532", diamonds: "43", clubs: "A8" },
+                east: { spades: "JT653", hearts: "", diamonds: "652", clubs: "JT976" },
+                south: { spades: "Q87", hearts: "KJ64", diamonds: "A8", clubs: "Q432" },
+                west: { spades: "AK", hearts: "AT7", diamonds: "KQJT97", clubs: "K5" },
+            },
+        },
+    ];
+    ctx.handRecordIndex = 0;
+    ctx.updateHandRecordNav();
+
+    let resolveParse;
+    const parseStarted = new Promise((resolve) => {
+        resolveParse = resolve;
+    });
+    ctx.loadAllBoardsFromHandRecordPdf = () => {
+        resolveParse();
+        return new Promise(() => {});
+    };
+
+    const pending = ctx.loadHandRecordFromFile({
+        name: "next.pdf",
+        type: "application/pdf",
+        arrayBuffer: async () => new ArrayBuffer(4),
+    });
+    await parseStarted;
+
+    assert.equal(ctx.handRecordBoards.length, 0);
+    assert.match(document.element("hand-record-status").textContent, /Reading PDF|Parsing/i);
+    assert.equal(document.element("hand-record").hidden, false);
+    // Leave the hung parse; generation isolation is covered elsewhere.
+    void pending;
 });
 
 test("refreshDdTable clears Computing when abandoning a stale PBN", async () => {
@@ -6809,4 +7150,635 @@ test("play score stays NS 0 until a trick completes, then updates", () => {
     ctx.playState.pendingDiffs = { S2: 0 };
     ctx.tryPlayCard("south", "S2", false);
     assert.equal(document.element("play-score").textContent, "NS 1 – EW 0");
+});
+
+// --- Hand-record PDF (BridgeComposer / ACBL) ---
+
+/** Minimal coordinate fixture for board 17 from 262ROTH5F1.pdf (page 1). */
+function board17PdfItems() {
+    const sp = "\u00aa";
+    const ht = "\u00a9";
+    const di = "\u00a8";
+    const cl = "\u00a7";
+    const voidMark = "\u0097";
+    return [
+        { x: 2556, y: 1344, text: "N Deals" },
+        { x: 2954, y: 1330, text: sp },
+        { x: 3054, y: 1327, text: "942" },
+        { x: 2556, y: 1278, text: "None Vul" },
+        { x: 2954, y: 1249, text: ht },
+        { x: 3054, y: 1246, text: "Q98532" },
+        { x: 2954, y: 1168, text: di },
+        { x: 3054, y: 1165, text: "43" },
+        { x: 3468, y: 1165, text: "17" },
+        { x: 2954, y: 1086, text: cl },
+        { x: 3054, y: 1084, text: "A8" },
+        { x: 2556, y: 1006, text: sp },
+        { x: 2656, y: 1003, text: "AK" },
+        { x: 3328, y: 1006, text: sp },
+        { x: 3428, y: 1003, text: "J10653" },
+        { x: 2556, y: 925, text: ht },
+        { x: 2656, y: 922, text: "A107" },
+        { x: 3328, y: 925, text: ht },
+        { x: 3428, y: 922, text: voidMark },
+        { x: 2556, y: 844, text: di },
+        { x: 2656, y: 841, text: "KQJ1097" },
+        { x: 3328, y: 844, text: di },
+        { x: 3428, y: 841, text: "652" },
+        { x: 2556, y: 762, text: cl },
+        { x: 2656, y: 760, text: "K5" },
+        { x: 3328, y: 762, text: cl },
+        { x: 3428, y: 760, text: "J10976" },
+        { x: 2954, y: 682, text: sp },
+        { x: 3054, y: 679, text: "Q87" },
+        { x: 2735, y: 634, text: "6" },
+        { x: 2954, y: 601, text: ht },
+        { x: 3054, y: 598, text: "KJ64" },
+        { x: 2634, y: 553, text: "20" },
+        { x: 2795, y: 553, text: "2" },
+        { x: 2954, y: 520, text: di },
+        { x: 3054, y: 517, text: "A8" },
+        { x: 2715, y: 472, text: "12" },
+        { x: 2954, y: 438, text: cl },
+        { x: 3054, y: 436, text: "Q432" },
+        { x: 3756, y: 1344, text: "E Deals" },
+        { x: 4154, y: 1330, text: sp },
+        { x: 4254, y: 1327, text: "K4" },
+    ];
+}
+
+function findHandRecordPdfPath(filename = "262ROTH5F1.pdf") {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const adjacent = join(here, "testdata", filename);
+    if (existsSync(adjacent)) {
+        return adjacent;
+    }
+    for (const base of [process.env.TEST_SRCDIR, process.env.RUNFILES_DIR]) {
+        if (!base) {
+            continue;
+        }
+        for (const sub of [
+            `web/tests/testdata/${filename}`,
+            `_main/web/tests/testdata/${filename}`,
+        ]) {
+            const candidate = join(base, sub);
+            if (existsSync(candidate)) {
+                return candidate;
+            }
+        }
+    }
+    return null;
+}
+
+/** Minimal coordinate fixture for Madeira/MiBO board 1 (compass-anchored). */
+function madeiraBoard1PdfItems() {
+    const sp = "\u00aa";
+    const ht = "\u00a9";
+    const di = "\u00a8";
+    const cl = "\u00a7";
+    return [
+        { x: 1425.5, y: 5663.2, text: "1" },
+        { x: 1378.7, y: 5580.4, text: "N / none" },
+        { x: 865.1, y: 5413.6, text: "N" },
+        { x: 807.5, y: 5334.4, text: "W" },
+        { x: 925.1, y: 5334.4, text: "E" },
+        { x: 866.3, y: 5255.2, text: "S" },
+        { x: 741.5, y: 5752, text: sp },
+        { x: 819.5, y: 5752, text: "AJ7" },
+        { x: 741.5, y: 5672.8, text: ht },
+        { x: 819.5, y: 5672.8, text: "Q103" },
+        { x: 741.5, y: 5593.6, text: di },
+        { x: 819.5, y: 5593.6, text: "107" },
+        { x: 741.5, y: 5514.4, text: cl },
+        { x: 819.5, y: 5514.4, text: "QJ1086" },
+        { x: 994.7, y: 5435.2, text: sp },
+        { x: 1072.7, y: 5435.2, text: "82" },
+        { x: 376.7, y: 5435.2, text: sp },
+        { x: 454.7, y: 5435.2, text: "10953" },
+        { x: 994.7, y: 5356, text: ht },
+        { x: 1072.7, y: 5356, text: "9764" },
+        { x: 376.7, y: 5356, text: ht },
+        { x: 454.7, y: 5356, text: "AJ852" },
+        { x: 994.7, y: 5276.8, text: di },
+        { x: 1072.7, y: 5276.8, text: "K85" },
+        { x: 376.7, y: 5276.8, text: di },
+        { x: 454.7, y: 5276.8, text: "A93" },
+        { x: 994.7, y: 5197.6, text: cl },
+        { x: 1072.7, y: 5197.6, text: "A742" },
+        { x: 376.7, y: 5197.6, text: cl },
+        { x: 454.7, y: 5197.6, text: "3" },
+        { x: 741.5, y: 5118.4, text: sp },
+        { x: 819.5, y: 5118.4, text: "KQ64" },
+        { x: 741.5, y: 5039.2, text: ht },
+        { x: 819.5, y: 5039.2, text: "K" },
+        { x: 741.5, y: 4960, text: di },
+        { x: 819.5, y: 4960, text: "QJ642" },
+        { x: 741.5, y: 4880.8, text: cl },
+        { x: 819.5, y: 4880.8, text: "K95" },
+    ];
+}
+
+test("normalizeBridgeHolding maps 10 to T and void to empty", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(ctx.normalizeBridgeHolding("J10653"), "JT653");
+    assert.equal(ctx.normalizeBridgeHolding("10"), "T");
+    assert.equal(ctx.normalizeBridgeHolding("A107"), "AT7");
+    assert.equal(ctx.normalizeBridgeHolding("KQJ1097"), "KQJT97");
+    assert.equal(ctx.normalizeBridgeHolding("\u0097"), "");
+    assert.equal(ctx.normalizeBridgeHolding("-"), "");
+});
+
+test("parseBridgeComposerBoard extracts board 17 seats", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands = ctx.parseBridgeComposerBoard(board17PdfItems(), 17);
+    assert.equal(
+        JSON.stringify(hands),
+        JSON.stringify({
+            north: {
+                spades: "942",
+                hearts: "Q98532",
+                diamonds: "43",
+                clubs: "A8",
+            },
+            east: {
+                spades: "JT653",
+                hearts: "",
+                diamonds: "652",
+                clubs: "JT976",
+            },
+            south: {
+                spades: "Q87",
+                hearts: "KJ64",
+                diamonds: "A8",
+                clubs: "Q432",
+            },
+            west: {
+                spades: "AK",
+                hearts: "AT7",
+                diamonds: "KQJT97",
+                clubs: "K5",
+            },
+        })
+    );
+});
+
+test("parseBridgeComposerBoard rejects unknown board", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.throws(
+        () => ctx.parseBridgeComposerBoard(board17PdfItems(), 99),
+        /board 99/
+    );
+});
+
+test("parseAllBridgeComposerBoards returns board 17 from fixture", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const boards = ctx.parseAllBridgeComposerBoards(board17PdfItems());
+    assert.equal(boards.length, 1);
+    assert.equal(boards[0].boardNumber, "17");
+    assert.equal(boards[0].hands.north.spades, "942");
+    assert.equal(boards[0].hands.west.diamonds, "KQJT97");
+});
+
+test("handsToDottedDeal formats NESW dotted holdings", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const dotted = ctx.handsToDottedDeal({
+        north: { spades: "942", hearts: "Q98532", diamonds: "43", clubs: "A8" },
+        east: { spades: "JT653", hearts: "", diamonds: "652", clubs: "JT976" },
+        south: { spades: "Q87", hearts: "KJ64", diamonds: "A8", clubs: "Q432" },
+        west: { spades: "AK", hearts: "AT7", diamonds: "KQJT97", clubs: "K5" },
+    });
+    // JSON: Node VM arrays are a different realm than the test runner's Array.
+    assert.equal(
+        JSON.stringify(dotted),
+        JSON.stringify([
+            "942.Q98532.43.A8",
+            "JT653..652.JT976",
+            "Q87.KJ64.A8.Q432",
+            "AK.AT7.KQJT97.K5",
+        ])
+    );
+});
+
+test("handleDealFileSelected reports when PDF import helper is missing", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.loadAllBoardsFromHandRecordPdf = undefined;
+    await ctx.handleDealFileSelected({
+        files: [
+            {
+                name: "boards.pdf",
+                type: "application/pdf",
+                arrayBuffer: async () => new ArrayBuffer(8),
+            },
+        ],
+    });
+    assert.match(
+        document.element("hand-record-status").textContent,
+        /dds_web_pdf_import\.js/
+    );
+    assert.ok(document.element("hand-record-status").classList.contains("error"));
+    // Errors still surface in the hand-record area even with no boards.
+    assert.equal(document.element("hand-record").hidden, false);
+});
+
+test("handleDealFileSelected loads a hand-record PDF through Import deal(s)…", async () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    // Override after scripts load — pdf_import assigns this global first.
+    ctx.loadAllBoardsFromHandRecordPdf = () =>
+        Promise.resolve([
+            {
+                boardNumber: "1",
+                hands: {
+                    north: {
+                        spades: "AJ7",
+                        hearts: "QT3",
+                        diamonds: "T7",
+                        clubs: "QJT86",
+                    },
+                    east: {
+                        spades: "82",
+                        hearts: "9764",
+                        diamonds: "K85",
+                        clubs: "A742",
+                    },
+                    south: {
+                        spades: "KQ64",
+                        hearts: "K",
+                        diamonds: "QJ642",
+                        clubs: "K95",
+                    },
+                    west: {
+                        spades: "T953",
+                        hearts: "AJ852",
+                        diamonds: "A93",
+                        clubs: "3",
+                    },
+                },
+            },
+        ]);
+    const input = {
+        files: [
+            {
+                name: "s261105m_1.pdf",
+                type: "application/pdf",
+                arrayBuffer: async () => new ArrayBuffer(8),
+                text: async () => {
+                    throw new Error("PDF must not be read as text");
+                },
+            },
+        ],
+    };
+    await ctx.handleDealFileSelected(input);
+    assert.equal(document.element("north_spades").value, "AJ7");
+    // Single-board imports leave the hand-record chrome hidden.
+    assert.equal(document.element("hand-record").hidden, true);
+    assert.equal(document.element("hand-record-nav").hidden, true);
+    // A trailing solve may paint WASM/Computing status; PDF import itself
+    // must not leave a parse error in #result.
+    assert.doesNotMatch(
+        document.element("result").innerHTML,
+        /hand-record|BridgeComposer|compass|Could not read the selected PDF/i
+    );
+});
+
+test("showHandRecordBoard hides the hand-record area for one board and shows it for multiple", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    const board17 = {
+        boardNumber: "17",
+        hands: {
+            north: {
+                spades: "942",
+                hearts: "Q98532",
+                diamonds: "43",
+                clubs: "A8",
+            },
+            east: {
+                spades: "JT653",
+                hearts: "",
+                diamonds: "652",
+                clubs: "JT976",
+            },
+            south: {
+                spades: "Q87",
+                hearts: "KJ64",
+                diamonds: "A8",
+                clubs: "Q432",
+            },
+            west: {
+                spades: "AK",
+                hearts: "AT7",
+                diamonds: "KQJT97",
+                clubs: "K5",
+            },
+        },
+    };
+    ctx.handRecordBoards = [board17];
+    ctx.showHandRecordBoard(0);
+    assert.equal(document.element("hand-record").hidden, true);
+    assert.equal(document.element("hand-record-nav").hidden, true);
+    assert.equal(document.element("north_spades").value, "942");
+
+    ctx.handRecordBoards = [
+        board17,
+        {
+            boardNumber: "18",
+            hands: {
+                north: {
+                    spades: "AKQ",
+                    hearts: "AKQ",
+                    diamonds: "AKQ",
+                    clubs: "AKQJT",
+                },
+                east: {
+                    spades: "234",
+                    hearts: "234",
+                    diamonds: "234",
+                    clubs: "23456",
+                },
+                south: {
+                    spades: "567",
+                    hearts: "567",
+                    diamonds: "567",
+                    clubs: "789",
+                },
+                west: {
+                    spades: "JT98",
+                    hearts: "JT98",
+                    diamonds: "JT98",
+                    clubs: "",
+                },
+            },
+        },
+    ];
+    ctx.showHandRecordBoard(0);
+    assert.equal(document.element("hand-record").hidden, false);
+    assert.equal(document.element("hand-record-nav").hidden, false);
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 17 of 2"
+    );
+});
+
+test("showHandRecordBoard fills the diagram and updates nav", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document, {
+        scheduleDealSolve() {
+            return Promise.resolve();
+        },
+    });
+    ctx.handRecordBoards = [
+        {
+            boardNumber: "17",
+            hands: {
+                north: {
+                    spades: "942",
+                    hearts: "Q98532",
+                    diamonds: "43",
+                    clubs: "A8",
+                },
+                east: {
+                    spades: "JT653",
+                    hearts: "",
+                    diamonds: "652",
+                    clubs: "JT976",
+                },
+                south: {
+                    spades: "Q87",
+                    hearts: "KJ64",
+                    diamonds: "A8",
+                    clubs: "Q432",
+                },
+                west: {
+                    spades: "AK",
+                    hearts: "AT7",
+                    diamonds: "KQJT97",
+                    clubs: "K5",
+                },
+            },
+        },
+        {
+            boardNumber: "18",
+            hands: {
+                north: {
+                    spades: "AKQ",
+                    hearts: "AKQ",
+                    diamonds: "AKQ",
+                    clubs: "AKQJT",
+                },
+                east: {
+                    spades: "234",
+                    hearts: "234",
+                    diamonds: "234",
+                    clubs: "23456",
+                },
+                south: {
+                    spades: "567",
+                    hearts: "567",
+                    diamonds: "567",
+                    clubs: "789",
+                },
+                west: {
+                    spades: "JT98",
+                    hearts: "JT98",
+                    diamonds: "JT98",
+                    clubs: "",
+                },
+            },
+        },
+    ];
+    ctx.showHandRecordBoard(0);
+    assert.equal(document.element("north_spades").value, "942");
+    assert.equal(document.element("hand-record-nav").hidden, false);
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 17 of 2"
+    );
+    assert.equal(document.element("hand-record-status").textContent || "", "");
+    assert.equal(document.element("hand-record-prev").disabled, true);
+    assert.equal(document.element("hand-record-next").disabled, false);
+
+    ctx.handRecordNext();
+    assert.equal(document.element("north_spades").value, "AKQ");
+    assert.equal(
+        document.element("hand-record-label").textContent,
+        "Board 18 of 2"
+    );
+    assert.equal(document.element("hand-record-status").textContent || "", "");
+    assert.equal(document.element("hand-record-prev").disabled, false);
+    assert.equal(document.element("hand-record-next").disabled, true);
+
+    ctx.handRecordPrev();
+    assert.equal(document.element("north_spades").value, "942");
+});
+
+test("extractPdfTextItems + parseBridgeComposerBoard loads board 17 from ACBL PDF", async () => {
+    const pdfPath = findHandRecordPdfPath();
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const items = await ctx.extractPdfTextItems(bytes);
+    const hands = ctx.parseBridgeComposerBoard(items, 17);
+    assert.equal(hands.north.spades, "942");
+    assert.equal(hands.east.hearts, "");
+    assert.equal(hands.west.diamonds, "KQJT97");
+    assert.equal(hands.south.spades, "Q87");
+});
+
+test("loadAllBoardsFromHandRecordPdf returns multiple boards", async () => {
+    const pdfPath = findHandRecordPdfPath();
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+    assert.ok(boards.length >= 2);
+    const board17 = boards.find((board) => board.boardNumber === "17");
+    assert.ok(board17);
+    assert.equal(board17.hands.north.spades, "942");
+    // Sorted ascending by board number.
+    for (let i = 1; i < boards.length; i++) {
+        assert.ok(
+            Number(boards[i - 1].boardNumber) < Number(boards[i].boardNumber)
+        );
+    }
+});
+
+test("hand-record-nav[hidden] overrides author display:inline-flex", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    assert.match(css, /#hand-record-nav\[hidden\]\s*\{[^}]*display:\s*none/s);
+});
+
+test("loadAllBoardsFromHandRecordPdf returns all 36 ACBL boards", async () => {
+    // Multi-page BridgeComposer sheets reuse absolute Td coordinates per page.
+    // Merging streams without a page offset used to drop/collide boards so only
+    // a mid-range subset (e.g. 10–15) survived.
+    const pdfPath = findHandRecordPdfPath("262ROTH5F1.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+
+    assert.equal(boards.length, 36);
+    // Spread into this realm — vm sandbox arrays confuse assert.deepEqual.
+    assert.deepEqual(
+        [...boards.map((board) => board.boardNumber)],
+        Array.from({ length: 36 }, (_, i) => String(i + 1))
+    );
+    assert.equal(boards[0].hands.north.spades, "K75");
+    assert.equal(boards[1].hands.north.spades, "T2");
+    assert.equal(boards[16].hands.north.spades, "942");
+    assert.equal(boards[35].hands.south.spades, "AKQJT");
+});
+
+test("extractPdfTextItems rejects trailing junk like browser DecompressionStream", async () => {
+    const pdfPath = findHandRecordPdfPath();
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) => {
+        if (
+            bytes.length > 0
+            && (bytes[bytes.length - 1] === 0x0a
+                || bytes[bytes.length - 1] === 0x0d
+                || bytes[bytes.length - 1] === 0x20)
+        ) {
+            throw new Error(
+                "Trailing junk found after the end of the compressed stream"
+            );
+        }
+        return new Uint8Array(inflateSync(Buffer.from(bytes)));
+    };
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const items = await ctx.extractPdfTextItems(bytes);
+    const hands = ctx.parseBridgeComposerBoard(items, 17);
+    assert.equal(hands.north.spades, "942");
+    assert.equal(hands.south.spades, "Q87");
+});
+
+test("parseAllCompassHandRecordBoards extracts Madeira board 1 seats", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const boards = ctx.parseAllCompassHandRecordBoards(madeiraBoard1PdfItems());
+    assert.equal(boards.length, 1);
+    assert.equal(boards[0].boardNumber, "1");
+    assert.equal(
+        JSON.stringify(boards[0].hands),
+        JSON.stringify({
+            north: {
+                spades: "AJ7",
+                hearts: "QT3",
+                diamonds: "T7",
+                clubs: "QJT86",
+            },
+            east: {
+                spades: "82",
+                hearts: "9764",
+                diamonds: "K85",
+                clubs: "A742",
+            },
+            south: {
+                spades: "KQ64",
+                hearts: "K",
+                diamonds: "QJ642",
+                clubs: "K95",
+            },
+            west: {
+                spades: "T953",
+                hearts: "AJ852",
+                diamonds: "A93",
+                clubs: "3",
+            },
+        })
+    );
+});
+
+test("loadAllBoardsFromHandRecordPdf loads Madeira MiBO PDF", async () => {
+    const pdfPath = findHandRecordPdfPath("s261105m_1.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+    assert.equal(boards.length, 26);
+    assert.equal(boards[0].boardNumber, "1");
+    assert.equal(boards[0].hands.north.spades, "AJ7");
+    assert.equal(boards[0].hands.west.spades, "T953");
+    assert.equal(boards[0].hands.east.clubs, "A742");
+    assert.equal(boards[0].hands.south.hearts, "K");
+    assert.equal(boards[25].boardNumber, "26");
 });

@@ -30,6 +30,7 @@ class StageGithubPagesTest(unittest.TestCase):
                 "dds_web.css",
                 "dds_web.js",
                 "dds_web_deal_import.js",
+                "dds_web_pdf_import.js",
                 "dds_web_core.js",
                 "dds_web_solve.js",
                 "dds_web_play.js",
@@ -51,6 +52,7 @@ class StageGithubPagesTest(unittest.TestCase):
                 "dds_web.css",
                 "dds_web.js",
                 "dds_web_deal_import.js",
+                "dds_web_pdf_import.js",
                 "dds_web_core.js",
                 "dds_web_solve.js",
                 "dds_web_play.js",
@@ -87,6 +89,7 @@ class StageGithubPagesTest(unittest.TestCase):
         stage = _load_stage_github_pages()
         self.assertIn("coi-serviceworker.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_deal_import.js", stage.DEPLOY_FILES)
+        self.assertIn("dds_web_pdf_import.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_core.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_solve.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_play.js", stage.DEPLOY_FILES)

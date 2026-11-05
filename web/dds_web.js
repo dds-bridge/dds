@@ -6,6 +6,7 @@
 
 // Layers (load before this UI file):
 //   web/dds_web_deal_import.js — file-format parsers
+//   web/dds_web_pdf_import.js — BridgeComposer / ACBL hand-record PDFs
 //   web/dds_web_core.js — Card / holdings / handsToPbn
 //   web/dds_web_solve.js — WASM queue / DD table / play solves
 //   web/dds_web_play.js — card-by-card play state / trick UI
@@ -69,6 +70,10 @@
             fillFormWithTestData
             handleSampleDealSelected
             populateSampleDealsSelect
+            handRecordPrev
+            handRecordNext
+            showHandRecordBoard
+            clearHandRecordSession
             */
 
 // It's also useful to pass the code through
@@ -108,6 +113,7 @@ function handleSampleDealSelected(select) {
     if (!sample) {
         return;
     }
+    clearHandRecordSession();
     // SAMPLE_DEALS.pbn is generated from hands/*.pbn; reuse the import parser.
     const deal = parseFirstDealFromText(`[Deal "${sample.pbn}"]`);
     fillFormWithTestData([
@@ -146,21 +152,217 @@ function populateSampleDealsSelect() {
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
-// must be loaded first; importDealFromText uses global parseFirstDealFromText.
+// must be loaded first; importDealFromText uses global parseAllDealsFromText.
+
+function dottedDealToSuitHands(deal) {
+    const hands = {};
+    for (const direction of DIRECTIONS) {
+        const parts = String(deal[direction] || "").split(".");
+        hands[direction] = {
+            spades: parts[0] || "",
+            hearts: parts[1] || "",
+            diamonds: parts[2] || "",
+            clubs: parts[3] || "",
+        };
+    }
+    return hands;
+}
 
 function importDealFromText(text) {
     try {
-        const deal = parseFirstDealFromText(text);
-        fillFormWithTestData([
-            deal.north,
-            deal.east,
-            deal.south,
-            deal.west,
-        ]);
+        const entries = parseAllDealsFromText(text);
+        if (entries.length === 0) {
+            return "No PBN, LIN, DLM, dtest, or sol-style deal found in the file.";
+        }
+        if (entries.length === 1) {
+            clearHandRecordSession();
+            const deal = entries[0].deal;
+            fillFormWithTestData([
+                deal.north,
+                deal.east,
+                deal.south,
+                deal.west,
+            ]);
+            return "";
+        }
+        handRecordBoards = entries.map(function (entry) {
+            return {
+                boardNumber: entry.boardNumber,
+                hands: dottedDealToSuitHands(entry.deal),
+            };
+        });
+        handRecordIndex = 0;
+        showHandRecordBoard(0);
         return "";
     } catch (err) {
         return err && err.message ? err.message : "Could not import deal.";
     }
+}
+
+// var so Node VM tests can assign ctx.handRecordBoards / handRecordIndex.
+var handRecordBoards = [];
+var handRecordIndex = 0;
+
+function updateHandRecordAreaVisibility() {
+    const area = document.getElementById("hand-record");
+    if (!area) {
+        return;
+    }
+    const status = document.getElementById("hand-record-status");
+    const statusText = status ? String(status.textContent || "").trim() : "";
+    const isError = !!(status && status.classList.contains("error"));
+    // Multi-board nav, import progress (no boards yet), or an error.
+    area.hidden = !(
+        handRecordBoards.length > 1
+        || isError
+        || (handRecordBoards.length === 0 && statusText !== "")
+    );
+}
+
+function setHandRecordStatus(message, isError, statusGeneration) {
+    // Optional generation: stale PDF loaders must not clobber a newer import's
+    // progress or clear it on abort.
+    if (
+        statusGeneration != null
+        && statusGeneration !== dealFileSelectionGeneration
+    ) {
+        return;
+    }
+    const el = document.getElementById("hand-record-status");
+    if (!el) {
+        return;
+    }
+    el.textContent = message || "";
+    el.className = isError ? "hand-record-status error" : "hand-record-status";
+    updateHandRecordAreaVisibility();
+}
+
+function updateHandRecordNav() {
+    const nav = document.getElementById("hand-record-nav");
+    const label = document.getElementById("hand-record-label");
+    const prev = document.getElementById("hand-record-prev");
+    const next = document.getElementById("hand-record-next");
+    if (!nav || !label || !prev || !next) {
+        return;
+    }
+    // Prev/next only matter when more than one board was imported.
+    if (handRecordBoards.length <= 1) {
+        nav.hidden = true;
+        label.textContent = "";
+        prev.disabled = true;
+        next.disabled = true;
+        updateHandRecordAreaVisibility();
+        return;
+    }
+    nav.hidden = false;
+    const board = handRecordBoards[handRecordIndex];
+    label.textContent =
+        "Board " + board.boardNumber + " of " + handRecordBoards.length;
+    prev.disabled = handRecordIndex <= 0;
+    next.disabled = handRecordIndex >= handRecordBoards.length - 1;
+    updateHandRecordAreaVisibility();
+}
+
+function clearHandRecordSession() {
+    handRecordBoards = [];
+    handRecordIndex = 0;
+    updateHandRecordNav();
+    setHandRecordStatus("", false);
+}
+
+function showHandRecordBoard(index) {
+    if (index < 0 || index >= handRecordBoards.length) {
+        return;
+    }
+    handRecordIndex = index;
+    const board = handRecordBoards[handRecordIndex];
+    fillFormWithTestData(handsToDottedDeal(board.hands));
+    updateHandRecordNav();
+    setHandRecordStatus("", false);
+}
+function handRecordPrev() {
+    if (handRecordIndex <= 0) {
+        return;
+    }
+    showHandRecordBoard(handRecordIndex - 1);
+}
+
+function handRecordNext() {
+    if (handRecordIndex >= handRecordBoards.length - 1) {
+        return;
+    }
+    showHandRecordBoard(handRecordIndex + 1);
+}
+
+function isHandRecordPdfFile(file) {
+    if (!file) {
+        return false;
+    }
+    const name = String(file.name || "").toLowerCase();
+    return file.type === "application/pdf" || name.endsWith(".pdf");
+}
+
+/**
+ * Read and parse a hand-record PDF. Does not apply boards to the diagram —
+ * callers must do that after confirming the file selection is still current.
+ * @param {File|{arrayBuffer:function():Promise<ArrayBuffer>,name?:string,type?:string}} file
+ * @param {{isCurrent?:function():boolean, statusGeneration?:number}=} options
+ * @returns {Promise<object[]|null>} parsed boards, or null if superseded mid-load
+ */
+function loadHandRecordFromFile(file, options) {
+    const loadAll = globalThis.loadAllBoardsFromHandRecordPdf;
+    if (typeof loadAll !== "function") {
+        return Promise.reject(new Error(
+            "PDF import unavailable (dds_web_pdf_import.js failed to load)"
+        ));
+    }
+    const isCurrent = options && typeof options.isCurrent === "function"
+        ? options.isCurrent
+        : null;
+    const statusGeneration = options && options.statusGeneration != null
+        ? options.statusGeneration
+        : dealFileSelectionGeneration;
+    function stillCurrent() {
+        return !isCurrent || isCurrent();
+    }
+    function abortIfSuperseded() {
+        return !stillCurrent();
+    }
+    function setProgress(message) {
+        setHandRecordStatus(message, false, statusGeneration);
+    }
+    // Drop any prior session so progress chrome is visible for a re-import.
+    clearHandRecordSession();
+    setProgress("Reading PDF…");
+    if (abortIfSuperseded()) {
+        return Promise.resolve(null);
+    }
+    return file.arrayBuffer().then(function (ab) {
+        if (abortIfSuperseded()) {
+            return null;
+        }
+        return new Uint8Array(ab);
+    }).then(function (bytes) {
+        if (bytes == null) {
+            return null;
+        }
+        if (abortIfSuperseded()) {
+            return null;
+        }
+        setProgress("Parsing boards…");
+        if (abortIfSuperseded()) {
+            return null;
+        }
+        return loadAll(bytes);
+    }).then(function (boards) {
+        if (boards == null) {
+            return null;
+        }
+        if (abortIfSuperseded()) {
+            return null;
+        }
+        return boards;
+    });
 }
 
 function chooseDealFile() {
@@ -174,6 +376,12 @@ function chooseDealFile() {
 
 let dealFileSelectionGeneration = 0;
 
+function dealFileSelectionIsCurrent(input, file, selectionGeneration) {
+    return selectionGeneration === dealFileSelectionGeneration
+        && input.files
+        && input.files[0] === file;
+}
+
 async function handleDealFileSelected(input) {
     const file = input && input.files && input.files[0];
     if (!file) {
@@ -182,14 +390,50 @@ async function handleDealFileSelected(input) {
 
     const selectionGeneration = ++dealFileSelectionGeneration;
     const result = document.getElementById("result");
+
+    if (isHandRecordPdfFile(file)) {
+        try {
+            const boards = await loadHandRecordFromFile(file, {
+                statusGeneration: selectionGeneration,
+                isCurrent: function () {
+                    return dealFileSelectionIsCurrent(
+                        input,
+                        file,
+                        selectionGeneration
+                    );
+                },
+            });
+            if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
+                return;
+            }
+            if (!boards) {
+                return;
+            }
+            handRecordBoards = boards;
+            handRecordIndex = 0;
+            showHandRecordBoard(0);
+            if (result) {
+                result.innerHTML = "";
+            }
+        } catch (err) {
+            if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
+                return;
+            }
+            clearHandRecordSession();
+            setHandRecordStatus(
+                String(err && err.message ? err.message : err),
+                true,
+                selectionGeneration
+            );
+            invalidateActiveDdTableRequest();
+        }
+        return;
+    }
+
     try {
         const text = await file.text();
         // A newer pick (or cleared selection) supersedes this read.
-        if (
-            selectionGeneration !== dealFileSelectionGeneration
-            || !input.files
-            || input.files[0] !== file
-        ) {
+        if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
             return;
         }
         const err = importDealFromText(text);
@@ -204,11 +448,7 @@ async function handleDealFileSelected(input) {
             result.innerHTML = "";
         }
     } catch (err) {
-        if (
-            selectionGeneration !== dealFileSelectionGeneration
-            || !input.files
-            || input.files[0] !== file
-        ) {
+        if (!dealFileSelectionIsCurrent(input, file, selectionGeneration)) {
             return;
         }
         invalidateActiveDdTableRequest();
@@ -244,6 +484,7 @@ function clearTestData() {
     if (typeof exitPlay === "function") {
         exitPlay();
     }
+    clearHandRecordSession();
     clear_results();
 
     for (const element of hand_elements()) {

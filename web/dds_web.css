@@ -34,6 +34,41 @@
   font-weight: 600;
 }
 
+.hand-record {
+  max-width: 800px;
+  margin: 0.75rem 0 0;
+}
+
+.hand-record-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  vertical-align: middle;
+}
+
+#hand-record-nav[hidden] {
+  display: none !important;
+}
+
+.hand-record-nav button {
+  min-width: 2rem;
+}
+
+#hand-record-label {
+  min-width: 9rem;
+  text-align: center;
+}
+
+.hand-record-status {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  min-height: 1.25em;
+}
+
+.hand-record-status.error {
+  color: #a00;
+}
+
 .faq {
   max-width: 1100px;
   margin: 1.5rem 0 2rem;

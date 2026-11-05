@@ -51,6 +51,7 @@ class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
             "What is DDS Web?",
             "Does my deal leave my browser?",
             "How do I play through a contract?",
+            "Can I load a tournament hand-record PDF?",
         ):
             self.assertIn(question, text)
         self.assertNotIn("Why won't solving start?", text)
@@ -88,12 +89,39 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
     def test_import_deal_button_and_file_input(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertIn('onclick="chooseDealFile()"', text)
+        self.assertIn(">Import deal(s)…</button>", text)
+        self.assertNotIn(">Import deal…</button>", text)
         self.assertRegex(
             text,
             r'<input[^>]*id="import-deal-file"[^>]*type="file"',
         )
         self.assertIn("handleDealFileSelected(this)", text)
         self.assertIn(".pbn,.lin,.dlm,.txt", text)
+        self.assertRegex(text, r'accept="[^"]*\.pdf[^"]*"')
+        self.assertNotIn("hand-record-file", text)
+        self.assertNotIn("Choose File", text)
+        self.assertNotIn("handleHandRecordFileSelected", text)
+
+    def test_hand_record_pdf_nav_controls(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("hand-record-url", text)
+        self.assertNotIn("PDF URL", text)
+        self.assertNotIn("CORS", text)
+        self.assertNotIn("hand-record-load", text)
+        self.assertNotIn("Load PDF", text)
+        self.assertNotIn("hand-record-file", text)
+        self.assertNotIn("Hand-record boards", text)
+        self.assertNotIn("<fieldset", text)
+        self.assertNotIn("<legend>", text)
+        self.assertRegex(
+            text,
+            r'<div[^>]*id="hand-record"[^>]*\bhidden\b',
+        )
+        self.assertIn('id="hand-record-nav"', text)
+        self.assertIn('onclick="handRecordPrev()"', text)
+        self.assertIn('onclick="handRecordNext()"', text)
+        self.assertIn('id="hand-record-label"', text)
+        self.assertIn('id="hand-record-status"', text)
 
     def test_sample_deals_dropdown_replaces_three_test_deal_buttons(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
@@ -168,14 +196,28 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
             r'<script\s+src="dds_web_play\.js"\s*>\s*</script>',
         )
         import_at = text.index('src="dds_web_deal_import.js"')
+        pdf_at = text.index('src="dds_web_pdf_import.js"')
         core_at = text.index('src="dds_web_core.js"')
         solve_at = text.index('src="dds_web_solve.js"')
         play_at = text.index('src="dds_web_play.js"')
         app_at = text.index('src="dds_web.js"')
-        self.assertLess(import_at, core_at)
+        self.assertLess(import_at, pdf_at)
+        self.assertLess(pdf_at, core_at)
         self.assertLess(core_at, solve_at)
         self.assertLess(solve_at, play_at)
         self.assertLess(play_at, app_at)
+
+    def test_loads_pdf_import_script_before_core(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'<script\s+src="dds_web_pdf_import\.js"\s*>\s*</script>',
+        )
+        import_at = text.index('src="dds_web_deal_import.js"')
+        pdf_at = text.index('src="dds_web_pdf_import.js"')
+        core_at = text.index('src="dds_web_core.js"')
+        self.assertLess(import_at, pdf_at)
+        self.assertLess(pdf_at, core_at)
 
     def test_loads_sample_deals_script_before_dds_web_js(self) -> None:
         # SAMPLE_DEALS is pure data; load before UI so handleSampleDealSelected
