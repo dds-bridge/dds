@@ -165,6 +165,16 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
             r'(?is)<dialog\b[^>]*id="dds-about-dialog"[^>]*'
             r'aria-labelledby="dds-about-title"[^>]*>',
         )
+        # Deal entry starts on North spades without a click; About OK must not
+        # steal the page-level autofocus while the dialog is closed.
+        self.assertRegex(
+            text,
+            r'(?is)<input\b[^>]*id="north_spades"[^>]*\bautofocus\b',
+        )
+        self.assertNotRegex(
+            text,
+            r'(?is)<button\b[^>]*id="dds-about-ok"[^>]*\bautofocus\b',
+        )
 
         self.assertRegex(
             text,

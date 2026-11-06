@@ -95,7 +95,19 @@ function noteHandInputFocus() {
 }
 
 function focusNorthSpades() {
-    // To allow the user to quickly enter a deal
+    // To allow the user to quickly enter a deal. Prefer pulling browsing-context
+    // focus first so refresh stays keyboard-ready without an extra click
+    // (embedded hosts often keep activeElement set while keys go elsewhere).
+    if (
+        typeof window !== "undefined"
+        && typeof window.focus === "function"
+    ) {
+        try {
+            window.focus();
+        } catch (_err) {
+            // Ignore hosts that block window.focus without a user gesture.
+        }
+    }
 
     const input = document.getElementById("north_spades");
     if (input && typeof input.focus === "function") {
@@ -1991,15 +2003,33 @@ function handleCardDragEnd(_event) {
 }
 
 function handleSuitSelectionChange() {
-    // Always redraw: when focus leaves a suit input the caret must clear, or a
-    // blinking insertion point remains while keypresses go to the new target.
+    if (!isHandInput(document.activeElement)) {
+        return;
+    }
+
     noteHandInputFocus();
     updateHandCardDisplays(collectHands());
 }
 
-function handleDocumentFocusIn() {
-    noteHandInputFocus();
-    updateHandCardDisplays(collectHands());
+function handleDocumentFocusOut(event) {
+    // Clear the glyph caret when leaving a suit input. Do not redraw on focusin:
+    // mutating the diagram during focus-in has broken keyboard-ready autofocus
+    // after refresh in some hosts (caret blinks, keys never arrive).
+    if (!isHandInput(event && event.target)) {
+        return;
+    }
+
+    const redraw = function () {
+        noteHandInputFocus();
+        updateHandCardDisplays(collectHands());
+    };
+
+    if (!isHandInput(document.activeElement)) {
+        redraw();
+        return;
+    }
+
+    setTimeout(redraw, 0);
 }
 
 function handleHandSuitClick(event) {
@@ -2978,11 +3008,14 @@ function pageLoad() {
         document.addEventListener("beforeinput", handlePlayHistoryUndo);
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
-    document.addEventListener("focusin", handleDocumentFocusIn);
+    document.addEventListener("focusout", handleDocumentFocusOut);
     if (typeof window !== "undefined" && window.addEventListener) {
         window.addEventListener("resize", fitDiagramFonts);
     }
     updateActionButtons();
     focusNorthSpades();
+    // Programmatic focus may not emit selectionchange; paint the caret so
+    // refresh is ready for typed pips with no extra click.
+    updateHandCardDisplays(collectHands());
 }
 

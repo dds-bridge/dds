@@ -316,6 +316,13 @@ function createMockDocument(initialValues = {}) {
 
     const documentRef = {
         activeElement: null,
+        // Browsing-context focus: default true so existing tests keep autofocus.
+        // Set false to model embedded hosts where activeElement can be set while
+        // OS keypresses still go elsewhere (caret would otherwise lie).
+        _hasFocus: true,
+        hasFocus() {
+            return this._hasFocus !== false;
+        },
         body,
         addEventListener(type, listener) {
             const typeListeners = listeners.get(type) ?? [];
@@ -2561,10 +2568,25 @@ test("leaving a suit input clears the hand-caret so it cannot outlive focus", ()
 
     // Act: focus leaves the suit input (menu label, About OK, etc.).
     document.activeElement = document.body;
-    ctx.handleSuitSelectionChange();
+    ctx.handleDocumentFocusOut({ target: input });
 
     // Assert: no insertion caret without keyboard focus on that suit.
     assert.doesNotMatch(
+        document.element("north_spades_cards").innerHTML,
+        /hand-caret/
+    );
+});
+
+test("pageLoad focuses North spades with a caret so typing needs no click", () => {
+    // Arrange / Act: refresh must leave North's spades keyboard-ready — same as
+    // before the About focus work — without requiring a click on the diagram.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+
+    // Assert
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+    assert.match(
         document.element("north_spades_cards").innerHTML,
         /hand-caret/
     );
