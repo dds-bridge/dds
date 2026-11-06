@@ -361,14 +361,30 @@ function menuLabelForItem(item) {
 function aboutRestoreTarget(returnFocus) {
     // Prefer the suit input the user was editing so Escape from About does not
     // leave a blinking hand-caret while focus sits on the DDS menu label.
+    // Play mode disables those inputs — fall back to the menu label then.
     if (
         lastFocusedHandInput
         && isHandInput(lastFocusedHandInput)
+        && !lastFocusedHandInput.disabled
         && document.getElementById(lastFocusedHandInput.id) === lastFocusedHandInput
     ) {
         return lastFocusedHandInput;
     }
     return returnFocus || null;
+}
+
+function syncDiagramAfterAboutRestore() {
+    // Suit inputs keep the full original deal during play; redrawing from them
+    // would resurrect cards already in the trick/history.
+    if (
+        typeof isPlayMode === "function"
+        && isPlayMode()
+        && typeof renderPlayUi === "function"
+    ) {
+        renderPlayUi();
+        return;
+    }
+    updateHandCardDisplays(collectHands());
 }
 
 function focusAboutRestoreTarget(target) {
@@ -385,7 +401,7 @@ function focusAboutRestoreTarget(target) {
     }
     // Keep the glyph caret in sync with activeElement (selectionchange alone
     // does not always fire for programmatic focus moves).
-    updateHandCardDisplays(collectHands());
+    syncDiagramAfterAboutRestore();
 }
 
 function showAboutDialog(returnFocus) {
@@ -2011,25 +2027,60 @@ function handleSuitSelectionChange() {
     updateHandCardDisplays(collectHands());
 }
 
+function clearHandCarets() {
+    // Prefer removing caret nodes in place so a mousedown→focusout→click/drag
+    // sequence keeps the same .hand-card button identity.
+    const carets = document.querySelectorAll
+        ? Array.prototype.slice.call(document.querySelectorAll(".hand-caret"))
+        : [];
+    if (carets.length) {
+        for (let i = 0; i < carets.length; i++) {
+            const node = carets[i];
+            if (node && node.parentNode) {
+                node.parentNode.removeChild(node);
+            }
+        }
+        return;
+    }
+    // Unit-test hosts store holdings as HTML strings without a live NodeList.
+    for (const direction of DIRECTIONS) {
+        for (const suit of SUITS) {
+            const holder = document.getElementById(direction + "_" + suit + "_cards");
+            if (
+                holder
+                && typeof holder.innerHTML === "string"
+                && holder.innerHTML.indexOf("hand-caret") >= 0
+            ) {
+                holder.innerHTML = holder.innerHTML.replace(
+                    /<span class="hand-caret"[^>]*><\/span>/g,
+                    ""
+                );
+            }
+        }
+    }
+}
+
 function handleDocumentFocusOut(event) {
-    // Clear the glyph caret when leaving a suit input. Do not redraw on focusin:
-    // mutating the diagram during focus-in has broken keyboard-ready autofocus
-    // after refresh in some hosts (caret blinks, keys never arrive).
+    // Clear only the glyph caret when leaving a suit input. A full holding
+    // redraw here replaces card buttons and breaks click-to-place-caret / drag
+    // (mousedown blurs the input before the gesture completes).
     if (!isHandInput(event && event.target)) {
         return;
     }
 
-    const redraw = function () {
-        noteHandInputFocus();
-        updateHandCardDisplays(collectHands());
+    const clear = function () {
+        if (isHandInput(document.activeElement)) {
+            return;
+        }
+        clearHandCarets();
     };
 
     if (!isHandInput(document.activeElement)) {
-        redraw();
+        clear();
         return;
     }
 
-    setTimeout(redraw, 0);
+    setTimeout(clear, 0);
 }
 
 function handleHandSuitClick(event) {

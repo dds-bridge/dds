@@ -2550,31 +2550,88 @@ test("typing at the caret inserts a pip at the insertion point", () => {
     assert.ok(a < q && q < eight);
 });
 
-test("leaving a suit input clears the hand-caret so it cannot outlive focus", () => {
-    // Arrange: caret is painted only while a suit input is focused. If focus
-    // moves elsewhere (About dismiss → menu label) and the caret stays, the
-    // blinking insertion point lies about where keypresses go.
+test("leaving a suit input clears the hand-caret without rewriting card buttons", () => {
+    // Arrange: mousedown on a hand-card blurs the suit input before click/drag
+    // completes. A full holding redraw would replace the button and break the
+    // gesture (e2e: click Q to place caret, then Backspace).
     const document = createMockDocument({ north_spades: "AK" });
     const ctx = loadDdsWeb(document);
     ctx.pageLoad();
     const input = document.element("north_spades");
+    const holder = document.element("north_spades_cards");
     input.focus();
     input.setSelectionRange(2, 2);
     ctx.updateHandCardDisplays(ctx.collectHands());
-    assert.match(
-        document.element("north_spades_cards").innerHTML,
-        /hand-caret/
+    assert.match(holder.innerHTML, /hand-caret/);
+    holder.innerHTML = holder.innerHTML.replace(
+        'data-card="SA"',
+        'data-card="SA" data-test-stable="1"'
     );
 
-    // Act: focus leaves the suit input (menu label, About OK, etc.).
+    // Act: focus leaves the suit input (as on card mousedown).
     document.activeElement = document.body;
     ctx.handleDocumentFocusOut({ target: input });
 
-    // Assert: no insertion caret without keyboard focus on that suit.
-    assert.doesNotMatch(
-        document.element("north_spades_cards").innerHTML,
-        /hand-caret/
-    );
+    // Assert: caret gone; card markup otherwise untouched.
+    assert.doesNotMatch(holder.innerHTML, /hand-caret/);
+    assert.match(holder.innerHTML, /data-test-stable="1"/);
+});
+
+test("About restore skips disabled suit inputs during play", () => {
+    // Arrange: play mode disables suit inputs; lastFocusedHandInput may still
+    // point at the pre-play field. Prefer the menu label so dismiss leaves a
+    // focusable visible target.
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+    const input = document.element("north_spades");
+    input.focus();
+    ctx.noteHandInputFocus();
+    input.disabled = true;
+    const label = { id: "dds-label", focus() {} };
+
+    // Act
+    const target = ctx.aboutRestoreTarget(label);
+
+    // Assert
+    assert.equal(target, label);
+});
+
+test("About restore during play redraws via renderPlayUi not raw suit inputs", () => {
+    // Arrange: suit inputs still hold the original deal; play UI must show
+    // remaining cards only.
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsWeb(document);
+    let playUiCalls = 0;
+    ctx.isPlayMode = () => true;
+    ctx.renderPlayUi = () => {
+        playUiCalls += 1;
+    };
+    const label = {
+        id: "dds-label",
+        focus() {
+            document.activeElement = label;
+        },
+        classList: {
+            _names: new Set(),
+            add(name) {
+                this._names.add(name);
+            },
+            remove(name) {
+                this._names.delete(name);
+            },
+            contains(name) {
+                return this._names.has(name);
+            },
+        },
+        addEventListener() {},
+        removeEventListener() {},
+    };
+
+    // Act
+    ctx.focusAboutRestoreTarget(label);
+
+    // Assert
+    assert.equal(playUiCalls, 1);
 });
 
 test("pageLoad focuses North spades with a caret so typing needs no click", () => {
