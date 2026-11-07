@@ -136,6 +136,7 @@ py_test(
         "tests/dds_web_test.mjs",
         "tests/testdata/262ROTH5F1.pdf",
         "tests/testdata/s261105m_1.pdf",
+        "tests/testdata/2611126-11061430.pdf",
     ],
 )
 

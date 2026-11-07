@@ -8499,3 +8499,41 @@ test("loadAllBoardsFromHandRecordPdf loads Madeira MiBO PDF", async () => {
     assert.equal(boards[0].hands.south.hearts, "K");
     assert.equal(boards[25].boardNumber, "26");
 });
+
+test("loadAllBoardsFromHandRecordPdf loads Deep Finesse regional PDF", async () => {
+    // Deep Finesse sheets use "N Deals" like BridgeComposer but print holdings
+    // as spaced ranks (and ----- for void) without suit-glyph prefixes.
+    const pdfPath = findHandRecordPdfPath("2611126-11061430.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+
+    assert.equal(boards.length, 36);
+    assert.deepEqual(
+        [...boards.map((board) => board.boardNumber)],
+        Array.from({ length: 36 }, (_, i) => String(i + 1))
+    );
+    assert.equal(boards[0].hands.north.spades, "6");
+    assert.equal(boards[0].hands.north.hearts, "987");
+    assert.equal(boards[0].hands.north.diamonds, "Q8");
+    assert.equal(boards[0].hands.north.clubs, "AKQ9854");
+    assert.equal(boards[0].hands.west.spades, "T984");
+    assert.equal(boards[0].hands.west.hearts, "");
+    assert.equal(boards[0].hands.west.diamonds, "K75432");
+    assert.equal(boards[0].hands.west.clubs, "T32");
+    assert.equal(boards[0].hands.east.spades, "KQ3");
+    assert.equal(boards[0].hands.east.hearts, "AJ6543");
+    assert.equal(boards[0].hands.east.diamonds, "AT96");
+    assert.equal(boards[0].hands.east.clubs, "");
+    assert.equal(boards[0].hands.south.spades, "AJ752");
+    assert.equal(boards[0].hands.south.hearts, "KQT2");
+    assert.equal(boards[0].hands.south.diamonds, "J");
+    assert.equal(boards[0].hands.south.clubs, "J76");
+});
