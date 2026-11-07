@@ -36,13 +36,6 @@ constexpr int HASH_MAX = 200;
 #endif
 
 
-struct schedType
-{
-    int number;
-    int repeatOf;
-};
-
-
 /**
  * @brief Scheduler for bridge double dummy solver threading and grouping.
  *
@@ -116,13 +109,7 @@ class Scheduler
         int numThreads;
         int numHands;
 
-        std::vector<int> highCards;
-
-        void InitHighCards();
-
         void SortHands(const enum RunMode mode);
-
-        int Strength(const Deal& dl) const;
 
         void Reset();
 
@@ -164,10 +151,6 @@ class Scheduler
         void InitTimes();
 #endif
 
-        int PredictedTime(
-            Deal& dl,
-            int number) const;
-
 
     public:
 
@@ -202,10 +185,6 @@ class Scheduler
         void RegisterRun(
             const enum RunMode mode,
             const Boards& bds);
-
-        schedType GetNumber(const int thrId);
-
-        int NumGroups() const;
 
     /**
    * @brief Retrieve per-board raw times collected by the scheduler.

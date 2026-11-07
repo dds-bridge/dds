@@ -28,8 +28,6 @@ Scheduler::Scheduler()
     numThreads = 0;
     numHands = 0;
 
-    Scheduler::InitHighCards();
-
 #ifdef DDS_SCHEDULER
     Scheduler::InitTimes();
     for (int i = 0; i < 10000; i++)
@@ -41,34 +39,6 @@ Scheduler::Scheduler()
 #endif
 
     Scheduler::RegisterThreads(1);
-}
-
-
-void Scheduler::InitHighCards()
-{
-    // highCards[i] is a point value of a given suit holding i.
-    // This can be HCP, for instance. Currently it is close to
-    // 6 - 4 - 2 - 1 - 0.5 for A-K-Q-J-T, but with 6.5 for the ace
-    // in order to make the sum come out to 28, an even number, so
-    // that the average number is an integer.
-
-    highCards.resize(1 << 13);
-    const unsigned pA = 1 << 12;
-    const unsigned pK = 1 << 11;
-    const unsigned pQ = 1 << 10;
-    const unsigned pJ = 1 << 9;
-    const unsigned pT = 1 << 8;
-
-    for (unsigned suit = 0; suit < (1 << 13); suit++)
-    {
-        int j = 0;
-        if (suit & pA) j += 13;
-        if (suit & pK) j += 8;
-        if (suit & pQ) j += 4;
-        if (suit & pJ) j += 2;
-        if (suit & pT) j += 1;
-        highCards[suit] = j;
-    }
 }
 
 
@@ -264,7 +234,6 @@ void Scheduler::MakeGroups(const Boards& bds)
         hands[b].first = dl->first;
         hands[b].strain = strain;
         hands[b].fanout = dds::internal::deal_fanout(*dl);
-        // hands[b].strength = Scheduler::Strength(* dl);
 
         lp = &list[strain][key];
 
@@ -717,120 +686,6 @@ void Scheduler::SortTrace()
 }
 
 
-int Scheduler::Strength(const Deal& dl) const
-{
-    // If the strength in all suits is evenly split, then the
-    // "strength" returned is close to 0. Maximum is 49.
-
-    const unsigned sp = (dl.remainCards[0][0] | dl.remainCards[2][0]) >> 2;
-    const unsigned he = (dl.remainCards[0][1] | dl.remainCards[2][1]) >> 2;
-    const unsigned di = (dl.remainCards[0][2] | dl.remainCards[2][2]) >> 2;
-    const unsigned cl = (dl.remainCards[0][3] | dl.remainCards[2][3]) >> 2;
-
-    const int hsp = highCards[sp];
-    const int hhe = highCards[he];
-    const int hdi = highCards[di];
-    const int hcl = highCards[cl];
-
-    int dev = (hsp >= 14 ? hsp - 14 : 14 - hsp) +
-        (hhe >= 14 ? hhe - 14 : 14 - hhe) +
-        (hdi >= 14 ? hdi - 14 : 14 - hdi) +
-        (hcl >= 14 ? hcl - 14 : 14 - hcl);
-
-    if (dev >= 50) dev = 49;
-
-    return dev;
-}
-
-
-schedType Scheduler::GetNumber(const int thrId)
-{
-    const unsigned tu = static_cast<unsigned>(thrId);
-    int g = threadGroup[tu];
-    listType * lp;
-    schedType st;
-
-    if (g == -1)
-    {
-        // Find a new group
-
-        if (currGroup >= numGroups - 1)
-        {
-            // Out of groups. Just an optimization not to touch the
-            // shared variable unnecessarily.
-            st.number = -1;
-            return st;
-        }
-
-        // Atomic.
-        g = ++currGroup;
-
-        if (g >= numGroups)
-        {
-            // Out of groups. currGroup could have changed in the
-            // meantime in another thread, so test again.
-
-            st.number = -1;
-            return st;
-        }
-
-        // A bit inelegant to duplicate this, but seems better than
-        // the alternative, as threadGroup must get set to -1 in some
-        // cases.
-        threadGroup[tu] = g;
-        threadCurrGroup[tu] = g;
-        group[g].repeatNo = 0;
-        group[g].actual = 0;
-    }
-
-    // Continue with existing or new group
-
-    int strain = group[g].strain;
-    int key = group[g].hash;
-
-    lp = &list[strain][key];
-    st.number = lp->first;
-    lp->first = hands[lp->first].next;
-
-    if (group[g].repeatNo == 0)
-    {
-        group[g].head = st.number;
-        st.repeatOf = -1;
-
-        // Only first-solve suited hands for statistics right now.
-        hands[st.number].selectFlag =
-            (hands[st.number].strain == 4 ? 1 : 0);
-    }
-    else
-    {
-        st.repeatOf = group[g].head;
-        //hands[st.number].selectFlag = 0;
-
-        if (hands[st.number].first == hands[st.repeatOf].first)
-            hands[st.number].selectFlag = 0;
-        else if (hands[st.number].strain == 4)
-            hands[st.number].selectFlag = 1;
-        else
-            hands[st.number].selectFlag = 0;
-    }
-
-    hands[st.number].repeatNo = group[g].repeatNo++;
-
-    threadToHand[tu] = st.number;
-
-    if (lp->first == -1)
-        threadGroup[tu] = -1;
-
-    return st;
-}
-
-
-int Scheduler::NumGroups() const
-{
-    return numGroups;
-}
-
-
 #ifdef DDS_SCHEDULER
 void Scheduler::StartThreadTimer(const int thrId)
 {
@@ -947,23 +802,6 @@ void Scheduler::PrintTiming() const
     fout << timeGroupPredStrain.List();
     fout << timeGroupDiffStrain.List();
 
-#if 0
-    fout << setw(13) << "Hist" <<
-        setw(10) << "Hist suit" <<
-        setw(10) << "Hist NT" << "\n";
-    for (int i = 0; i < 10000; i++)
-    {
-        if (timeHist[i] || timeHistSuit[i] || timeHistNT[i])
-        {
-            fout << setw(4) << i <<
-                setw(9) << timeHist[i] <<
-                setw(10) << timeHistSuit[i] <<
-                setw(10) << timeHistNT[i] << "\n";
-        }
-    }
-    fout << endl;
-#endif
-
     if (timeBlock == 0)
         return;
 
@@ -1008,43 +846,4 @@ auto saturate_board_time_us(long long time_us) -> int
     return static_cast<int>(time_us);
 }
 
-
-int Scheduler::PredictedTime(
-    Deal& dl,
-    int number) const
-{
-    int trump = dl.trump;
-    int NT = (trump == 4 ? 100 : 0);
-
-    int dev1 = Scheduler::Strength(dl);
-
-    int pred;
-    if (NT)
-    {
-        if (dev1 >= 25)
-            pred = 125000 - 2500 * dev1;
-        else
-            // This branch is not very accurate.
-            pred = 200000 - 5500 * dev1;
-
-        if (number >= 1)
-            pred = static_cast<int>(1.25 * pred);
-
-        if (number >= 2)
-            pred = static_cast<int> (pred *
-                (1.185 - 0.185 * exp( -(number - 1) / 6.0)));
-    }
-    else
-    {
-        pred = 125000 - 2500 * dev1;
-        if (number >= 1)
-            pred = static_cast<int>(1.2 * pred);
-
-        if (number >= 2)
-            pred = static_cast<int>(pred *
-                (1.185 - 0.185 * exp( -(number - 1) / 5.5)));
-    }
-
-    return pred;
-}
 

@@ -7,7 +7,6 @@
    See LICENSE and README.
 */
 
-#include "play_analyser.hpp"
 #include <api/dll.h>
 #include <api/analyse_play.hpp>
 #include <solver_if.hpp>
@@ -168,26 +167,5 @@ int STDCALL AnalyseAllPlaysPBN(
     chunkSize = 1;
     return AnalyseAllPlaysBin(&bd, &pl, solvedp, chunkSize);
 }
-
-
-void detect_play_duplicates(
-    const Boards& bds,
-    vector<int>& uniques,
-    vector<int>& crossrefs)
-{
-    // This dummy function is there for consistency in System.cpp.
-    // In practice there is not much point in deteting play repeats,
-    // as it is highly unlikely that the play went identically at
-    // two tables.
-
-    uniques.resize(static_cast<unsigned>(bds.no_of_boards));
-    crossrefs.resize(static_cast<unsigned>(bds.no_of_boards));
-    for (unsigned i = 0; i < uniques.size(); i++)
-    {
-        uniques[i] = static_cast<int>(i);
-        crossrefs[i] = -1;
-    }
-}
-
 
 

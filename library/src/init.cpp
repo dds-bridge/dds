@@ -17,14 +17,12 @@
 
 #include <calc_tables.hpp>
 #include "init.hpp"
-#include <play_analyser.hpp>
 #include <solve_board.hpp>
 #include <lookup_tables/lookup_tables.hpp>
 #include <solver_context/solver_context.hpp>
 #include <string>
 #include <system/scheduler.hpp>
 #include <system/system.hpp>
-#include <system/thread_mgr.hpp>
 #include <trans_table/trans_table.hpp>
 #include <utility/constants.h>
 #include <api/dll.h>
@@ -158,8 +156,6 @@ void STDCALL SetResources(
     if (noOfSmallThreads > 0)
         memory.Resize(static_cast<unsigned>(noOfThreads),
             DDS_TT_SMALL, THREADMEM_SMALL_DEF_MB, THREADMEM_SMALL_MAX_MB);
-
-    ThreadMgr::instance().Reset(noOfThreads);
 
     InitDebugFiles();
 

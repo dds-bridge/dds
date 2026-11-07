@@ -72,7 +72,6 @@ class Memory
             const int memMaximum_MB); // NOLINT(bugprone-easily-swappable-parameters)
 
         unsigned NumThreads() const;
-        double MemoryInUseMB(const unsigned thrId) const;
 
         std::string ThreadSize(const unsigned thrId) const;
 };

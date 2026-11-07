@@ -93,7 +93,6 @@
     <ClCompile Include="..\library\src\system\scheduler.cpp" />
     <ClCompile Include="..\library\src\system\system.cpp" />
     <ClCompile Include="..\library\src\system\thread_data.cpp" />
-    <ClCompile Include="..\library\src\system\thread_mgr.cpp" />
     <ClCompile Include="..\library\src\system\timer.cpp" />
     <ClCompile Include="..\library\src\system\timer_group.cpp" />
     <ClCompile Include="..\library\src\system\timer_list.cpp" />
@@ -130,7 +129,6 @@
     <ClInclude Include="..\library\src\lookup_tables\lookup_tables.hpp" />
     <ClInclude Include="..\library\src\moves\moves.hpp" />
     <ClInclude Include="..\library\src\pbn.hpp" />
-    <ClInclude Include="..\library\src\play_analyser.hpp" />
     <ClInclude Include="..\library\src\quick_tricks.hpp" />
     <ClInclude Include="..\library\src\solver_context\solver_context.hpp" />
     <ClInclude Include="..\library\src\solver_if.hpp" />
@@ -140,7 +138,6 @@
     <ClInclude Include="..\library\src\system\scheduler.hpp" />
     <ClInclude Include="..\library\src\system\system.hpp" />
     <ClInclude Include="..\library\src\system\thread_data.hpp" />
-    <ClInclude Include="..\library\src\system\thread_mgr.hpp" />
     <ClInclude Include="..\library\src\system\timer.hpp" />
     <ClInclude Include="..\library\src\system\timer_group.hpp" />
     <ClInclude Include="..\library\src\system\timer_list.hpp" />

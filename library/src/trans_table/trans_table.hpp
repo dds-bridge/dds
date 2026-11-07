@@ -286,11 +286,6 @@ class TransTable
         /// \brief Print summary entry statistics.
         virtual auto print_summary_entry_stats(std::ofstream& fout) const -> void = 0;
 
-        /// \brief Print page summary (implementation-specific, optional).
-        virtual auto print_page_summary(std::ofstream& /*fout*/) const -> void
-        {
-        }
-
         /// \brief Print node statistics (implementation-specific, optional).
         virtual auto print_node_stats(std::ofstream& /*fout*/) const -> void
         {

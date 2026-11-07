@@ -28,7 +28,3 @@ auto solve_all_boards_n_seq(
     Boards const& bds,
     SolvedBoards& solved) -> int;
 
-auto detect_solve_duplicates(
-    const Boards& bds,
-    std::vector<int>& uniques,
-    std::vector<int>& crossrefs) -> void;

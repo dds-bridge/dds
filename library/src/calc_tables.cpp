@@ -836,12 +836,3 @@ int STDCALL CalcDDtablePBN(
 }
 
 
-void detect_calc_duplicates(
-    const Boards& bds,
-    std::vector<int>& uniques,
-    std::vector<int>& crossrefs)
-{
-    // Could save a little bit of time with a dedicated checker that
-    // only looks at the cards.
-    return detect_solve_duplicates(bds, uniques, crossrefs);
-}

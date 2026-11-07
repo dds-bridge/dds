@@ -151,17 +151,6 @@ public:
     moveStatsType trickFuncSuitTable;
 
     /**
-   * @brief Compute top number of winning moves for a given rank.
-   *
-   * @param ris Rank-in-suit bitmask
-   * @param prank Partner rank
-   * @param topNumber Output: top move number
-   * @param mno Output: move index
-   */
-    auto GetTopNumber(const int ris, const int prank, int &topNumber,
-                                        int &mno) const -> void;
-
-    /**
    * @brief Determine whether one move wins over another.
    *
    * @param mvp1 Candidate move
@@ -351,14 +340,6 @@ public:
                              const int trick) -> void;
 
         /**
-     * @brief Advance to next move in list.
-     *
-     * @param tricks Current trick index
-     * @param relHand Relative hand index
-     */
-        auto Step(const int tricks, const int relHand) -> void;
-
-        /**
      * @brief Reset move index to start of list.
      *
      * @param tricks Current trick index
@@ -377,14 +358,6 @@ public:
          const MoveType forbiddenMoves[]) -> void;
 
         /**
-     * @brief Reward the last chosen move with extra weight.
-     *
-     * @param trick Trick index
-     * @param relHand Relative hand index
-     */
-        auto Reward(const int trick, const int relHand) -> void;
-
-        /**
      * @brief Collect summary data for the current trick.
      *
      * @param tricks Current trick index
@@ -399,15 +372,6 @@ public:
      * @param relHand Relative hand index
      */
         auto Sort(const int tricks, const int relHand) -> void;
-
-        /**
-     * @brief Render moves for a trick/hand as a printable string.
-     *
-     * @param trick Trick index
-     * @param relHand Relative hand index
-     * @return Formatted string
-     */
-        auto PrintMoves(const int trick, const int relHand) const -> std::string;
 
         /**
      * @brief Register the chosen move in statistics tables.

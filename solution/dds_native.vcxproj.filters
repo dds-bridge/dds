@@ -123,9 +123,6 @@
     <ClCompile Include="..\library\src\system\thread_data.cpp">
       <Filter>library\src\system</Filter>
     </ClCompile>
-    <ClCompile Include="..\library\src\system\thread_mgr.cpp">
-      <Filter>library\src\system</Filter>
-    </ClCompile>
     <ClCompile Include="..\library\src\system\timer.cpp">
       <Filter>library\src\system</Filter>
     </ClCompile>
@@ -227,9 +224,6 @@
     <ClInclude Include="..\library\src\pbn.hpp">
       <Filter>library\src</Filter>
     </ClInclude>
-    <ClInclude Include="..\library\src\play_analyser.hpp">
-      <Filter>library\src</Filter>
-    </ClInclude>
     <ClInclude Include="..\library\src\quick_tricks.hpp">
       <Filter>library\src</Filter>
     </ClInclude>
@@ -255,9 +249,6 @@
       <Filter>library\src\system</Filter>
     </ClInclude>
     <ClInclude Include="..\library\src\system\thread_data.hpp">
-      <Filter>library\src\system</Filter>
-    </ClInclude>
-    <ClInclude Include="..\library\src\system\thread_mgr.hpp">
       <Filter>library\src\system</Filter>
     </ClInclude>
     <ClInclude Include="..\library\src\system\timer.hpp">

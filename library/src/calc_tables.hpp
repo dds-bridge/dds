@@ -41,20 +41,6 @@ auto calc_all_boards_n(
     Boards * bop,
     SolvedBoards * solvedp) -> int;
 
-/**
- * @brief Detect duplicate board calculations and build cross-reference maps.
- *
- * Identifies unique and duplicate Boards in a batch, populating vectors for unique indices and cross-references.
- *
- * @param bds Boards to analyze for duplicates.
- * @param uniques Output vector of indices for unique Boards.
- * @param crossrefs Output vector mapping each board to its unique representative.
- */
-auto detect_calc_duplicates(
-    const Boards& bds,
-    std::vector<int>& uniques,
-    std::vector<int>& crossrefs) -> void;
-
 // Match SolveBoard's remaining-trick count from remainCards alone.
 auto remaining_tricks_from_holdings(
     unsigned int const cards[DDS_HANDS][DDS_SUITS]) -> int;

@@ -24,11 +24,6 @@
 
 extern Scheduler scheduler;
 
-auto same_board(
-    const Boards& bds,
-    const unsigned index1,
-    const unsigned index2) -> bool;
-
 
 static auto boards_from_pbn(
     BoardsPBN const& bop,
@@ -304,71 +299,4 @@ auto solve_all_boards_n_seq(
     return RETURN_NO_FAULT;
 }
 
-
-auto detect_solve_duplicates(
-    const Boards& bds,
-    std::vector<int>& uniques,
-    std::vector<int>& crossrefs) -> void
-{
-    const unsigned nu = static_cast<unsigned>(bds.no_of_boards);
-
-    uniques.clear();
-    crossrefs.resize(nu);
-
-    for (unsigned i = 0; i < nu; i++)
-        crossrefs[i] = -1;
-
-    for (unsigned i = 0; i < nu; i++)
-    {
-        if (crossrefs[i] != -1)
-            continue;
-
-        uniques.push_back(static_cast<int>(i));
-
-        for (unsigned index = i+1; index < nu; index++)
-        {
-            if (same_board(bds, i, index))
-                crossrefs[index] = static_cast<int>(i);
-        }
-    }
-}
-
-
-auto same_board(
-    const Boards& bds,
-    const unsigned index1,
-    const unsigned index2) -> bool
-{
-    for (int h = 0; h < DDS_HANDS; h++)
-    {
-        for (int s = 0; s < DDS_SUITS; s++)
-        {
-            if (bds.deals[index1].remainCards[h][s] !=
-                    bds.deals[index2].remainCards[h][s])
-                return false;
-        }
-    }
-
-    if (bds.mode[index1] != bds.mode[index2])
-        return false;
-    if (bds.solutions[index1] != bds.solutions[index2])
-        return false;
-    if (bds.target[index1] != bds.target[index2])
-        return false;
-    if (bds.deals[index1].first != bds.deals[index2].first)
-        return false;
-    if (bds.deals[index1].trump != bds.deals[index2].trump)
-        return false;
-
-    for (int k = 0; k < 3; k++)
-    {
-        if (bds.deals[index1].currentTrickSuit[k] != 
-                bds.deals[index2].currentTrickSuit[k])
-            return false;
-        if (bds.deals[index1].currentTrickRank[k] != 
-                bds.deals[index2].currentTrickRank[k])
-            return false;
-    }
-    return true;
-}
 

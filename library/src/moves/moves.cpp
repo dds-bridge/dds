@@ -390,35 +390,6 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
     return numMoves;
 }
 
-auto Moves::GetTopNumber(const int ris, const int prank, int &topNumber,
-                         int &mno) const -> void {
-    // Determine how many winning moves exist when partner has played prank.
-    // topNumber indicates the number of cards that can win, mno is the index
-    // in the move list of the lowest winning card.
-    topNumber = -10;
-
-    // Find the lowest move that still overtakes partner's card.
-    mno = 0;
-    while (mno < numMoves - 1 && mply[1 + mno].rank > prank)
-        mno++;
-
-    const MoveGroupType &mp = group_data[ris];
-    int g = mp.last_group_;
-
-    // Include partner's card as removed to count only moves that beat it.
-    const int removed =
-            static_cast<int>(trackp->removed_ranks[leadSuit] | bit_map_rank[prank]);
-
-    int fullseq = mp.fullseq_[g];
-
-    // Merge groups as in move generation, accounting for gaps filled
-    // by removed cards (including partner's card).
-    while (g >= 1 && ((mp.gap_[g] & removed) == mp.gap_[g]))
-        fullseq |= mp.fullseq_[--g];
-
-    topNumber = count_table[fullseq] - 1;
-}
-
 inline auto Moves::WinningMove(const MoveType &mvp1, const ExtCard &mvp2,
                                const int ourTrump) const -> bool {
     /* Return true if move 1 wins over move 2, with the assumption that
@@ -548,10 +519,6 @@ auto Moves::MakeNextSimple(const int trick, const int relHand)
     return &curr;
 }
 
-auto Moves::Step(const int tricks, const int relHand) -> void {
-    moveList[tricks][relHand].current++;
-}
-
 auto Moves::Rewind(const int tricks, const int relHand) -> void {
     moveList[tricks][relHand].current = 0;
 }
@@ -575,12 +542,6 @@ auto Moves::Purge(const int trick, const int ourLeadHand,
             }
         }
     }
-}
-
-auto Moves::Reward(const int tricks, const int relHand) -> void {
-    moveList[tricks][relHand]
-            .move[moveList[tricks][relHand].current - 1]
-            .weight += 100;
 }
 
 auto Moves::GetTrickData(const int tricks) -> const TrickDataType & {
@@ -915,16 +876,6 @@ auto Moves::PrintMove(const MovePlyType &ourMply) const -> string {
        << "\n";
     }
     return ss.str();
-}
-
-auto Moves::PrintMoves(const int trick, const int relHand) const -> string {
-    const MovePlyType &list = moveList[trick][relHand];
-
-    const string st = "trick " + to_string(trick) + " relHand " +
-                                        to_string(relHand) + " last " + to_string(list.last) +
-                                        " current " + to_string(list.current) + "\n";
-
-    return st + Moves::PrintMove(list);
 }
 
 auto Moves::TrickToText(const int trick) const -> string {
