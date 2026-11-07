@@ -116,7 +116,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         return page, errors
 
     def _load_sample_deal(self, page, label: str) -> None:
-        page.get_by_role("button", name="File", exact=True).click()
+        # Top-level File trigger is role=menuitem (menubar child), not button.
+        page.get_by_role("menuitem", name="File", exact=True).click()
         page.get_by_role("menuitem", name="Sample Deals").click()
         page.get_by_role("menuitem", name=label, exact=True).click()
 
@@ -1346,7 +1347,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             try:
                 self._fill_part_score_deal(page)
                 self._wait_for_dd_table(page)
-                page.get_by_role("button", name="Edit", exact=True).click()
+                page.get_by_role("menuitem", name="Edit", exact=True).click()
                 page.get_by_role("menuitem", name="Clear Entries").click()
                 page.wait_for_function(
                     """() => {
