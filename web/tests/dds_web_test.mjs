@@ -3742,6 +3742,42 @@ test("menubar CSS styles dropdown panels and labels", () => {
     assert.doesNotMatch(css, /#sample-deals/);
 });
 
+test("menubar CSS uses Avenir Next stack and warm chrome colors", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(
+        css,
+        /--menu-font:\s*"Avenir Next",\s*"Segoe UI",\s*"Helvetica Neue",\s*sans-serif/
+    );
+    assert.match(css, /--menu-ink:\s*#1c1a16/);
+    assert.match(css, /--menu-muted:\s*#5c574e/);
+    assert.match(css, /--menu-line:\s*#d2cbbd/);
+    assert.match(css, /--menu-accent-soft:\s*#dce8e3/);
+    assert.match(css, /--menu-focus:\s*#3b7a6a/);
+    assert.match(
+        css,
+        /\.menubar\s*\{[^}]*font-family:\s*var\(--menu-font\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-label:hover,\s*\.menu\.is-open\s*>\s*\.menu-label\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel\s*\{[^}]*border:\s*1px\s+solid\s+var\(--menu-line\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel\s*\{[^}]*box-shadow:\s*var\(--menu-shadow\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:hover:not\(:disabled\),\s*\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.doesNotMatch(css, /\.menu-label:hover[\s\S]*?background:\s*#e8eef8/);
+});
+
 test("showAboutDialog fills the About body with the product blurb", () => {
     const document = createMockDocument();
     const dialog = document.element("dds-about-dialog");

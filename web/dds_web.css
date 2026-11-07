@@ -5,6 +5,17 @@
    https://opensource.org/licenses/MIT
 */
 
+:root {
+  /* Menubar chrome: warm ink/line, soft green hover, Avenir Next UI stack. */
+  --menu-ink: #1c1a16;
+  --menu-muted: #5c574e;
+  --menu-line: #d2cbbd;
+  --menu-accent-soft: #dce8e3;
+  --menu-focus: #3b7a6a;
+  --menu-shadow: 0 10px 30px rgba(40, 35, 25, 0.08);
+  --menu-font: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
 .site-header {
   margin: 0 0 1rem;
 }
@@ -34,6 +45,10 @@
   margin: 0 0 0.5rem;
   position: relative;
   z-index: 5;
+  color: var(--menu-ink);
+  font-family: var(--menu-font);
+  font-size: 15px;
+  line-height: 1.45;
 }
 
 .menu {
@@ -45,7 +60,7 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: #111;
+  color: var(--menu-ink);
   border-radius: 4px;
   padding: 0.35rem 0.55rem;
   font: inherit;
@@ -55,11 +70,15 @@
 
 .menu-label:hover,
 .menu.is-open > .menu-label {
-  background: #e8eef8;
+  background: var(--menu-accent-soft);
 }
 
 .menu-label:focus-visible,
-.menu-label.focus-visible-fallback,
+.menu-label.focus-visible-fallback {
+  outline: 2px solid var(--menu-focus);
+  outline-offset: 1px;
+}
+
 #dds-about-ok:focus-visible,
 #dds-about-ok.focus-visible-fallback,
 .focus-visible-fallback {
@@ -75,10 +94,10 @@
   min-width: 14rem;
   margin: 0;
   padding: 0.3rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--menu-line);
   border-radius: 6px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--menu-shadow);
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
@@ -92,7 +111,7 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: #111;
+  color: var(--menu-ink);
   border-radius: 4px;
   padding: 0.45rem 0.65rem;
   font: inherit;
@@ -122,7 +141,7 @@
 
 .menu-shortcut {
   flex: 0 0 auto;
-  color: #666;
+  color: var(--menu-muted);
   font-size: 0.78em;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -130,13 +149,13 @@
 
 .menu-submenu-marker {
   margin-left: auto;
-  color: #666;
+  color: var(--menu-muted);
   font-size: 0.85em;
 }
 
 .menu-panel [role="menuitem"]:hover:not(:disabled),
 .menu-panel [role="menuitem"]:focus-visible {
-  background: #e8eef8;
+  background: var(--menu-accent-soft);
   outline: none;
 }
 
@@ -147,7 +166,7 @@
 
 .menu-sep {
   border: 0;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--menu-line);
   margin: 0.25rem 0.35rem;
 }
 
@@ -166,7 +185,7 @@
   min-width: 0;
   width: auto;
   box-shadow: none;
-  border: 1px solid #ddd;
+  border: 1px solid var(--menu-line);
 }
 
 .dds-dialog {
