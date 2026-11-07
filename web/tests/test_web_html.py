@@ -142,6 +142,20 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
     def test_menubar_replaces_toolbar_and_sample_select(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertRegex(text, r'<nav[^>]*class="menubar"[^>]*role="menubar"')
+        # Top-level triggers must be menuitems so the menubar has required
+        # children when panels are closed (not bare button roles only).
+        self.assertRegex(
+            text,
+            r'(?is)<button\b[^>]*class="menu-label"[^>]*role="menuitem"[^>]*>\s*DDS\s*</button>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<button\b[^>]*class="menu-label"[^>]*role="menuitem"[^>]*>\s*File\s*</button>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<button\b[^>]*class="menu-label"[^>]*role="menuitem"[^>]*>\s*Edit\s*</button>',
+        )
         self.assertIn('data-menu="dds"', text)
         self.assertIn(">DDS</button>", text)
         self.assertIn('id="menu-about"', text)
