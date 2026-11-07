@@ -10,5 +10,17 @@
   {
     "name": "Part-score",
     "file": "hands/part_score.pbn"
+  },
+  {
+    "name": "Smallest ever DD problem – South declares ♠",
+    "file": "hands/smallest_ever_double_dummy_problem.pbn"
+  },
+  {
+    "name": "Thomas 1 - difficult for solvers",
+    "file": "hands/thomas1.pbn"
+  },
+  {
+    "name": "Thomas 2 - most difficult for solvers",
+    "file": "hands/thomas2.pbn"
   }
 ]

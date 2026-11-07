@@ -26,6 +26,18 @@
         "part_score": {
             name: "Part-score",
             pbn: "N:AQ85.AK976.5.J87 JT.QJ5432.Q9.KQ9 972..JT863.A6432 K643.T8.AK742.T5"
+        },
+        "smallest_ever_double_dummy_problem": {
+            name: "Smallest ever DD problem \u2013\u00a0South declares \u2660",
+            pbn: "N:Q8...7 KT..A. A3...A J2.A.."
+        },
+        "thomas1": {
+            name: "Thomas 1 - difficult for solvers",
+            pbn: "S:Q853.AJ962.KT74. AJ962.KT74..Q853 KT74..Q853.AJ962 .Q853.AJ962.KT74"
+        },
+        "thomas2": {
+            name: "Thomas 2 - most difficult for solvers",
+            pbn: "S:AQT8642.KJ9753.. KJ9753..AQT8642. ..KJ9753.AQT8642 .AQT8642..KJ9753"
         }
     };
 })(typeof globalThis !== "undefined" ? globalThis : window);

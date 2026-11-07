@@ -27,6 +27,7 @@ class StageGithubPagesTest(unittest.TestCase):
             dest = Path(dest_dir)
             for name in (
                 "dds_web.html",
+                "dds_web_faq.html",
                 "dds_web.css",
                 "dds_web.js",
                 "dds_web_deal_import.js",
@@ -49,6 +50,7 @@ class StageGithubPagesTest(unittest.TestCase):
             self.assertEqual(out, dest)
             for name in (
                 "dds_web.html",
+                "dds_web_faq.html",
                 "dds_web.css",
                 "dds_web.js",
                 "dds_web_deal_import.js",
@@ -82,7 +84,7 @@ class StageGithubPagesTest(unittest.TestCase):
             (src / "dds_web.html").write_text("<html></html>", encoding="utf-8")
             with self.assertRaises(FileNotFoundError) as ctx:
                 stage.stage_github_pages(src, dest)
-            self.assertIn("dds_web.css", str(ctx.exception))
+            self.assertIn("dds_web_faq.html", str(ctx.exception))
             self.assertEqual(list(dest.iterdir()), [])
 
     def test_deploy_file_list_matches_static_plus_wasm(self) -> None:
@@ -94,6 +96,7 @@ class StageGithubPagesTest(unittest.TestCase):
         self.assertIn("dds_web_solve.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_play.js", stage.DEPLOY_FILES)
         self.assertIn("dds_web_sample_deals.js", stage.DEPLOY_FILES)
+        self.assertIn("dds_web_faq.html", stage.DEPLOY_FILES)
         self.assertIn("dds_web_wasm_bin.js", stage.DEPLOY_FILES)
         self.assertNotIn("index.html", stage.DEPLOY_FILES)
 

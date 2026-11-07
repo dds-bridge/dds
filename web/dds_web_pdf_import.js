@@ -4,12 +4,13 @@
 //   license that can be found in the LICENSE file or at
 //   https://opensource.org/licenses/MIT
 
-// Hand-record PDF parsers for DDS Web (BridgeComposer / ACBL and compass layouts).
+// Hand-record PDF parsers for DDS Web (BridgeComposer / Deep Finesse / compass).
 // Loaded after dds_web_deal_import.js; exports extract/parse helpers on globalThis.
 
 /* eslint-env es6 */
 /* exported normalizeBridgeHolding parseBridgeComposerBoard
-            parseAllBridgeComposerBoards parseAllCompassHandRecordBoards
+            parseAllBridgeComposerBoards parseAllDeepFinesseBoards
+            parseAllCompassHandRecordBoards
             extractPdfTextItems loadAllBoardsFromHandRecordPdf handsToDottedDeal */
 
 "use strict";
@@ -31,6 +32,10 @@
     // Typical BridgeComposer NABC sheet: 1200×1260 cells.
     const CELL_W = 1200;
     const CELL_H = 1260;
+
+    // Deep Finesse regional sheets pack ~4×5 diagrams per page (~149×168 cells).
+    const DF_CELL_W = 145;
+    const DF_CELL_H = 140;
 
     function normalizeBridgeHolding(raw) {
         if (!raw || raw === BRIDGE_VOID_CHAR || raw === "-" || raw === "—") {
@@ -260,6 +265,141 @@
     }
 
     /**
+     * Deep Finesse / ACBL regional sheets use the same "N Deals" anchors as
+     * BridgeComposer but print holdings as space-separated ranks (ten as "10",
+     * void as "-----") with no WinAnsi suit glyphs.
+     */
+    function isDeepFinesseHoldingText(text) {
+        if (text === "-----" || text === "-" || text === "—") {
+            return true;
+        }
+        return /^(?:10|[AKQJT98765432])(?: (?:10|[AKQJT98765432]))*$/.test(text);
+    }
+
+    function normalizeDeepFinesseHolding(raw) {
+        if (!raw || raw === "-----" || raw === "-" || raw === "—") {
+            return "";
+        }
+        return String(raw).replace(/ /g, "").replace(/10/g, "T");
+    }
+
+    function itemsInDeepFinesseCell(items, dealer) {
+        return items.filter(function (item) {
+            return item.x >= dealer.x - 5
+                && item.x < dealer.x + DF_CELL_W
+                && item.y <= dealer.y + 15
+                && item.y > dealer.y - DF_CELL_H;
+        });
+    }
+
+    function deepFinesseBoardNumber(inCell, dealer) {
+        const candidates = inCell.filter(function (item) {
+            return /^[1-9]\d*$/.test(item.text)
+                && item.x >= dealer.x + 100
+                && item.x <= dealer.x + 140
+                && Math.abs(item.y - dealer.y) <= 20;
+        });
+        candidates.sort(function (a, b) {
+            return a.x - b.x;
+        });
+        return candidates.length > 0 ? candidates[0].text : null;
+    }
+
+    function deepFinesseSeatHoldings(
+        inCell, dealer, xMin, xMax, yMin, yMax, boardLabel, seat
+    ) {
+        const lines = inCell.filter(function (item) {
+            const relX = item.x - dealer.x;
+            const relY = dealer.y - item.y;
+            return relX >= xMin && relX <= xMax
+                && relY >= yMin && relY <= yMax
+                && isDeepFinesseHoldingText(item.text);
+        }).sort(function (a, b) {
+            return b.y - a.y;
+        });
+        if (lines.length < 4) {
+            throw new Error(
+                "board " + boardLabel + ": " + seat
+                + " has " + lines.length + " suit lines (expected 4)"
+            );
+        }
+        return {
+            spades: normalizeDeepFinesseHolding(lines[0].text),
+            hearts: normalizeDeepFinesseHolding(lines[1].text),
+            diamonds: normalizeDeepFinesseHolding(lines[2].text),
+            clubs: normalizeDeepFinesseHolding(lines[3].text)
+        };
+    }
+
+    function parseHandsInDeepFinesseCell(inCell, dealer, boardLabel) {
+        const hands = {
+            north: deepFinesseSeatHoldings(
+                inCell, dealer, 40, 75, -5, 40, boardLabel, "north"
+            ),
+            west: deepFinesseSeatHoldings(
+                inCell, dealer, 0, 25, 40, 85, boardLabel, "west"
+            ),
+            east: deepFinesseSeatHoldings(
+                inCell, dealer, 80, 115, 40, 85, boardLabel, "east"
+            ),
+            south: deepFinesseSeatHoldings(
+                inCell, dealer, 40, 75, 85, 130, boardLabel, "south"
+            )
+        };
+        for (const direction of DIRECTIONS) {
+            let pips = "";
+            for (const suit of SUITS) {
+                pips += hands[direction][suit];
+            }
+            if (pips.length !== 13) {
+                throw new Error(
+                    "board " + boardLabel + ": " + direction
+                    + " has " + pips.length + " cards after parse (expected 13)"
+                );
+            }
+        }
+        return hands;
+    }
+
+    /**
+     * Parse every Deep Finesse board diagram into an ordered list.
+     * @returns {{boardNumber: string, hands: object}[]}
+     */
+    function parseAllDeepFinesseBoards(items) {
+        const dealers = dealerMarkers(items);
+        if (dealers.length === 0) {
+            throw new Error("no Deep Finesse board diagrams found in PDF text");
+        }
+
+        const boards = [];
+        const seen = {};
+        for (const dealer of dealers) {
+            const inCell = itemsInDeepFinesseCell(items, dealer);
+            const boardNumber = deepFinesseBoardNumber(inCell, dealer);
+            if (!boardNumber || seen[boardNumber]) {
+                continue;
+            }
+            let hands;
+            try {
+                hands = parseHandsInDeepFinesseCell(inCell, dealer, boardNumber);
+            } catch (_err) {
+                continue;
+            }
+            seen[boardNumber] = true;
+            boards.push({ boardNumber: boardNumber, hands: hands });
+        }
+
+        if (boards.length === 0) {
+            throw new Error("no numbered boards found in hand-record PDF");
+        }
+
+        boards.sort(function (a, b) {
+            return Number(a.boardNumber) - Number(b.boardNumber);
+        });
+        return boards;
+    }
+
+    /**
      * Madeira / MiBO-style sheets place a compact N/W/E/S compass under each
      * diagram. Suit rows fan out from the compass "N" (north above, south below,
      * west/east beside). Ghostscript PDFs typically use Tm under a scaled cm.
@@ -411,7 +551,11 @@
             try {
                 return parseAllBridgeComposerBoards(items);
             } catch (_err) {
-                // Fall through to compass layouts (Madeira / MiBO).
+                try {
+                    return parseAllDeepFinesseBoards(items);
+                } catch (_err2) {
+                    // Fall through to compass layouts (Madeira / MiBO).
+                }
             }
         }
         return parseAllCompassHandRecordBoards(items);
@@ -754,6 +898,7 @@
     global.normalizeBridgeHolding = normalizeBridgeHolding;
     global.parseBridgeComposerBoard = parseBridgeComposerBoard;
     global.parseAllBridgeComposerBoards = parseAllBridgeComposerBoards;
+    global.parseAllDeepFinesseBoards = parseAllDeepFinesseBoards;
     global.parseAllCompassHandRecordBoards = parseAllCompassHandRecordBoards;
     global.extractPdfTextItems = extractPdfTextItems;
     global.loadAllBoardsFromHandRecordPdf = loadAllBoardsFromHandRecordPdf;

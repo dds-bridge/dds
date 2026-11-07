@@ -115,8 +115,13 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         )
         return page, errors
 
+    def _load_sample_deal(self, page, label: str) -> None:
+        page.get_by_role("button", name="File", exact=True).click()
+        page.get_by_role("menuitem", name="Sample Deals").click()
+        page.get_by_role("menuitem", name=label, exact=True).click()
+
     def _fill_part_score_deal(self, page) -> None:
-        page.get_by_label("Sample deals").select_option(label="Part-score")
+        self._load_sample_deal(page, "Part-score")
 
     def _wait_for_dd_table(self, page) -> None:
         page.wait_for_function(
@@ -294,7 +299,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
-                page.get_by_label("Sample deals").select_option(label="Part-score")
+                self._fill_part_score_deal(page)
                 self._wait_for_dd_table(page)
 
                 # South / NT → West leads.
@@ -359,7 +364,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
-                page.get_by_label("Sample deals").select_option(label="Part-score")
+                self._fill_part_score_deal(page)
                 # Click South/NT immediately — cells may still be empty.
                 page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
                 self.assertEqual(
@@ -380,7 +385,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
-                page.get_by_label("Sample deals").select_option(label="Part-score")
+                self._fill_part_score_deal(page)
                 self._wait_for_dd_table(page)
                 page.locator("#result-table tr").nth(3).locator("td").nth(4).click()
                 page.wait_for_function(
@@ -653,9 +658,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             outer_before = page.locator(".grid-outer").bounding_box()
             self.assertIsNotNone(outer_before)
 
-            page.get_by_label("Sample deals").select_option(
-                label="Everyone makes 3N"
-            )
+            self._load_sample_deal(page, "Everyone makes 3N")
             page.wait_for_function(
                 "() => document.querySelectorAll('#east_diamonds_cards .hand-card').length === 8"
             )
@@ -695,9 +698,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         """N/S/W 8-card suits must not spill out of their hand cells (washed-out overflow)."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            page.get_by_label("Sample deals").select_option(
-                label="Everyone makes 3N"
-            )
+            self._load_sample_deal(page, "Everyone makes 3N")
             page.wait_for_function(
                 "() => document.querySelectorAll('#north_hearts_cards .hand-card').length === 8"
             )
@@ -1345,7 +1346,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             try:
                 self._fill_part_score_deal(page)
                 self._wait_for_dd_table(page)
-                page.get_by_role("button", name="Clear entries").click()
+                page.get_by_role("button", name="Edit", exact=True).click()
+                page.get_by_role("menuitem", name="Clear Entries").click()
                 page.wait_for_function(
                     """() => {
                     const cell = document.getElementById('result-table')
@@ -1374,12 +1376,11 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             page.close()
 
     def test_sample_deals_can_reselect_same_option_after_edit(self) -> None:
-        """Placeholder reset must allow choosing the same sample again after edits."""
+        """Sample Deals menu can load the same sample again after edits."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             self._fill_part_score_deal(page)
             self.assertEqual(page.locator("#north_spades").input_value(), "AQ85")
-            self.assertEqual(page.locator("#sample-deals").input_value(), "")
 
             page.locator("#north_spades").fill("A")
             page.locator("#north_spades").dispatch_event("input")
@@ -1387,7 +1388,6 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
 
             self._fill_part_score_deal(page)
             self.assertEqual(page.locator("#north_spades").input_value(), "AQ85")
-            self.assertEqual(page.locator("#sample-deals").input_value(), "")
             self.assertEqual(errors, [])
         finally:
             page.close()

@@ -38,23 +38,36 @@ class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
             r'rel="[^"]*\bnoopener\b[^"]*"[^>]*>',
         )
 
-    def test_faq_section_with_common_questions(self) -> None:
-        text = HTML_PATH.read_text(encoding="utf-8")
-        self.assertRegex(
-            text,
+    def test_faq_lives_on_its_own_page(self) -> None:
+        main = HTML_PATH.read_text(encoding="utf-8")
+        faq_path = WEB_ROOT / "dds_web_faq.html"
+        self.assertTrue(faq_path.is_file(), msg="dds_web_faq.html must exist")
+        faq = faq_path.read_text(encoding="utf-8")
+        self.assertNotRegex(
+            main,
             r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*>',
-            msg="dds_web.html must include an FAQ landmark",
+            msg="dds_web.html must not embed the FAQ section",
         )
-        self.assertRegex(text, r"(?is)<h2[^>]*>\s*FAQ\s*</h2>")
-        # Cover the questions visitors actually ask about a browser solver.
+        self.assertRegex(
+            faq,
+            r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*>',
+            msg="dds_web_faq.html must include an FAQ landmark",
+        )
+        self.assertRegex(faq, r"(?is)<h1[^>]*>\s*FAQ\s*</h1>")
+        self.assertRegex(
+            faq,
+            r'(?is)<a\b[^>]*href="dds_web\.html"[^>]*>',
+            msg="FAQ page must link back to the solver",
+        )
         for question in (
             "What is DDS Web?",
             "Does my deal leave my browser?",
             "How do I play through a contract?",
             "Can I load a tournament hand-record PDF?",
         ):
-            self.assertIn(question, text)
-        self.assertNotIn("Why won't solving start?", text)
+            self.assertIn(question, faq)
+            self.assertNotIn(question, main)
+        self.assertNotIn("Why won't solving start?", faq)
 
 
 class DdsWebHtmlCharsetTest(unittest.TestCase):
@@ -88,8 +101,8 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
 
     def test_import_deal_button_and_file_input(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
-        self.assertIn('onclick="chooseDealFile()"', text)
-        self.assertIn(">Import deal(s)…</button>", text)
+        self.assertIn('id="menu-import-deals"', text)
+        self.assertIn("Import Deal(s)…", text)
         self.assertNotIn(">Import deal…</button>", text)
         self.assertRegex(
             text,
@@ -101,6 +114,9 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertNotIn("hand-record-file", text)
         self.assertNotIn("Choose File", text)
         self.assertNotIn("handleHandRecordFileSelected", text)
+        self.assertNotIn('onclick="chooseDealFile()"', text)
+        self.assertNotIn("Clear entries</button>", text)
+        self.assertNotIn("Rotate the hands clockwise", text)
 
     def test_hand_record_pdf_nav_controls(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
@@ -123,27 +139,79 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn('id="hand-record-label"', text)
         self.assertIn('id="hand-record-status"', text)
 
-    def test_sample_deals_dropdown_replaces_three_test_deal_buttons(self) -> None:
+    def test_menubar_replaces_toolbar_and_sample_select(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")
-        self.assertNotIn("fillFormWithGrandSlamTestData()", text)
-        self.assertNotIn("fillFormWithEveryoneMakes3nTestData()", text)
-        self.assertNotIn("fillFormWithPartScoreTestData()", text)
-        self.assertNotIn("NS make 7 test deal", text)
-        self.assertNotIn("Everyone makes 3N test deal", text)
-        self.assertNotIn("Part-score test deal", text)
+        self.assertRegex(text, r'<nav[^>]*class="menubar"[^>]*role="menubar"')
+        self.assertIn('data-menu="dds"', text)
+        self.assertIn(">DDS</button>", text)
+        self.assertIn('id="menu-about"', text)
+        self.assertIn(">About…</button>", text)
+        self.assertIn('id="menu-how-to"', text)
         self.assertRegex(
             text,
-            r'<select[^>]*id="sample-deals"[^>]*>',
+            r'(?is)<a\b[^>]*id="menu-how-to"[^>]*href="dds_web_faq\.html"[^>]*>\s*FAQ\s*</a>',
         )
-        self.assertIn("handleSampleDealSelected(this)", text)
-        self.assertIn("Sample deals…", text)
-        # Deal labels/values come from SAMPLE_DEALS at pageLoad, not hard-coded HTML.
+        # Keep the solver session: FAQ opens in another tab.
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-how-to"[^>]*target="_blank"[^>]*>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-how-to"[^>]*rel="[^"]*\bnoopener\b[^"]*"[^>]*>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<dialog\b[^>]*id="dds-about-dialog"[^>]*'
+            r'aria-labelledby="dds-about-title"[^>]*>',
+        )
+        # Deal entry starts on North spades without a click; About OK must not
+        # steal the page-level autofocus while the dialog is closed.
+        self.assertRegex(
+            text,
+            r'(?is)<input\b[^>]*id="north_spades"[^>]*\bautofocus\b',
+        )
+        self.assertNotRegex(
+            text,
+            r'(?is)<button\b[^>]*id="dds-about-ok"[^>]*\bautofocus\b',
+        )
+
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-source-code"[^>]*'
+            r'href="https://github\.com/dds-bridge/dds"[^>]*>\s*Source code\s*</a>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-report-issue"[^>]*'
+            r'href="https://github\.com/dds-bridge/dds/issues"[^>]*>',
+        )
+
+        self.assertIn('data-menu="file"', text)
+        self.assertIn('id="menu-sample-deals"', text)
+        self.assertIn("Sample Deals", text)
+        self.assertIn('id="menu-sample-deals-panel"', text)
+        self.assertIn('data-menu="edit"', text)
+        self.assertIn('id="menu-undo"', text)
+        self.assertIn('id="menu-rotate"', text)
+        self.assertIn('id="menu-clear"', text)
+        self.assertIn("Clear Entries", text)
+        self.assertIn('id="menu-edit-hands"', text)
+        self.assertNotIn("<select", text)
+        self.assertNotIn('id="sample-deals"', text)
+        self.assertNotIn("handleSampleDealSelected(this)", text)
+        self.assertNotIn("site-repo", text)
+        self.assertNotIn("Source on GitHub", text)
+        # About is the first DDS menu item.
+        dds_about = text.index('id="menu-about"')
+        dds_how = text.index('id="menu-how-to"')
+        self.assertLess(dds_about, dds_how)
+        # FAQ is a separate page, not an in-page scroll target.
+        self.assertNotIn('id="faq"', text)
+        # Sample deal labels still come from SAMPLE_DEALS at pageLoad.
+        self.assertNotIn("fillFormWithGrandSlamTestData()", text)
         self.assertNotIn('value="ns_make_7"', text)
-        self.assertNotIn('value="everyone_makes_3N"', text)
-        self.assertNotIn('value="part_score"', text)
         self.assertNotIn("NS make 7", text)
-        self.assertNotIn("Everyone makes 3N", text)
-        self.assertNotIn(">Part-score<", text)
 
 
 class DdsWebHtmlCoiTest(unittest.TestCase):
@@ -220,8 +288,7 @@ class DdsWebHtmlCoiTest(unittest.TestCase):
         self.assertLess(pdf_at, core_at)
 
     def test_loads_sample_deals_script_before_dds_web_js(self) -> None:
-        # SAMPLE_DEALS is pure data; load before UI so handleSampleDealSelected
-        # can read it.
+        # SAMPLE_DEALS is pure data; load before UI so the File menu can read it.
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertRegex(
             text,

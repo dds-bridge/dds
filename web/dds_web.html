@@ -30,30 +30,87 @@
     <header class="site-header">
         <h1>DDS Web</h1>
         <p class="site-tagline">Double dummy bridge solver in your browser</p>
-        <p class="site-repo">
-            <a href="https://github.com/dds-bridge/dds"
-               target="_blank"
-               rel="noopener noreferrer">Source on GitHub</a>
-        </p>
     </header>
 
-    <p class="deal-entry-hint">
-    Enter a 52-card deal using only these pips: <span id=valid-pips></span>
-    </p>
+    <nav class="menubar" role="menubar" aria-label="DDS Web menus">
+        <div class="menu" data-menu="dds">
+            <button type="button" class="menu-label" aria-haspopup="menu" aria-expanded="false">DDS</button>
+            <div class="menu-panel" role="menu" hidden>
+                <button type="button" role="menuitem" id="menu-about">About…</button>
+                <a role="menuitem"
+                   id="menu-how-to"
+                   href="dds_web_faq.html"
+                   target="_blank"
+                   rel="noopener noreferrer">FAQ</a>
+                <a role="menuitem"
+                   id="menu-source-code"
+                   href="https://github.com/dds-bridge/dds"
+                   target="_blank"
+                   rel="noopener noreferrer">Source code</a>
+                <a role="menuitem"
+                   id="menu-report-issue"
+                   href="https://github.com/dds-bridge/dds/issues"
+                   target="_blank"
+                   rel="noopener noreferrer">Report an issue or request a feature</a>
+            </div>
+        </div>
+        <div class="menu" data-menu="file">
+            <button type="button" class="menu-label" aria-haspopup="menu" aria-expanded="false">File</button>
+            <div class="menu-panel" role="menu" hidden>
+                <button type="button" role="menuitem" id="menu-import-deals">
+                    Import Deal(s)…<span class="menu-shortcut" data-keys="mod+o"></span>
+                </button>
+                <div class="menu-item-submenu">
+                    <button type="button"
+                            role="menuitem"
+                            id="menu-sample-deals"
+                            aria-haspopup="menu"
+                            aria-expanded="false">
+                        Sample Deals<span class="menu-submenu-marker" aria-hidden="true">▸</span>
+                    </button>
+                    <div class="menu-panel menu-submenu"
+                         id="menu-sample-deals-panel"
+                         role="menu"
+                         hidden></div>
+                </div>
+            </div>
+        </div>
+        <div class="menu" data-menu="edit">
+            <button type="button" class="menu-label" aria-haspopup="menu" aria-expanded="false">Edit</button>
+            <div class="menu-panel" role="menu" hidden>
+                <button type="button" role="menuitem" id="menu-undo" disabled>
+                    Undo<span class="menu-shortcut" data-keys="mod+z"></span>
+                </button>
+                <hr class="menu-sep" />
+                <button type="button" role="menuitem" id="menu-rotate">Rotate Hands Clockwise</button>
+                <button type="button" role="menuitem" id="menu-clear">Clear Entries</button>
+                <hr class="menu-sep" />
+                <button type="button" role="menuitem" id="menu-edit-hands" disabled>Edit Hands</button>
+            </div>
+        </div>
+    </nav>
 
-    <button type="button" onclick="clearTestData()">Clear entries</button>
-    <button type="button" onclick="chooseDealFile()">Import deal(s)…</button>
     <input id="import-deal-file"
            type="file"
            accept=".pbn,.lin,.dlm,.txt,.pdf,text/plain,application/pdf"
            hidden
            onchange="handleDealFileSelected(this)">
-    <select id="sample-deals"
-            aria-label="Sample deals"
-            onchange="handleSampleDealSelected(this)">
-        <option value="" selected disabled>Sample deals…</option>
-    </select>
-    <button type="button" onclick="rotateClockwise()">Rotate the hands clockwise</button>
+
+    <dialog id="dds-about-dialog"
+            class="dds-dialog"
+            aria-labelledby="dds-about-title">
+        <form method="dialog" class="dds-dialog-form">
+            <h2 id="dds-about-title">About</h2>
+            <p id="dds-about-body" class="dds-dialog-body"></p>
+            <div class="dds-dialog-actions">
+                <button type="submit" id="dds-about-ok">OK</button>
+            </div>
+        </form>
+    </dialog>
+
+    <p class="deal-entry-hint">
+    Enter a 52-card deal using only these pips: <span id=valid-pips></span>
+    </p>
 
     <div id="hand-record" class="hand-record" hidden>
         <div id="hand-record-nav" class="hand-record-nav" hidden>
@@ -87,7 +144,7 @@
     <div class="grid-outer">
     <div class="grid-container">
         <div class="grid-item hand-north">
-            <span class="hand-suit"><spade-suit>♠</spade-suit><span id="north_spades_cards" class="hand-holding"></span><input id="north_spades" class="hand-suit-input" name="north spades" aria-label="North spades" type="text" autocomplete="off" spellcheck="false"></span><br>
+            <span class="hand-suit"><spade-suit>♠</spade-suit><span id="north_spades_cards" class="hand-holding"></span><input id="north_spades" class="hand-suit-input" name="north spades" aria-label="North spades" type="text" autocomplete="off" spellcheck="false" autofocus></span><br>
             <span class="hand-suit"><heart-suit>♥</heart-suit><span id="north_hearts_cards" class="hand-holding"></span><input id="north_hearts" class="hand-suit-input" name="north hearts" aria-label="North hearts" type="text" autocomplete="off" spellcheck="false"></span><br>
             <span class="hand-suit"><diamond-suit>♦</diamond-suit><span id="north_diamonds_cards" class="hand-holding"></span><input id="north_diamonds" class="hand-suit-input" name="north diamonds" aria-label="North diamonds" type="text" autocomplete="off" spellcheck="false"></span><br>
             <span class="hand-suit"><club-suit>♣</club-suit><span id="north_clubs_cards" class="hand-holding"></span><input id="north_clubs" class="hand-suit-input" name="north clubs" aria-label="North clubs" type="text" autocomplete="off" spellcheck="false"></span><br>
@@ -186,51 +243,6 @@
         </div>
     </div>
     </div>
-
-    <section id="faq" class="faq" aria-labelledby="faq-heading">
-        <h2 id="faq-heading">FAQ</h2>
-        <details>
-            <summary>What is DDS Web?</summary>
-            <p>
-                DDS Web is a browser demo of
-                <a href="https://github.com/dds-bridge/dds"
-                   target="_blank"
-                   rel="noopener noreferrer">DDS</a>,
-                a double dummy originally written by Bo Haglund. It runs entirely
-                client-side via WebAssembly: enter a deal (or import one),
-                and the page fills a double-dummy table of max tricks by
-                declarer and strain.
-            </p>
-        </details>
-        <details>
-            <summary>Does my deal leave my browser?</summary>
-            <p>
-                No. Cards, imports, and solve results stay on your device.
-                The solver module is downloaded once with the page; nothing
-                is sent to a server to analyze a deal.
-            </p>
-        </details>
-        <details>
-            <summary>How do I play through a contract?</summary>
-            <p>
-                After the double-dummy table appears, click a cell to enter
-                play for that declarer and strain (or that seat on lead for a
-                partial deal). Drag or click a highlighted card to play it;
-                each card shows the contract outcome with best play and
-                defense. Undo with ⌘/Ctrl-Z, or choose Edit hands to leave
-                play mode.
-            </p>
-        </details>
-        <details>
-            <summary>Can I load a tournament hand-record PDF?</summary>
-            <p>
-                Yes. Use Import deal(s)… and pick a hand-record PDF
-                (BridgeComposer / ACBL or compass layouts such as Madeira /
-                MiBO) or a multi-deal PBN file. Use the arrows to step through
-                numbered boards.
-            </p>
-        </details>
-    </section>
 
     <script src="dds_web_wasm_bin.js"></script>
     <script src="dds_web_wasm.js"></script>

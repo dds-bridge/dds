@@ -13,6 +13,7 @@ from pathlib import Path
 
 DEPLOY_FILES = (
     "dds_web.html",
+    "dds_web_faq.html",
     "dds_web.css",
     "dds_web.js",
     "dds_web_deal_import.js",
