@@ -549,7 +549,8 @@ function mountMenubar(menubar) {
         if (sampleId) {
             loadSampleDealById(sampleId);
             closeAll();
-            focusForKeyboard(trigger);
+            // Deal is ready to edit — do not steal focus back to File.
+            focusNorthSpades();
             return;
         }
 
@@ -563,6 +564,7 @@ function mountMenubar(menubar) {
         if (
             item.id === "menu-how-to"
             || item.id === "menu-source-code"
+            || item.id === "menu-changelog"
             || item.id === "menu-report-issue"
         ) {
             // Anchor menuitems — close the menu and let the browser follow href.
@@ -572,18 +574,37 @@ function mountMenubar(menubar) {
         }
         if (item.id === "menu-import-deals") {
             chooseDealFile();
-        } else if (item.id === "menu-undo") {
+            closeAll();
+            focusForKeyboard(trigger);
+            return;
+        }
+        if (item.id === "menu-undo") {
             if (typeof undoPlay === "function") {
                 undoPlay();
             }
-        } else if (item.id === "menu-rotate") {
+            closeAll();
+            focusForKeyboard(trigger);
+            return;
+        }
+        if (item.id === "menu-rotate") {
             rotateClockwise();
-        } else if (item.id === "menu-clear") {
+            closeAll();
+            focusNorthSpades();
+            return;
+        }
+        if (item.id === "menu-clear") {
             clearTestData();
-        } else if (item.id === "menu-edit-hands") {
+            closeAll();
+            // clearTestData already focused North spades for typing.
+            return;
+        }
+        if (item.id === "menu-edit-hands") {
             if (typeof exitPlay === "function") {
                 exitPlay();
             }
+            closeAll();
+            focusNorthSpades();
+            return;
         }
         closeAll();
         // Menu panels are display:none when closed; leave focus on a visible

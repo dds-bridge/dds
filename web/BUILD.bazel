@@ -137,6 +137,7 @@ py_test(
         "tests/testdata/262ROTH5F1.pdf",
         "tests/testdata/s261105m_1.pdf",
         "tests/testdata/2611126-11061430.pdf",
+        "tests/testdata/s261108s_3.pdf",
     ],
 )
 

@@ -197,9 +197,28 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         )
         self.assertRegex(
             text,
+            r'(?is)<a\b[^>]*id="menu-changelog"[^>]*'
+            r'href="https://github\.com/dds-bridge/dds/blob/develop/ChangeLog"[^>]*>'
+            r'\s*Changelog\s*</a>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-changelog"[^>]*target="_blank"[^>]*>',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<a\b[^>]*id="menu-changelog"[^>]*rel="[^"]*\bnoopener\b[^"]*"[^>]*>',
+        )
+        self.assertRegex(
+            text,
             r'(?is)<a\b[^>]*id="menu-report-issue"[^>]*'
             r'href="https://github\.com/dds-bridge/dds/issues"[^>]*>',
         )
+        dds_source = text.index('id="menu-source-code"')
+        dds_changelog = text.index('id="menu-changelog"')
+        dds_report = text.index('id="menu-report-issue"')
+        self.assertLess(dds_source, dds_changelog)
+        self.assertLess(dds_changelog, dds_report)
 
         self.assertIn('data-menu="file"', text)
         self.assertIn('id="menu-sample-deals"', text)

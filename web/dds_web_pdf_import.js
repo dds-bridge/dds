@@ -759,7 +759,105 @@
         };
     }
 
-    function extractPdfTextItemsFromContent(decBytes) {
+    function pdfHexToCodePoints(hexBody) {
+        const hex = String(hexBody).replace(/\s+/g, "");
+        const codes = [];
+        // CID / Identity-H strings are two bytes per character.
+        for (let i = 0; i + 3 < hex.length; i += 4) {
+            const code = parseInt(hex.slice(i, i + 4), 16);
+            if (Number.isFinite(code)) {
+                codes.push(code);
+            }
+        }
+        return codes;
+    }
+
+    /**
+     * Build a font-code → Unicode map from ToUnicode CMap stream text.
+     * Supports beginbfchar and the incremental beginbfrange form.
+     */
+    function parsePdfToUnicodeCMap(cmapText) {
+        const map = Object.create(null);
+        const bfcharRe = /beginbfchar([\s\S]*?)endbfchar/g;
+        let section;
+        while ((section = bfcharRe.exec(cmapText)) !== null) {
+            const pairRe = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+            let pair;
+            while ((pair = pairRe.exec(section[1])) !== null) {
+                const src = parseInt(pair[1], 16);
+                const dst = parseInt(pair[2], 16);
+                if (Number.isFinite(src) && Number.isFinite(dst)) {
+                    map[src] = dst;
+                }
+            }
+        }
+        const bfrangeRe = /beginbfrange([\s\S]*?)endbfrange/g;
+        while ((section = bfrangeRe.exec(cmapText)) !== null) {
+            const rangeRe =
+                /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+            let range;
+            while ((range = rangeRe.exec(section[1])) !== null) {
+                const lo = parseInt(range[1], 16);
+                const hi = parseInt(range[2], 16);
+                const start = parseInt(range[3], 16);
+                if (
+                    !Number.isFinite(lo)
+                    || !Number.isFinite(hi)
+                    || !Number.isFinite(start)
+                    || hi < lo
+                ) {
+                    continue;
+                }
+                for (let code = lo; code <= hi; code++) {
+                    map[code] = start + (code - lo);
+                }
+            }
+        }
+        return map;
+    }
+
+    function pdfCollectToUnicodeMaps(decodedList) {
+        const maps = [];
+        for (let i = 0; i < decodedList.length; i++) {
+            const decoded = decodedList[i];
+            if (!decoded) {
+                continue;
+            }
+            const text = Array.from(decoded, function (b) {
+                return String.fromCharCode(b);
+            }).join("");
+            if (text.indexOf("begincmap") < 0) {
+                continue;
+            }
+            const map = parsePdfToUnicodeCMap(text);
+            if (Object.keys(map).length > 0) {
+                maps.push(map);
+            }
+        }
+        // One merged map is enough for single-font placeholder / Identity sheets.
+        const merged = Object.create(null);
+        for (let i = 0; i < maps.length; i++) {
+            const src = maps[i];
+            for (const key of Object.keys(src)) {
+                merged[key] = src[key];
+            }
+        }
+        return merged;
+    }
+
+    function pdfMapCodesToText(codes, toUnicode) {
+        let text = "";
+        for (let i = 0; i < codes.length; i++) {
+            const code = codes[i];
+            const mapped = toUnicode && toUnicode[code] != null
+                ? toUnicode[code]
+                : code;
+            text += String.fromCharCode(mapped);
+        }
+        return text;
+    }
+
+    function extractPdfTextItemsFromContent(decBytes, toUnicode) {
         const items = [];
         let x = 0;
         let y = 0;
@@ -774,6 +872,7 @@
             "(" + num + "(?:\\s+" + num + "){5}\\s+(?:cm|Tm))"
             + "|(" + num + "\\s+" + num + "\\s+Td)"
             + "|(\\((?:\\\\.|[^\\\\)])*\\)\\s*Tj)"
+            + "|(<[0-9A-Fa-f\\s]+>\\s*Tj)"
             + "|(\\[(?:[^\\]]*)\\]\\s*TJ)",
             "g"
         );
@@ -802,6 +901,20 @@
                 continue;
             }
             if (token.endsWith("Tj")) {
+                const hexStart = token.indexOf("<");
+                if (hexStart >= 0) {
+                    const hexEnd = token.indexOf(">", hexStart);
+                    const hexBody = token.slice(hexStart + 1, hexEnd);
+                    items.push({
+                        x: x,
+                        y: y,
+                        text: pdfMapCodesToText(
+                            pdfHexToCodePoints(hexBody),
+                            toUnicode
+                        )
+                    });
+                    continue;
+                }
                 const litStart = token.indexOf("(") + 1;
                 const litEnd = token.lastIndexOf(")");
                 const lit = token.slice(litStart, litEnd);
@@ -814,10 +927,18 @@
             if (token.endsWith("TJ")) {
                 const arr = token.slice(token.indexOf("[") + 1, token.lastIndexOf("]"));
                 let text = "";
-                const litRe = /\((?:\\.|[^\\)])*\)/g;
-                let litMatch;
-                while ((litMatch = litRe.exec(arr)) !== null) {
-                    const body = litMatch[0].slice(1, -1);
+                const pieceRe = /\((?:\\.|[^\\)])*\)|<[0-9A-Fa-f\s]+>/g;
+                let piece;
+                while ((piece = pieceRe.exec(arr)) !== null) {
+                    const raw = piece[0];
+                    if (raw.charAt(0) === "<") {
+                        text += pdfMapCodesToText(
+                            pdfHexToCodePoints(raw.slice(1, -1)),
+                            toUnicode
+                        );
+                        continue;
+                    }
+                    const body = raw.slice(1, -1);
                     const litBytes = Uint8Array.from(body, function (ch) {
                         return ch.charCodeAt(0) & 0xff;
                     });
@@ -843,6 +964,7 @@
             );
         });
         return Promise.all(inflated).then(function (decodedList) {
+            const toUnicode = pdfCollectToUnicodeMaps(decodedList);
             const items = [];
             // BridgeComposer / ACBL multi-page sheets reuse the same absolute Td
             // space on every page. Concatenating streams without a per-page
@@ -867,7 +989,10 @@
                 if (!hasText) {
                     continue;
                 }
-                const pageItems = extractPdfTextItemsFromContent(decoded);
+                const pageItems = extractPdfTextItemsFromContent(
+                    decoded,
+                    toUnicode
+                );
                 let pageMaxY = 0;
                 for (let i = 0; i < pageItems.length; i++) {
                     const item = pageItems[i];
@@ -891,7 +1016,22 @@
 
     function loadAllBoardsFromHandRecordPdf(pdfBytes) {
         return extractPdfTextItems(pdfBytes).then(function (items) {
-            return parseAllHandRecordBoards(items);
+            try {
+                return parseAllHandRecordBoards(items);
+            } catch (error) {
+                const message = error && error.message
+                    ? String(error.message)
+                    : "";
+                if (
+                    /no (compass|BridgeComposer|Deep Finesse|numbered) board/i
+                        .test(message)
+                ) {
+                    throw new Error(
+                        "no hand-record board diagrams found in PDF"
+                    );
+                }
+                throw error;
+            }
         });
     }
 

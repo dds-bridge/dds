@@ -3802,40 +3802,36 @@ test("showAboutDialog fills the About body with the product blurb", () => {
     );
 });
 
-test("menu commands restore visible focus to their menu label after closing", () => {
+/**
+ * Attach an extra Edit/File menuitem to an attachDdsMenuForKeyboard fixture.
+ */
+function attachExtraMenuitem(document, fixture, item) {
+    const { menubar, menu } = fixture;
+    const oldContains = menu.contains.bind(menu);
+    menu.contains = (node) => oldContains(node) || node === item;
+    const oldMenubarContains = menubar.contains.bind(menubar);
+    menubar.contains = (node) => oldMenubarContains(node) || node === item;
+    item.focus = item.focus || (() => {
+        document.activeElement = item;
+    });
+    item.closest = item.closest || ((selector) => {
+        if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+            return item;
+        }
+        if (selector === ".menu") {
+            return menu;
+        }
+        return null;
+    });
+    return item;
+}
+
+test("anchor menu commands restore visible focus to their menu label after closing", () => {
+    // External/FAQ links close the menu; leave focus on the visible label so
+    // keyboard users are not stranded on a display:none menuitem.
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    const { menubar, menu, label, about, panel } = attachDdsMenuForKeyboard(document);
-    // Reuse About fixture; rotate is another command that closes the menu.
-    const rotate = {
-        id: "menu-rotate",
-        role: "menuitem",
-        disabled: false,
-        attributes: { role: "menuitem" },
-        dataset: {},
-        focus() {
-            document.activeElement = this;
-        },
-        closest(selector) {
-            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
-                return this;
-            }
-            if (selector === ".menu") {
-                return menu;
-            }
-            return null;
-        },
-        setAttribute(name, value) {
-            this.attributes[name] = String(value);
-        },
-        getAttribute(name) {
-            return this.attributes[name] ?? null;
-        },
-    };
-    const oldContains = menu.contains.bind(menu);
-    menu.contains = (node) => oldContains(node) || node === rotate;
-    const oldMenubarContains = menubar.contains.bind(menubar);
-    menubar.contains = (node) => oldMenubarContains(node) || node === rotate;
+    const { menubar, menu, label, faq, panel } = attachDdsMenuForKeyboard(document);
     label.classList = {
         _names: new Set(),
         add(name) {
@@ -3853,20 +3849,89 @@ test("menu commands restore visible focus to their menu label after closing", ()
     label.focus = () => {
         document.activeElement = label;
     };
-    ctx.rotateClockwise = () => {};
     ctx.mountMenubar(menubar);
     menubar.dispatch("click", { target: label, preventDefault() {} });
     assert.equal(menu.classList.contains("is-open"), true);
-    rotate.focus();
+    faq.focus();
 
-    menubar.dispatch("click", { target: rotate, preventDefault() {} });
+    menubar.dispatch("click", { target: faq, preventDefault() {} });
 
     assert.equal(menu.classList.contains("is-open"), false);
     assert.equal(panel.hidden, true);
     assert.equal(document.activeElement, label);
     assert.equal(label.classList.contains("focus-visible-fallback"), true);
-    // Silence unused fixture binding in some runners.
-    assert.equal(typeof about.focus, "function");
+});
+
+test("Clear Entries via the menu leaves focus on North spades for typing", () => {
+    // clearTestData focuses North spades; the menubar must not steal focus
+    // back onto the Edit label afterward.
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsWeb(document);
+    const fixture = attachDdsMenuForKeyboard(document);
+    const { menubar, menu, label } = fixture;
+    const clear = attachExtraMenuitem(document, fixture, {
+        id: "menu-clear",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+    });
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    assert.equal(menu.classList.contains("is-open"), true);
+    clear.focus();
+
+    menubar.dispatch("click", { target: clear, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.element("north_spades").value, "");
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+});
+
+test("Rotate Hands via the menu leaves focus on North spades for typing", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const fixture = attachDdsMenuForKeyboard(document);
+    const { menubar, menu, label } = fixture;
+    const rotate = attachExtraMenuitem(document, fixture, {
+        id: "menu-rotate",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+    });
+    ctx.rotateClockwise = () => {};
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    rotate.focus();
+
+    menubar.dispatch("click", { target: rotate, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+});
+
+test("Sample Deal via the menu leaves focus on North spades for typing", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const fixture = attachDdsMenuForKeyboard(document);
+    const { menubar, menu, label } = fixture;
+    const sample = attachExtraMenuitem(document, fixture, {
+        id: "menu-sample-part-score",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: { sampleId: "part_score" },
+    });
+    ctx.loadSampleDealById = () => {};
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    sample.focus();
+
+    menubar.dispatch("click", { target: sample, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
 });
 
 test("opening About from the menu restores visible focus to the DDS label on close", async () => {
@@ -8534,6 +8599,42 @@ test("loadAllBoardsFromHandRecordPdf loads Madeira MiBO PDF", async () => {
     assert.equal(boards[0].hands.east.clubs, "A742");
     assert.equal(boards[0].hands.south.hearts, "K");
     assert.equal(boards[25].boardNumber, "26");
+});
+
+test("extractPdfTextItems decodes hex Tj via ToUnicode CMap", async () => {
+    // Some host "unavailable" / placeholder PDFs emit <hhhh> Tj with a
+    // ToUnicode CMap instead of WinAnsi literal strings.
+    const pdfPath = findHandRecordPdfPath("s261108s_3.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const items = await ctx.extractPdfTextItems(bytes);
+    const joined = items.map((item) => item.text).join("");
+    assert.match(joined, /página ou ficheiro/i);
+    assert.match(joined, /ainda não está disponível/i);
+});
+
+test("loadAllBoardsFromHandRecordPdf rejects placeholder PDFs clearly", async () => {
+    const pdfPath = findHandRecordPdfPath("s261108s_3.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    await assert.rejects(
+        () => ctx.loadAllBoardsFromHandRecordPdf(bytes),
+        /no hand-record board diagrams found/i
+    );
 });
 
 test("loadAllBoardsFromHandRecordPdf loads Deep Finesse regional PDF", async () => {
