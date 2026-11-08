@@ -674,14 +674,44 @@ test("formatDealPbnText includes Declarer Contract and incomplete Play", () => {
         [
             `[Deal "${PART_SCORE_PBN}"]`,
             '[Declarer "S"]',
-            '[Contract "3N"]',
+            '[Contract "3NT"]',
             '[Play "W"]',
-            "HK",
-            "H2",
-            "H9",
+            "HK H2 H9 -",
             "*",
             "",
         ].join("\n")
+    );
+});
+
+test("formatDealPbnText uses fixed Play columns when the trick leader changes", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands = handsFromKeys(ctx, {
+        north: ["H2", "S5"],
+        east: ["H9", "SQ"],
+        south: ["HA", "SK"],
+        west: ["HK", "S2"],
+    });
+    // Trick 1: West leads hearts and South wins. Trick 2: South leads S.
+    const text = ctx.formatDealPbnText({
+        hands,
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 9,
+        leadSeat: "west",
+        history: [
+            { seat: "west", key: "HK" },
+            { seat: "north", key: "H2" },
+            { seat: "east", key: "H9" },
+            { seat: "south", key: "HA" },
+            { seat: "south", key: "SK" },
+            { seat: "west", key: "S2" },
+        ],
+        absoluteSideTricks: false,
+    });
+    assert.match(text, /\[Contract "3NT"\]/);
+    assert.match(
+        text,
+        /\[Play "W"\]\nHK H2 H9 HA\nS2 - - SK\n\*\n$/
     );
 });
 
@@ -705,7 +735,7 @@ test("formatDealPbnText omits Contract for partial-deal lead mode", () => {
     assert.match(text, /\[Deal "/);
     assert.match(text, /\[Declarer "N"\]/);
     assert.doesNotMatch(text, /\[Contract /);
-    assert.match(text, /\[Play "N"\]\nSA\n\*\n/);
+    assert.match(text, /\[Play "N"\]\nSA - - -\n\*\n/);
 });
 
 test("updateSavePbnMenuEnablement disables when the diagram is empty", () => {
@@ -752,8 +782,8 @@ test("saveDealToPbn includes play history while in play mode", () => {
     assert.equal(downloads.length, 1);
     assert.equal(downloads[0].filename, "deal.pbn");
     assert.match(downloads[0].text, /\[Declarer "S"\]/);
-    assert.match(downloads[0].text, /\[Contract "3N"\]/);
-    assert.match(downloads[0].text, /\[Play "W"\]\nHT\n/);
+    assert.match(downloads[0].text, /\[Contract "3NT"\]/);
+    assert.match(downloads[0].text, /\[Play "W"\]\nHT - - -\n/);
     assert.match(downloads[0].text, /\*\n$/);
 });
 

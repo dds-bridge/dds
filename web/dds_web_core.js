@@ -152,6 +152,49 @@
         return String(direction).charAt(0).toUpperCase();
     }
 
+    function pbnContractDenomination(denomination) {
+        const value = String(denomination || "").toUpperCase();
+        if (value === "N" || value === "NT") {
+            return "NT";
+        }
+        return value;
+    }
+
+    // PBN export columns are fixed from the opening leader, then clockwise.
+    function playColumnSeats(leadSeat) {
+        const start = DIRECTIONS.indexOf(leadSeat);
+        if (start < 0) {
+            return DIRECTIONS.slice();
+        }
+        const seats = [];
+        for (let i = 0; i < DIRECTIONS.length; i++) {
+            seats.push(DIRECTIONS[(start + i) % DIRECTIONS.length]);
+        }
+        return seats;
+    }
+
+    function formatPlaySectionLines(leadSeat, history) {
+        const columns = playColumnSeats(leadSeat);
+        const lines = ['[Play "' + directionLetter(leadSeat) + '"]'];
+        const plays = history || [];
+        for (let offset = 0; offset < plays.length; offset += 4) {
+            const trick = plays.slice(offset, offset + 4);
+            const bySeat = {};
+            for (let i = 0; i < trick.length; i++) {
+                const entry = trick[i];
+                if (!entry || !entry.seat) {
+                    continue;
+                }
+                bySeat[entry.seat] = String(entry.key).toUpperCase();
+            }
+            const cells = columns.map(function (seat) {
+                return bySeat[seat] || "-";
+            });
+            lines.push(cells.join(" "));
+        }
+        return lines;
+    }
+
     /**
      * Build a PBN 2.1 text record for the current diagram.
      * When leadSeat is set, emit Declarer/Contract/Play so remaining cards are
@@ -174,15 +217,18 @@
             const level = Number(opts.targetTricks) - 6;
             if (level >= 1 && level <= 7) {
                 lines.push(
-                    '[Contract "' + level + String(opts.denomination) + '"]'
+                    '[Contract "'
+                        + level
+                        + pbnContractDenomination(opts.denomination)
+                        + '"]'
                 );
             }
         }
         if (opts.leadSeat) {
-            lines.push('[Play "' + directionLetter(opts.leadSeat) + '"]');
             const history = opts.history || [];
-            for (let i = 0; i < history.length; i++) {
-                lines.push(String(history[i].key).toUpperCase());
+            const playLines = formatPlaySectionLines(opts.leadSeat, history);
+            for (let i = 0; i < playLines.length; i++) {
+                lines.push(playLines[i]);
             }
             let totalCards = 0;
             for (let d = 0; d < DIRECTIONS.length; d++) {
