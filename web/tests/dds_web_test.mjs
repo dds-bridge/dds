@@ -3840,6 +3840,14 @@ test("menubar CSS uses Avenir Next stack and warm chrome colors", () => {
     assert.doesNotMatch(css, /\.menu-label:hover[\s\S]*?background:\s*#e8eef8/);
 });
 
+test("formatMenuShortcut treats ctrl like mod on non-Mac", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(ctx.formatMenuShortcut("ctrl+o", { mac: false }), "Ctrl+O");
+    assert.equal(ctx.formatMenuShortcut("mod+o", { mac: false }), "Ctrl+O");
+    assert.equal(ctx.formatMenuShortcut("ctrl+shift+z", { mac: false }), "Ctrl+Shift+Z");
+    assert.equal(ctx.formatMenuShortcut("ctrl+o", { mac: true }), "⌘O");
+});
+
 test("showAboutDialog fills the About body with the product blurb", () => {
     const document = createMockDocument();
     const dialog = document.element("dds-about-dialog");

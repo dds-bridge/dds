@@ -84,7 +84,10 @@ class StageGithubPagesTest(unittest.TestCase):
             (src / "dds_web.html").write_text("<html></html>", encoding="utf-8")
             with self.assertRaises(FileNotFoundError) as ctx:
                 stage.stage_github_pages(src, dest)
-            self.assertIn("dds_web_faq.html", str(ctx.exception))
+            message = str(ctx.exception)
+            self.assertIn("dds_web_faq.html", message)
+            self.assertIn("required deploy files", message)
+            self.assertNotIn("update_wasm.sh", message)
             self.assertEqual(list(dest.iterdir()), [])
 
     def test_deploy_file_list_matches_static_plus_wasm(self) -> None:

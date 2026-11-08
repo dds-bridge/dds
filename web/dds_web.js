@@ -192,7 +192,7 @@ function formatMenuShortcut(spec, options) {
     const parts = String(spec).toLowerCase().split("+").map(function (p) {
         return p.trim();
     }).filter(Boolean);
-    const hasMod = parts.indexOf("mod") >= 0;
+    const hasMod = parts.indexOf("mod") >= 0 || parts.indexOf("ctrl") >= 0;
     const hasShift = parts.indexOf("shift") >= 0;
     const hasAlt = parts.indexOf("alt") >= 0;
     const key = parts.find(function (p) {
