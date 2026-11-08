@@ -214,15 +214,19 @@
             && opts.targetTricks != null
             && !isNaN(Number(opts.targetTricks))
         ) {
-            const level = Number(opts.targetTricks) - 6;
-            if (level >= 1 && level <= 7) {
-                lines.push(
-                    '[Contract "'
-                        + level
-                        + pbnContractDenomination(opts.denomination)
-                        + '"]'
-                );
-            }
+            // DD-table play can target 0–13 tricks; PBN Contract levels are
+            // 1–7. Clamp so denomination/trump is preserved for replay even
+            // when the selected target is below a one-level contract.
+            const level = Math.max(
+                1,
+                Math.min(7, Number(opts.targetTricks) - 6)
+            );
+            lines.push(
+                '[Contract "'
+                    + level
+                    + pbnContractDenomination(opts.denomination)
+                    + '"]'
+            );
         }
         if (opts.leadSeat) {
             const history = opts.history || [];

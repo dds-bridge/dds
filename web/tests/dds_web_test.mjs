@@ -683,6 +683,22 @@ test("formatDealPbnText includes Declarer Contract and incomplete Play", () => {
     );
 });
 
+test("formatDealPbnText emits a one-level Contract for sub-game targets", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    loadSampleDeal(ctx, "part_score");
+    const text = ctx.formatDealPbnText({
+        hands: ctx.collectHands(),
+        declarer: "south",
+        denomination: "H",
+        targetTricks: 5,
+        leadSeat: "west",
+        history: [{ seat: "west", key: "HK" }],
+        absoluteSideTricks: false,
+    });
+    assert.match(text, /\[Contract "1H"\]/);
+    assert.match(text, /\[Play "W"\]\nHK - - -\n\*\n/);
+});
+
 test("formatDealPbnText uses fixed Play columns when the trick leader changes", () => {
     const ctx = loadDdsWeb(createMockDocument());
     const hands = handsFromKeys(ctx, {
