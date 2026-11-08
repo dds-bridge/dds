@@ -8620,6 +8620,72 @@ test("extractPdfTextItems decodes hex Tj via ToUnicode CMap", async () => {
     assert.match(joined, /ainda não está disponível/i);
 });
 
+test("parsePdfToUnicodeCMap skips hostile oversized bfrange endpoints", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const started = Date.now();
+    const parsed = ctx.parsePdfToUnicodeCMap(`
+begincmap
+1 beginbfrange
+<0000> <20000000000000> <0041>
+endbfrange
+1 beginbfrange
+<0041> <0043> <0061>
+endbfrange
+endcmap
+`);
+    assert.ok(Date.now() - started < 1000, "bfrange expand must not hang");
+    assert.equal(parsed.map[0x41], 0x61);
+    assert.equal(parsed.map[0x42], 0x62);
+    assert.equal(parsed.map[0x43], 0x63);
+    assert.equal(parsed.map[0], undefined);
+});
+
+test("pdfHexToCodePoints respects one-byte and two-byte widths", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    // Copy out of the VM realm before deepEqual (Node rejects cross-realm arrays).
+    assert.deepEqual(Array.from(ctx.pdfHexToCodePoints("41", 1)), [0x41]);
+    assert.deepEqual(Array.from(ctx.pdfHexToCodePoints("4142", 1)), [0x41, 0x42]);
+    assert.deepEqual(Array.from(ctx.pdfHexToCodePoints("0041", 2)), [0x41]);
+    assert.deepEqual(
+        Array.from(ctx.pdfHexToCodePoints("00410042", 2)),
+        [0x41, 0x42]
+    );
+});
+
+test("extractPdfTextItemsFromContent keeps literal angle brackets out of hex path", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const content = Buffer.from("BT\n(<0041>) Tj\n(A < B) Tj\nET\n", "latin1");
+    const items = ctx.extractPdfTextItemsFromContent(
+        new Uint8Array(content),
+        { map: Object.create(null), codeByteWidth: 2 }
+    );
+    assert.equal(
+        Array.from(items, (item) => item.text).join("\n"),
+        "<0041>\nA < B"
+    );
+});
+
+test("extractPdfTextItemsFromContent uses the active Tf ToUnicode map", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const byFont = {
+        F1: { map: { 1: "N".charCodeAt(0) }, codeByteWidth: 2 },
+        F2: { map: { 1: "K".charCodeAt(0) }, codeByteWidth: 2 },
+    };
+    const content = Buffer.from(
+        "BT\n/F1 12 Tf\n<0001> Tj\n/F2 12 Tf\n<0001> Tj\nET\n",
+        "latin1"
+    );
+    const items = ctx.extractPdfTextItemsFromContent(
+        new Uint8Array(content),
+        byFont
+    );
+    assert.equal(Array.from(items, (item) => item.text).join(""), "NK");
+});
+
 test("loadAllBoardsFromHandRecordPdf rejects placeholder PDFs clearly", async () => {
     const pdfPath = findHandRecordPdfPath("s261108s_3.pdf");
     if (!pdfPath) {

@@ -639,6 +639,25 @@
         return Number.isFinite(length) && length >= 0 ? length : null;
     }
 
+    function pdfObjectNumberBefore(bytes, streamKeywordOffset) {
+        const lookback = Math.min(streamKeywordOffset, 256);
+        let text = "";
+        for (
+            let i = streamKeywordOffset - lookback;
+            i < streamKeywordOffset;
+            i++
+        ) {
+            text += String.fromCharCode(bytes[i]);
+        }
+        const re = /(\d+)\s+0\s+obj\b/g;
+        let match;
+        let last = null;
+        while ((match = re.exec(text)) !== null) {
+            last = parseInt(match[1], 10);
+        }
+        return Number.isFinite(last) ? last : null;
+    }
+
     function pdfFindStreams(bytes) {
         const streams = [];
         const startMark = [0x73, 0x74, 0x72, 0x65, 0x61, 0x6d]; // stream
@@ -720,7 +739,10 @@
             } else {
                 i = end;
             }
-            streams.push(bytes.subarray(dataStart, dataEnd));
+            streams.push({
+                objNum: pdfObjectNumberBefore(bytes, found),
+                data: bytes.subarray(dataStart, dataEnd)
+            });
         }
         return streams;
     }
@@ -759,12 +781,16 @@
         };
     }
 
-    function pdfHexToCodePoints(hexBody) {
+    // Two-byte Identity / CID codespace upper bound (and max bfrange span).
+    const PDF_MAX_CHAR_CODE = 0xffff;
+
+    function pdfHexToCodePoints(hexBody, codeByteWidth) {
         const hex = String(hexBody).replace(/\s+/g, "");
+        const width = codeByteWidth === 1 ? 1 : 2;
+        const step = width * 2;
         const codes = [];
-        // CID / Identity-H strings are two bytes per character.
-        for (let i = 0; i + 3 < hex.length; i += 4) {
-            const code = parseInt(hex.slice(i, i + 4), 16);
+        for (let i = 0; i + step <= hex.length; i += step) {
+            const code = parseInt(hex.slice(i, i + step), 16);
             if (Number.isFinite(code)) {
                 codes.push(code);
             }
@@ -775,9 +801,24 @@
     /**
      * Build a font-code → Unicode map from ToUnicode CMap stream text.
      * Supports beginbfchar and the incremental beginbfrange form.
+     * @returns {{map: Object, codeByteWidth: number}}
      */
     function parsePdfToUnicodeCMap(cmapText) {
         const map = Object.create(null);
+        let codeByteWidth = 2;
+        const spaceRe = /begincodespacerange([\s\S]*?)endcodespacerange/;
+        const spaceMatch = spaceRe.exec(cmapText);
+        if (spaceMatch) {
+            const first = /<([0-9A-Fa-f]+)>/.exec(spaceMatch[1]);
+            if (first) {
+                const nibbles = first[1].length;
+                if (nibbles <= 2) {
+                    codeByteWidth = 1;
+                } else if (nibbles <= 4) {
+                    codeByteWidth = 2;
+                }
+            }
+        }
         const bfcharRe = /beginbfchar([\s\S]*?)endbfchar/g;
         let section;
         while ((section = bfcharRe.exec(cmapText)) !== null) {
@@ -786,7 +827,12 @@
             while ((pair = pairRe.exec(section[1])) !== null) {
                 const src = parseInt(pair[1], 16);
                 const dst = parseInt(pair[2], 16);
-                if (Number.isFinite(src) && Number.isFinite(dst)) {
+                if (
+                    Number.isSafeInteger(src)
+                    && Number.isSafeInteger(dst)
+                    && src >= 0
+                    && src <= PDF_MAX_CHAR_CODE
+                ) {
                     map[src] = dst;
                 }
             }
@@ -801,10 +847,20 @@
                 const hi = parseInt(range[2], 16);
                 const start = parseInt(range[3], 16);
                 if (
-                    !Number.isFinite(lo)
-                    || !Number.isFinite(hi)
-                    || !Number.isFinite(start)
+                    !Number.isSafeInteger(lo)
+                    || !Number.isSafeInteger(hi)
+                    || !Number.isSafeInteger(start)
+                    || lo < 0
                     || hi < lo
+                    || hi > PDF_MAX_CHAR_CODE
+                    || start < 0
+                ) {
+                    continue;
+                }
+                const span = hi - lo;
+                if (
+                    !Number.isSafeInteger(start + span)
+                    || span > PDF_MAX_CHAR_CODE
                 ) {
                     continue;
                 }
@@ -813,64 +869,128 @@
                 }
             }
         }
-        return map;
+        return { map: map, codeByteWidth: codeByteWidth };
     }
 
-    function pdfCollectToUnicodeMaps(decodedList) {
-        const maps = [];
-        for (let i = 0; i < decodedList.length; i++) {
-            const decoded = decodedList[i];
-            if (!decoded) {
+    function pdfLatin1(bytes) {
+        return Array.from(bytes, function (b) {
+            return String.fromCharCode(b);
+        }).join("");
+    }
+
+    function pdfFontResourceObjectNums(pdfText) {
+        const out = Object.create(null);
+        const resRe = /\/Font\s*<<([\s\S]*?)>>/g;
+        let match;
+        while ((match = resRe.exec(pdfText)) !== null) {
+            const entryRe = /\/([A-Za-z][\w+\-]*)\s+(\d+)\s+0\s+R/g;
+            let entry;
+            while ((entry = entryRe.exec(match[1])) !== null) {
+                out[entry[1]] = parseInt(entry[2], 10);
+            }
+        }
+        return out;
+    }
+
+    function pdfFontObjectToUnicodeObjectNums(pdfText) {
+        const out = Object.create(null);
+        // Flat font dictionaries only (`[^>]+` stops before nested `<<` /
+        // stream dicts). Type0 parents carry /ToUnicode here; binary streams
+        // must not be scanned for a false /Type /Font match.
+        const objRe = /(\d+)\s+0\s+obj\s*<<([^>]+)>>/g;
+        let match;
+        while ((match = objRe.exec(pdfText)) !== null) {
+            const body = match[2];
+            if (!/\/Type\s*\/Font\b/.test(body)) {
                 continue;
             }
-            const text = Array.from(decoded, function (b) {
-                return String.fromCharCode(b);
-            }).join("");
+            const tu = /\/ToUnicode\s+(\d+)\s+0\s+R/.exec(body);
+            if (!tu) {
+                continue;
+            }
+            out[parseInt(match[1], 10)] = parseInt(tu[1], 10);
+        }
+        return out;
+    }
+
+    /**
+     * Map resource font names (/F4) to parsed ToUnicode CMaps for this PDF.
+     * @returns {Object<string, {map: Object, codeByteWidth: number}>}
+     */
+    function pdfCollectFontToUnicodeMaps(pdfBytes, decodedStreams) {
+        const byCmapObj = Object.create(null);
+        for (let i = 0; i < decodedStreams.length; i++) {
+            const entry = decodedStreams[i];
+            if (!entry || !entry.data || entry.objNum == null) {
+                continue;
+            }
+            const text = pdfLatin1(entry.data);
             if (text.indexOf("begincmap") < 0) {
                 continue;
             }
-            const map = parsePdfToUnicodeCMap(text);
-            if (Object.keys(map).length > 0) {
-                maps.push(map);
+            const parsed = parsePdfToUnicodeCMap(text);
+            if (Object.keys(parsed.map).length > 0) {
+                byCmapObj[entry.objNum] = parsed;
             }
         }
-        // One merged map is enough for single-font placeholder / Identity sheets.
-        const merged = Object.create(null);
-        for (let i = 0; i < maps.length; i++) {
-            const src = maps[i];
-            for (const key of Object.keys(src)) {
-                merged[key] = src[key];
+        const pdfText = pdfLatin1(pdfBytes);
+        const fontRes = pdfFontResourceObjectNums(pdfText);
+        const fontToCmap = pdfFontObjectToUnicodeObjectNums(pdfText);
+        const byFont = Object.create(null);
+        for (const name of Object.keys(fontRes)) {
+            const fontObj = fontRes[name];
+            const cmapObj = fontToCmap[fontObj];
+            if (cmapObj != null && byCmapObj[cmapObj]) {
+                byFont[name] = byCmapObj[cmapObj];
             }
         }
-        return merged;
+        return byFont;
     }
 
     function pdfMapCodesToText(codes, toUnicode) {
+        const table = toUnicode && toUnicode.map ? toUnicode.map : toUnicode;
         let text = "";
         for (let i = 0; i < codes.length; i++) {
             const code = codes[i];
-            const mapped = toUnicode && toUnicode[code] != null
-                ? toUnicode[code]
-                : code;
+            const mapped = table && table[code] != null ? table[code] : code;
             text += String.fromCharCode(mapped);
         }
         return text;
     }
 
-    function extractPdfTextItemsFromContent(decBytes, toUnicode) {
+    function pdfActiveToUnicode(byFont, fontName) {
+        if (!byFont) {
+            return { map: Object.create(null), codeByteWidth: 2 };
+        }
+        // Legacy single-map shape used by unit tests.
+        if (byFont.map) {
+            return byFont;
+        }
+        if (fontName && byFont[fontName]) {
+            return byFont[fontName];
+        }
+        const names = Object.keys(byFont);
+        if (names.length === 1) {
+            return byFont[names[0]];
+        }
+        return { map: Object.create(null), codeByteWidth: 2 };
+    }
+
+    function extractPdfTextItemsFromContent(decBytes, toUnicodeByFont) {
         const items = [];
         let x = 0;
         let y = 0;
         // Identity CTM; Ghostscript hand-records wrap BT/ET in `10 0 0 10 0 0 cm`.
         let ctm = [1, 0, 0, 1, 0, 0];
-        // Walk cm / Tm / Td / Tj / TJ. Latin-1 decode of content is fine for ASCII ops.
-        const content = Array.from(decBytes, function (b) {
-            return String.fromCharCode(b);
-        }).join("");
+        let activeFont = null;
+        let activeToUnicode = pdfActiveToUnicode(toUnicodeByFont, null);
+        // Walk cm / Tm / Td / Tf / Tj / TJ. Latin-1 decode is fine for ASCII ops.
+        const content = pdfLatin1(decBytes);
         const num = "-?\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?";
         const tokenRe = new RegExp(
             "(" + num + "(?:\\s+" + num + "){5}\\s+(?:cm|Tm))"
             + "|(" + num + "\\s+" + num + "\\s+Td)"
+            + "|(/[A-Za-z][\\w+\\-]*\\s+" + num + "\\s+Tf)"
             + "|(\\((?:\\\\.|[^\\\\)])*\\)\\s*Tj)"
             + "|(<[0-9A-Fa-f\\s]+>\\s*Tj)"
             + "|(\\[(?:[^\\]]*)\\]\\s*TJ)",
@@ -900,17 +1020,31 @@
                 y = parseFloat(parts[1]);
                 continue;
             }
+            if (token.endsWith("Tf")) {
+                const parts = token.trim().split(/\s+/);
+                activeFont = parts[0].slice(1);
+                activeToUnicode = pdfActiveToUnicode(
+                    toUnicodeByFont,
+                    activeFont
+                );
+                continue;
+            }
             if (token.endsWith("Tj")) {
-                const hexStart = token.indexOf("<");
-                if (hexStart >= 0) {
+                // Hex strings are their own token (`<...>` Tj). Do not treat a
+                // literal that merely contains "<" as hex.
+                if (/^\s*</.test(token)) {
+                    const hexStart = token.indexOf("<");
                     const hexEnd = token.indexOf(">", hexStart);
                     const hexBody = token.slice(hexStart + 1, hexEnd);
                     items.push({
                         x: x,
                         y: y,
                         text: pdfMapCodesToText(
-                            pdfHexToCodePoints(hexBody),
-                            toUnicode
+                            pdfHexToCodePoints(
+                                hexBody,
+                                activeToUnicode.codeByteWidth
+                            ),
+                            activeToUnicode
                         )
                     });
                     continue;
@@ -933,8 +1067,11 @@
                     const raw = piece[0];
                     if (raw.charAt(0) === "<") {
                         text += pdfMapCodesToText(
-                            pdfHexToCodePoints(raw.slice(1, -1)),
-                            toUnicode
+                            pdfHexToCodePoints(
+                                raw.slice(1, -1),
+                                activeToUnicode.codeByteWidth
+                            ),
+                            activeToUnicode
                         );
                         continue;
                     }
@@ -953,10 +1090,10 @@
     function extractPdfTextItems(pdfBytes) {
         const bytes = pdfBytes instanceof Uint8Array ? pdfBytes : new Uint8Array(pdfBytes);
         const streams = pdfFindStreams(bytes);
-        const inflated = streams.map(function (raw) {
-            return inflateZlibBytes(raw).then(
+        const inflated = streams.map(function (stream) {
+            return inflateZlibBytes(stream.data).then(
                 function (dec) {
-                    return dec;
+                    return { objNum: stream.objNum, data: dec };
                 },
                 function () {
                     return null;
@@ -964,16 +1101,20 @@
             );
         });
         return Promise.all(inflated).then(function (decodedList) {
-            const toUnicode = pdfCollectToUnicodeMaps(decodedList);
+            const toUnicodeByFont = pdfCollectFontToUnicodeMaps(
+                bytes,
+                decodedList
+            );
             const items = [];
             // BridgeComposer / ACBL multi-page sheets reuse the same absolute Td
             // space on every page. Concatenating streams without a per-page
             // offset collapses board cells (e.g. 1 with 19) and drops most boards.
             let pageYOffset = 0;
-            for (const decoded of decodedList) {
-                if (!decoded) {
+            for (const entry of decodedList) {
+                if (!entry || !entry.data) {
                     continue;
                 }
+                const decoded = entry.data;
                 // Only content streams with text operators.
                 let hasText = false;
                 for (let i = 0; i + 1 < decoded.length; i++) {
@@ -991,7 +1132,7 @@
                 }
                 const pageItems = extractPdfTextItemsFromContent(
                     decoded,
-                    toUnicode
+                    toUnicodeByFont
                 );
                 let pageMaxY = 0;
                 for (let i = 0; i < pageItems.length; i++) {
@@ -1040,6 +1181,9 @@
     global.parseAllBridgeComposerBoards = parseAllBridgeComposerBoards;
     global.parseAllDeepFinesseBoards = parseAllDeepFinesseBoards;
     global.parseAllCompassHandRecordBoards = parseAllCompassHandRecordBoards;
+    global.parsePdfToUnicodeCMap = parsePdfToUnicodeCMap;
+    global.pdfHexToCodePoints = pdfHexToCodePoints;
+    global.extractPdfTextItemsFromContent = extractPdfTextItemsFromContent;
     global.extractPdfTextItems = extractPdfTextItems;
     global.loadAllBoardsFromHandRecordPdf = loadAllBoardsFromHandRecordPdf;
     global.handsToDottedDeal = handsToDottedDeal;
