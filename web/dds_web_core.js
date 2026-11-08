@@ -9,7 +9,8 @@
 
 /* eslint-env es6 */
 /* exported DIRECTIONS SUITS PIPS DENOMINATIONS DENOM_TO_STRAIN DIR_TO_HAND
-            Card handsToPbn openingLeader pipFromDdsRank leadTricksMapFromSolverOutput
+            Card handsToPbn formatDealPbnText openingLeader pipFromDdsRank
+            leadTricksMapFromSolverOutput
             fourthHandFillState cardsToSuitHoldings sortedPipInsertIndex
             allHandsHaveEqualCardCounts dealIsPartial dealIsFull
             ddMatrixCellTricks sanitizeSuitHolding
@@ -142,6 +143,57 @@
             }).join(".");
         });
         return "N:" + handStrings.join(" ");
+    }
+
+    function directionLetter(direction) {
+        if (!direction) {
+            return "";
+        }
+        return String(direction).charAt(0).toUpperCase();
+    }
+
+    /**
+     * Build a PBN 2.1 text record for the current diagram.
+     * When leadSeat is set, emit Declarer/Contract/Play so remaining cards are
+     * Deal minus the play history (standard encoding).
+     */
+    function formatDealPbnText(options) {
+        const opts = options || {};
+        const hands = opts.hands || {};
+        const lines = ['[Deal "' + handsToPbn(hands) + '"]'];
+        if (opts.declarer) {
+            lines.push('[Declarer "' + directionLetter(opts.declarer) + '"]');
+        }
+        if (
+            opts.declarer
+            && opts.denomination
+            && !opts.absoluteSideTricks
+            && opts.targetTricks != null
+            && !isNaN(Number(opts.targetTricks))
+        ) {
+            const level = Number(opts.targetTricks) - 6;
+            if (level >= 1 && level <= 7) {
+                lines.push(
+                    '[Contract "' + level + String(opts.denomination) + '"]'
+                );
+            }
+        }
+        if (opts.leadSeat) {
+            lines.push('[Play "' + directionLetter(opts.leadSeat) + '"]');
+            const history = opts.history || [];
+            for (let i = 0; i < history.length; i++) {
+                lines.push(String(history[i].key).toUpperCase());
+            }
+            let totalCards = 0;
+            for (let d = 0; d < DIRECTIONS.length; d++) {
+                const seatCards = hands[DIRECTIONS[d]];
+                totalCards += seatCards ? seatCards.length : 0;
+            }
+            if (history.length < totalCards) {
+                lines.push("*");
+            }
+        }
+        return lines.join("\n") + "\n";
     }
 
     function openingLeader(declarerDirection) {
@@ -400,6 +452,7 @@
     global.suitTag = suitTag;
     global.suitSymbolHtml = suitSymbolHtml;
     global.handsToPbn = handsToPbn;
+    global.formatDealPbnText = formatDealPbnText;
     global.openingLeader = openingLeader;
     global.pipFromDdsRank = pipFromDdsRank;
     global.leadTricksMapFromSolverOutput = leadTricksMapFromSolverOutput;

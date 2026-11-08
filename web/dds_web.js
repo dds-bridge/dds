@@ -72,6 +72,10 @@
             populateSampleDealsMenu
             mountMenubar
             updateEditMenuEnablement
+            updateSavePbnMenuEnablement
+            formatDealPbnText
+            downloadTextFile
+            saveDealToPbn
             handRecordPrev
             handRecordNext
             showHandRecordBoard
@@ -516,6 +520,87 @@ function updateEditMenuEnablement() {
     }
 }
 
+function diagramHasAnyCards(hands) {
+    const source = hands || collectHands();
+    for (let i = 0; i < DIRECTIONS.length; i++) {
+        if ((source[DIRECTIONS[i]] || []).length > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function updateSavePbnMenuEnablement(hands) {
+    const save = document.getElementById("menu-save-pbn");
+    if (!save) {
+        return;
+    }
+    save.disabled = !diagramHasAnyCards(hands);
+}
+
+function downloadTextFile(filename, text) {
+    const blob = new Blob([text], { type: "application/x-bridge+pbn" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.rel = "noopener";
+    if (document.body && typeof document.body.appendChild === "function") {
+        document.body.appendChild(anchor);
+    }
+    anchor.click();
+    if (anchor.remove) {
+        anchor.remove();
+    } else if (anchor.parentNode) {
+        anchor.parentNode.removeChild(anchor);
+    }
+    if (typeof URL.revokeObjectURL === "function") {
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 0);
+    }
+}
+
+function saveDealPbnFilename() {
+    if (
+        handRecordBoards
+        && handRecordBoards.length > 0
+        && handRecordIndex >= 0
+        && handRecordIndex < handRecordBoards.length
+    ) {
+        const board = handRecordBoards[handRecordIndex];
+        if (board && board.boardNumber != null && board.boardNumber !== "") {
+            return "board-" + board.boardNumber + ".pbn";
+        }
+    }
+    return "deal.pbn";
+}
+
+function saveDealToPbn() {
+    if (typeof formatDealPbnText !== "function") {
+        return;
+    }
+    let text;
+    if (typeof isPlayMode === "function" && isPlayMode() && playState) {
+        text = formatDealPbnText({
+            hands: playState.hands,
+            declarer: playState.declarer,
+            denomination: playState.denomination,
+            targetTricks: playState.targetTricks,
+            leadSeat: playState.leadSeat,
+            history: playState.history,
+            absoluteSideTricks: playState.absoluteSideTricks,
+        });
+    } else {
+        const hands = collectHands();
+        if (!diagramHasAnyCards(hands)) {
+            return;
+        }
+        text = formatDealPbnText({ hands: hands });
+    }
+    downloadTextFile(saveDealPbnFilename(), text);
+}
+
 function mountMenubar(menubar) {
     if (!menubar) {
         return function () {};
@@ -592,6 +677,12 @@ function mountMenubar(menubar) {
         }
         if (item.id === "menu-import-deals") {
             chooseDealFile();
+            closeAll();
+            focusForKeyboard(trigger);
+            return;
+        }
+        if (item.id === "menu-save-pbn") {
+            saveDealToPbn();
             closeAll();
             focusForKeyboard(trigger);
             return;
@@ -3014,6 +3105,7 @@ function updateActionButtons(activeElement) {
     }
 
     lastDealWasComplete = dealComplete;
+    updateSavePbnMenuEnablement(hands);
 }
 
 function collectHands() {
@@ -3101,6 +3193,7 @@ function pageLoad() {
         ? document.querySelector(".menubar")
         : document.getElementById("menubar"));
     updateEditMenuEnablement();
+    updateSavePbnMenuEnablement();
 
     for (const element of hand_elements()) {
         element.addEventListener("input", handleHandSuitInput);
