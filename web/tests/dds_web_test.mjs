@@ -4424,6 +4424,155 @@ test("ArrowDown moves focus between menuitems in the open menu", () => {
     assert.equal(document.activeElement, about);
 });
 
+test("ArrowDown on another menu label opens that menu instead of the prior panel", () => {
+    // Open DDS, move focus to the File label, then ArrowDown must open File
+    // (not jump back into DDS → About).
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const dds = attachDdsMenuForKeyboard(document);
+    const fileLabel = {
+        className: "menu-label",
+        attributes: { "aria-expanded": "false", "aria-haspopup": "menu" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                ? this.attributes[name]
+                : null;
+        },
+        closest() {
+            return null;
+        },
+    };
+    const importItem = {
+        id: "menu-import-deals",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+        focus() {
+            document.activeElement = this;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return fileMenu;
+            }
+            return null;
+        },
+    };
+    const filePanel = {
+        className: "menu-panel",
+        hidden: true,
+        role: "menu",
+        querySelectorAll(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return [importItem];
+            }
+            return [];
+        },
+        contains(node) {
+            return node === importItem;
+        },
+    };
+    const fileMenu = {
+        className: "menu",
+        classList: {
+            _open: false,
+            contains(name) {
+                return name === "is-open" ? this._open : false;
+            },
+            toggle(name, force) {
+                if (name === "is-open") {
+                    this._open = !!force;
+                }
+            },
+            add(name) {
+                if (name === "is-open") {
+                    this._open = true;
+                }
+            },
+            remove(name) {
+                if (name === "is-open") {
+                    this._open = false;
+                }
+            },
+        },
+        querySelector(selector) {
+            if (
+                selector === ".menu-panel:not(.menu-submenu)"
+                || selector === ".menu-panel"
+            ) {
+                return filePanel;
+            }
+            if (selector === ".menu-label") {
+                return fileLabel;
+            }
+            return null;
+        },
+        contains(node) {
+            return node === fileLabel || node === importItem || node === filePanel;
+        },
+    };
+    fileMenu.classList.toggle = function (name, force) {
+        if (name === "is-open") {
+            this._open = force === undefined ? !this._open : !!force;
+            fileMenu.classList._open = this._open;
+        }
+    };
+    fileMenu.classList.contains = function (name) {
+        return name === "is-open" ? this._open : false;
+    };
+    fileLabel.closest = (selector) => {
+        if (selector === ".menu-label") {
+            return fileLabel;
+        }
+        if (selector === ".menu") {
+            return fileMenu;
+        }
+        return null;
+    };
+
+    const { menubar, menu: ddsMenu, label: ddsLabel, about } = dds;
+    const oldQueryAll = menubar.querySelectorAll;
+    menubar.querySelectorAll = (selector) => {
+        if (selector === ".menu") {
+            return [ddsMenu, fileMenu];
+        }
+        return oldQueryAll.call(menubar, selector);
+    };
+    const oldContains = menubar.contains;
+    menubar.contains = (node) =>
+        oldContains(node)
+        || node === fileLabel
+        || node === importItem
+        || node === filePanel
+        || fileMenu.contains(node);
+
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: ddsLabel, preventDefault() {} });
+    assert.equal(ddsMenu.classList.contains("is-open"), true);
+    about.focus();
+    fileLabel.focus();
+    assert.equal(document.activeElement, fileLabel);
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+
+    assert.equal(ddsMenu.classList.contains("is-open"), false);
+    assert.equal(fileMenu.classList.contains("is-open"), true);
+    assert.equal(filePanel.hidden, false);
+    assert.equal(document.activeElement, importItem);
+});
+
 test("Escape does nothing when no menu is open so dialogs can dismiss", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);

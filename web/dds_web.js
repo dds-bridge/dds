@@ -644,7 +644,7 @@ function mountMenubar(menubar) {
 
     function onKeyDown(event) {
         const key = event.key;
-        const menu = openMenu();
+        let menu = openMenu();
         const submenuOpen = sampleSubmenuIsOpen();
 
         if (key === "Escape") {
@@ -675,13 +675,35 @@ function mountMenubar(menubar) {
             return;
         }
 
-        if (!menu) {
-            return;
-        }
-
         const active = document.activeElement;
         // Arrow navigation applies only while focus remains inside the menubar.
         if (!active || !menubar.contains(active)) {
+            return;
+        }
+
+        // If focus sits on another top-level label, switch to that menu before
+        // arrowing — otherwise ArrowDown jumps back into the previously open panel.
+        const focusMenu = active.closest ? active.closest(".menu") : null;
+        const onMenuLabel = !!(
+            focusMenu
+            && focusMenu.querySelector
+            && focusMenu.querySelector(".menu-label") === active
+        );
+        if (onMenuLabel && focusMenu !== menu) {
+            if (
+                key !== "ArrowDown"
+                && key !== "ArrowUp"
+                && key !== "ArrowLeft"
+                && key !== "ArrowRight"
+            ) {
+                return;
+            }
+            closeAll();
+            setMenuOpen(focusMenu, true);
+            menu = focusMenu;
+        }
+
+        if (!menu) {
             return;
         }
 

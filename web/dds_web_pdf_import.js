@@ -913,11 +913,56 @@
         return out;
     }
 
+    function pdfResolveFontNamesToCmaps(fontNameToObj, fontToCmap, byCmapObj) {
+        const byFont = Object.create(null);
+        for (const name of Object.keys(fontNameToObj)) {
+            const fontObj = fontNameToObj[name];
+            const cmapObj = fontToCmap[fontObj];
+            if (cmapObj != null && byCmapObj[cmapObj]) {
+                byFont[name] = byCmapObj[cmapObj];
+            }
+        }
+        return byFont;
+    }
+
+    function pdfFontBlockObjectNums(fontDictBody) {
+        const out = Object.create(null);
+        const entryRe = /\/([A-Za-z][\w+\-]*)\s+(\d+)\s+0\s+R/g;
+        let entry;
+        while ((entry = entryRe.exec(fontDictBody)) !== null) {
+            out[entry[1]] = parseInt(entry[2], 10);
+        }
+        return out;
+    }
+
+    function pdfResourceObjectFontMaps(pdfText) {
+        // Associate each `/Font <<...>>` with the nearest preceding object id
+        // (page Resources, Pages inheritance, or a shared resource object).
+        const out = Object.create(null); // objNum -> { fontName: fontObjNum }
+        const fontRe = /\/Font\s*<<([^>]*)>>/g;
+        let match;
+        while ((match = fontRe.exec(pdfText)) !== null) {
+            const before = pdfText.slice(Math.max(0, match.index - 400), match.index);
+            const objs = before.match(/(\d+)\s+0\s+obj/g);
+            if (!objs || objs.length === 0) {
+                continue;
+            }
+            const last = objs[objs.length - 1].match(/(\d+)/);
+            if (!last) {
+                continue;
+            }
+            out[parseInt(last[1], 10)] = pdfFontBlockObjectNums(match[1]);
+        }
+        return out;
+    }
+
     /**
-     * Map resource font names (/F4) to parsed ToUnicode CMaps for this PDF.
-     * @returns {Object<string, {map: Object, codeByteWidth: number}>}
+     * Map each content-stream object number to font-name → ToUnicode CMap.
+     * Page /Resources (and inherited Pages resources) scope /F1 per page so
+     * reused names on later pages do not overwrite earlier boards.
+     * @returns {Object<number, Object<string, {map: Object, codeByteWidth: number}>>}
      */
-    function pdfCollectFontToUnicodeMaps(pdfBytes, decodedStreams) {
+    function pdfCollectContentFontToUnicodeMaps(pdfBytes, decodedStreams) {
         const byCmapObj = Object.create(null);
         for (let i = 0; i < decodedStreams.length; i++) {
             const entry = decodedStreams[i];
@@ -934,17 +979,75 @@
             }
         }
         const pdfText = pdfLatin1(pdfBytes);
-        const fontRes = pdfFontResourceObjectNums(pdfText);
         const fontToCmap = pdfFontObjectToUnicodeObjectNums(pdfText);
-        const byFont = Object.create(null);
-        for (const name of Object.keys(fontRes)) {
-            const fontObj = fontRes[name];
-            const cmapObj = fontToCmap[fontObj];
-            if (cmapObj != null && byCmapObj[cmapObj]) {
-                byFont[name] = byCmapObj[cmapObj];
+        const resourceFonts = pdfResourceObjectFontMaps(pdfText);
+        const contentMaps = Object.create(null);
+
+        let search = 0;
+        while (search < pdfText.length) {
+            const pageType = pdfText.indexOf("/Type /Page", search);
+            if (pageType < 0) {
+                break;
+            }
+            search = pageType + 11;
+            // Skip the /Pages tree node (`/Type /Pages`).
+            if (pdfText.charAt(pageType + 11) === "s") {
+                continue;
+            }
+            const windowText = pdfText.slice(pageType, pageType + 1200);
+            let fontNameToObj = Object.create(null);
+            const inlineFont = /\/Font\s*<<([^>]*)>>/.exec(windowText);
+            if (inlineFont) {
+                fontNameToObj = pdfFontBlockObjectNums(inlineFont[1]);
+            }
+            if (Object.keys(fontNameToObj).length === 0) {
+                const resRef = /\/Resources\s+(\d+)\s+0\s+R/.exec(windowText);
+                if (resRef) {
+                    fontNameToObj = resourceFonts[parseInt(resRef[1], 10)]
+                        || fontNameToObj;
+                }
+            }
+            if (Object.keys(fontNameToObj).length === 0) {
+                const parentRef = /\/Parent\s+(\d+)\s+0\s+R/.exec(windowText);
+                if (parentRef) {
+                    fontNameToObj = resourceFonts[parseInt(parentRef[1], 10)]
+                        || fontNameToObj;
+                }
+            }
+            const byFont = pdfResolveFontNamesToCmaps(
+                fontNameToObj,
+                fontToCmap,
+                byCmapObj
+            );
+            const contentNums = [];
+            const single = /\/Contents\s+(\d+)\s+0\s+R/.exec(windowText);
+            if (single) {
+                contentNums.push(parseInt(single[1], 10));
+            }
+            const arr = /\/Contents\s*\[([^\]]*)\]/.exec(windowText);
+            if (arr) {
+                const refRe = /(\d+)\s+0\s+R/g;
+                let ref;
+                while ((ref = refRe.exec(arr[1])) !== null) {
+                    contentNums.push(parseInt(ref[1], 10));
+                }
+            }
+            for (let c = 0; c < contentNums.length; c++) {
+                contentMaps[contentNums[c]] = byFont;
             }
         }
-        return byFont;
+
+        // Single-page / missing-page fallback: document-wide font resources.
+        if (Object.keys(contentMaps).length === 0) {
+            const fontRes = pdfFontResourceObjectNums(pdfText);
+            const byFont = pdfResolveFontNamesToCmaps(
+                fontRes,
+                fontToCmap,
+                byCmapObj
+            );
+            contentMaps[0] = byFont;
+        }
+        return contentMaps;
     }
 
     function pdfMapCodesToText(codes, toUnicode) {
@@ -1101,7 +1204,7 @@
             );
         });
         return Promise.all(inflated).then(function (decodedList) {
-            const toUnicodeByFont = pdfCollectFontToUnicodeMaps(
+            const contentFontMaps = pdfCollectContentFontToUnicodeMaps(
                 bytes,
                 decodedList
             );
@@ -1130,6 +1233,11 @@
                 if (!hasText) {
                     continue;
                 }
+                const toUnicodeByFont = (
+                    entry.objNum != null && contentFontMaps[entry.objNum]
+                )
+                    ? contentFontMaps[entry.objNum]
+                    : (contentFontMaps[0] || Object.create(null));
                 const pageItems = extractPdfTextItemsFromContent(
                     decoded,
                     toUnicodeByFont
