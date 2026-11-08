@@ -8750,6 +8750,45 @@ test("loadAllBoardsFromHandRecordPdf loads Madeira MiBO PDF", async () => {
     assert.equal(boards[25].boardNumber, "26");
 });
 
+test("loadAllBoardsFromHandRecordPdf loads larger-scale Madeira teams PDF", async () => {
+    // Swiss Teams sheets use the same compass layout at ~1.7× the pair scale.
+    // This fixture stacks several rounds; board numbers 17–24 appear twice, so
+    // unique parsed boards are 1–24 (first occurrence kept).
+    const pdfPath = findHandRecordPdfPath("madeira_teams_saturday.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+
+    assert.equal(boards.length, 24);
+    assert.equal(boards[0].boardNumber, "1");
+    const board17 = boards.find((board) => board.boardNumber === "17");
+    assert.ok(board17);
+    assert.equal(board17.hands.north.spades, "8");
+    assert.equal(board17.hands.north.hearts, "AKT82");
+    assert.equal(board17.hands.north.diamonds, "K63");
+    assert.equal(board17.hands.north.clubs, "KT64");
+    assert.equal(board17.hands.west.spades, "KQT962");
+    assert.equal(board17.hands.west.hearts, "Q53");
+    assert.equal(board17.hands.west.diamonds, "A");
+    assert.equal(board17.hands.west.clubs, "A82");
+    assert.equal(board17.hands.east.spades, "AJ5");
+    assert.equal(board17.hands.east.hearts, "9764");
+    assert.equal(board17.hands.east.diamonds, "9854");
+    assert.equal(board17.hands.east.clubs, "Q7");
+    assert.equal(board17.hands.south.spades, "743");
+    assert.equal(board17.hands.south.hearts, "J");
+    assert.equal(board17.hands.south.diamonds, "QJT72");
+    assert.equal(board17.hands.south.clubs, "J953");
+    assert.equal(boards[23].boardNumber, "24");
+});
+
 test("extractPdfTextItems decodes hex Tj via ToUnicode CMap", async () => {
     // Some host "unavailable" / placeholder PDFs emit <hhhh> Tj with a
     // ToUnicode CMap instead of WinAnsi literal strings.

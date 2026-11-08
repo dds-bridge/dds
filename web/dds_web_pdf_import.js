@@ -403,7 +403,11 @@
      * Madeira / MiBO-style sheets place a compact N/W/E/S compass under each
      * diagram. Suit rows fan out from the compass "N" (north above, south below,
      * west/east beside). Ghostscript PDFs typically use Tm under a scaled cm.
+     * Pair and teams sheets share the layout at different absolute scales; seat
+     * bands are normalized to the pair-scale south gap (~158pt).
      */
+    const COMPASS_REF_SOUTH_DY = 158.4;
+
     function compassBoardAnchors(items) {
         const norths = items.filter(function (item) {
             return item.text === "N";
@@ -412,43 +416,68 @@
         for (const north of norths) {
             const west = items.find(function (item) {
                 return item.text === "W"
-                    && Math.abs(item.x - north.x) < 120
+                    && item.x < north.x
+                    && north.x - item.x > 40
+                    && north.x - item.x < 200
                     && item.y < north.y
-                    && north.y - item.y < 120;
+                    && north.y - item.y > 50
+                    && north.y - item.y < 200;
             });
+            if (!west) {
+                continue;
+            }
             const east = items.find(function (item) {
                 return item.text === "E"
                     && item.x > north.x
-                    && Math.abs(item.x - north.x) < 120
+                    && item.x - north.x > 40
+                    && item.x - north.x < 200
                     && item.y < north.y
-                    && north.y - item.y < 120;
+                    && north.y - item.y > 50
+                    && north.y - item.y < 200
+                    && Math.abs(item.y - west.y) < 20;
             });
+            if (!east) {
+                continue;
+            }
             const south = items.find(function (item) {
+                const southDy = north.y - item.y;
+                const westDy = north.y - west.y;
                 return item.text === "S"
                     && Math.abs(item.x - north.x) < 40
-                    && north.y - item.y > 100
-                    && north.y - item.y < 220;
+                    && southDy > 100
+                    && southDy < 350
+                    && Math.abs(southDy - 2 * westDy) < 40;
             });
             if (west && east && south) {
-                anchors.push(north);
+                anchors.push({ north: north, south: south });
             }
         }
         return anchors;
     }
 
-    function itemsNearCompass(items, north) {
+    function compassScale(anchor) {
+        const southDy = anchor.north.y - anchor.south.y;
+        if (!(southDy > 0)) {
+            return 1;
+        }
+        return southDy / COMPASS_REF_SOUTH_DY;
+    }
+
+    function itemsNearCompass(items, north, scale) {
+        const s = scale > 0 ? scale : 1;
         return items.filter(function (item) {
-            return item.x >= north.x - 600
-                && item.x <= north.x + 700
-                && item.y >= north.y - 700
-                && item.y <= north.y + 400;
+            return item.x >= north.x - 600 * s
+                && item.x <= north.x + 700 * s
+                && item.y >= north.y - 700 * s
+                && item.y <= north.y + 400 * s;
         });
     }
 
-    function compassSeatForSuit(northX, northY, suitX, suitY) {
-        const dx = suitX - northX;
-        const dy = suitY - northY;
-        if (dx >= -200 && dx <= 50 && dy >= 80 && dy <= 380) {
+    function compassSeatForSuit(northX, northY, suitX, suitY, scale) {
+        const s = scale > 0 ? scale : 1;
+        const dx = (suitX - northX) / s;
+        const dy = (suitY - northY) / s;
+        if (dx >= -250 && dx <= 50 && dy >= 80 && dy <= 380) {
             return "north";
         }
         if (dx >= -550 && dx <= -250 && dy >= -250 && dy <= 50) {
@@ -457,17 +486,18 @@
         if (dx >= 80 && dx <= 280 && dy >= -250 && dy <= 50) {
             return "east";
         }
-        if (dx >= -200 && dx <= 50 && dy >= -580 && dy <= -250) {
+        if (dx >= -250 && dx <= 50 && dy >= -580 && dy <= -250) {
             return "south";
         }
         return null;
     }
 
-    function boardNumberNearCompass(inCell, north) {
+    function boardNumberNearCompass(inCell, north, scale) {
+        const s = scale > 0 ? scale : 1;
         const candidates = inCell.filter(function (item) {
             return /^\d{1,2}$/.test(item.text)
-                && item.y > north.y + 150
-                && item.x > north.x + 200;
+                && item.y > north.y + 150 * s
+                && item.x > north.x + 200 * s;
         });
         candidates.sort(function (a, b) {
             return a.y - b.y || a.x - b.x;
@@ -475,7 +505,7 @@
         return candidates.length > 0 ? candidates[0].text : null;
     }
 
-    function parseHandsNearCompass(inCell, north) {
+    function parseHandsNearCompass(inCell, north, scale) {
         const hands = {
             north: emptySuitHoldings(),
             east: emptySuitHoldings(),
@@ -487,7 +517,9 @@
             if (!suit) {
                 continue;
             }
-            const seat = compassSeatForSuit(north.x, north.y, item.x, item.y);
+            const seat = compassSeatForSuit(
+                north.x, north.y, item.x, item.y, scale
+            );
             if (!seat) {
                 continue;
             }
@@ -520,15 +552,17 @@
 
         const boards = [];
         const seen = {};
-        for (const north of anchors) {
-            const inCell = itemsNearCompass(items, north);
-            const boardNumber = boardNumberNearCompass(inCell, north);
+        for (const anchor of anchors) {
+            const north = anchor.north;
+            const scale = compassScale(anchor);
+            const inCell = itemsNearCompass(items, north, scale);
+            const boardNumber = boardNumberNearCompass(inCell, north, scale);
             if (!boardNumber || seen[boardNumber]) {
                 continue;
             }
             let hands;
             try {
-                hands = parseHandsNearCompass(inCell, north);
+                hands = parseHandsNearCompass(inCell, north, scale);
             } catch (_err) {
                 continue;
             }
