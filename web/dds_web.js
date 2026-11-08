@@ -677,7 +677,11 @@ function mountMenubar(menubar) {
 
         const active = document.activeElement;
         // Arrow navigation applies only while focus remains inside the menubar.
-        if (!active || !menubar.contains(active)) {
+        if (
+            !active
+            || (typeof menubar.contains === "function"
+                && !menubar.contains(active))
+        ) {
             return;
         }
 
