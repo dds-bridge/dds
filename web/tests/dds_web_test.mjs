@@ -152,6 +152,12 @@ function createMockDocument(initialValues = {}) {
                     ? this.attributes[name]
                     : null;
             },
+            hasAttribute(name) {
+                return Object.prototype.hasOwnProperty.call(this.attributes, name);
+            },
+            removeAttribute(name) {
+                delete this.attributes[name];
+            },
             addEventListener(type, listener) {
                 const typeListeners = elementListeners.get(type) ?? [];
                 typeListeners.push(listener);
@@ -186,7 +192,6 @@ function createMockDocument(initialValues = {}) {
     makeElement("deck-status");
     makeElement("trick-status");
     makeElement("contract-status");
-    makeElement("sample-deals");
     makeElement("play-bar");
     makeElement("play-hint");
     makeElement("play-score");
@@ -198,6 +203,33 @@ function createMockDocument(initialValues = {}) {
     makeElement("hand-record-next");
     makeElement("hand-record-label");
     makeElement("hand-record-status");
+    makeElement("menubar");
+    makeElement("menu-undo").disabled = true;
+    makeElement("menu-edit-hands").disabled = true;
+    makeElement("menu-sample-deals");
+    const samplePanel = makeElement("menu-sample-deals-panel");
+    samplePanel.children = [];
+    samplePanel._textContent = "";
+    samplePanel.appendChild = function (child) {
+        this.children.push(child);
+        return child;
+    };
+    Object.defineProperty(samplePanel, "textContent", {
+        get() {
+            return this._textContent || "";
+        },
+        set(value) {
+            this._textContent = value;
+            if (value === "") {
+                this.children = [];
+            }
+        },
+        configurable: true,
+    });
+    makeElement("dds-about-dialog");
+    makeElement("dds-about-body");
+    makeElement("dds-about-ok");
+    makeElement("faq");
     for (const direction of DIRECTIONS) {
         makeElement(`${direction}-card-count`);
     }
@@ -290,6 +322,13 @@ function createMockDocument(initialValues = {}) {
 
     const documentRef = {
         activeElement: null,
+        // Browsing-context focus: default true so existing tests keep autofocus.
+        // Set false to model embedded hosts where activeElement can be set while
+        // OS keypresses still go elsewhere (caret would otherwise lie).
+        _hasFocus: true,
+        hasFocus() {
+            return this._hasFocus !== false;
+        },
         body,
         addEventListener(type, listener) {
             const typeListeners = listeners.get(type) ?? [];
@@ -302,13 +341,41 @@ function createMockDocument(initialValues = {}) {
             }
         },
         createElement(tagName) {
-            return {
+            const el = {
                 tagName: String(tagName).toUpperCase(),
+                type: "",
                 value: "",
                 textContent: "",
                 disabled: false,
                 selected: false,
+                dataset: {},
+                attributes: {},
+                setAttribute(name, value) {
+                    this.attributes[name] = String(value);
+                    if (name === "role") {
+                        this.role = String(value);
+                    }
+                },
+                getAttribute(name) {
+                    return this.attributes[name] ?? null;
+                },
             };
+            return el;
+        },
+        querySelector(selector) {
+            if (selector === ".menubar") {
+                return store.get("menubar") ?? null;
+            }
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector === ".menu-shortcut[data-keys]") {
+                return [];
+            }
+            if (selector === ".menu") {
+                return [];
+            }
+            return [];
         },
         getElementById(id) {
             return store.get(id) ?? null;
@@ -423,11 +490,9 @@ function loadDdsWeb(document, extras = {}) {
     return context;
 }
 
-/** Load a Sample deals dropdown entry via the page's select handler. */
+/** Load a sample deal via the File → Sample Deals path. */
 function loadSampleDeal(ctx, id) {
-    const select = ctx.document.element("sample-deals");
-    select.value = id;
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById(id);
 }
 
 function cardsFromKeys(ctx, keys) {
@@ -766,73 +831,54 @@ test("loadSampleDeal part_score populates inputs", () => {
     assert.equal(document.element("west_clubs").value, "T5");
 });
 
-test("handleSampleDealSelected loads part_score and resets the select", () => {
+test("loadSampleDealById loads part_score", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.value = "part_score";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("part_score");
 
     assert.equal(document.element("north_spades").value, "AQ85");
     assert.equal(document.element("west_clubs").value, "T5");
-    assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected loads ns_make_7 deal", () => {
+test("loadSampleDealById loads ns_make_7 deal", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.value = "ns_make_7";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("ns_make_7");
 
     assert.equal(document.element("north_spades").value, "AKQJ");
-    assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected loads everyone_makes_3N deal", () => {
+test("loadSampleDealById loads everyone_makes_3N deal", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.value = "everyone_makes_3N";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("everyone_makes_3N");
 
     assert.equal(document.element("north_spades").value, "QT9");
-    assert.equal(select.value, "");
 });
 
-test("handleSampleDealSelected ignores empty selection", () => {
+test("loadSampleDealById ignores unknown ids", () => {
     const document = createMockDocument({ north_spades: "AK" });
-    const select = document.element("sample-deals");
-    select.value = "";
     const ctx = loadDdsWeb(document);
 
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("");
+    ctx.loadSampleDealById("nope");
 
     assert.equal(document.element("north_spades").value, "AK");
 });
 
-test("handleSampleDealSelected can reload the same sample after an edit", () => {
-    // Arrange: load part-score, then edit a holding so the deal no longer matches.
+test("loadSampleDealById can reload the same sample after an edit", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
     const ctx = loadDdsWeb(document);
-    select.value = "part_score";
-    ctx.handleSampleDealSelected(select);
+    ctx.loadSampleDealById("part_score");
     assert.equal(document.element("north_spades").value, "AQ85");
-    assert.equal(select.value, "");
 
     document.element("north_spades").value = "A";
+    ctx.loadSampleDealById("part_score");
 
-    // Act: choose the same sample again (possible because the select reset).
-    select.value = "part_score";
-    ctx.handleSampleDealSelected(select);
-
-    // Assert
     assert.equal(document.element("north_spades").value, "AQ85");
-    assert.equal(select.value, "");
 });
 
 test("fillFormWithTestData does not require a double-dummy button", async () => {
@@ -1322,40 +1368,71 @@ test("sample deals live in dds_web_sample_deals.js not dds_web.js", () => {
     );
     const app = readFileSync(findWebJsPath("dds_web.js", "DDS_WEB_JS"), "utf8");
 
-    // Assert: the sample-deals file is data only; the select handler is UI glue.
+    // Assert: the sample-deals file is data only; the menu loader is UI glue.
     assert.match(samples, /SAMPLE_DEALS/);
     assert.match(samples, /AQ85\.AK976\.5\.J87/);
     assert.match(samples, /AKQJ\.AKQJ\.T98\.T9/);
     assert.match(samples, /QT9\.A8765432\.KJ\./);
-    assert.doesNotMatch(samples, /handleSampleDealSelected/);
+    assert.doesNotMatch(samples, /loadSampleDealById/);
     assert.doesNotMatch(samples, /fillFormWithTestData/);
     assert.doesNotMatch(app, /AQ85\.AK976\.5\.J87/);
-    assert.match(app, /handleSampleDealSelected/);
+    assert.match(app, /loadSampleDealById/);
     assert.match(app, /SAMPLE_DEALS/);
 });
 
-test("pageLoad fills sample-deals select from SAMPLE_DEALS", () => {
-    // Arrange: HTML keeps only the placeholder; options come from SAMPLE_DEALS.
+test("pageLoad fills Sample Deals submenu from SAMPLE_DEALS", () => {
     const document = createMockDocument();
-    const select = document.element("sample-deals");
-    select.innerHTML =
-        '<option value="" selected disabled>Sample deals…</option>';
+    const panel = document.element("menu-sample-deals-panel");
     const ctx = loadDdsWeb(document);
 
-    // Act
     ctx.pageLoad();
 
-    // Assert: one option per SAMPLE_DEALS entry, plus the placeholder.
     const ids = Object.keys(ctx.SAMPLE_DEALS);
-    assert.equal(select.options.length, ids.length + 1);
-    assert.equal(select.options[0].value, "");
-    assert.equal(select.options[0].textContent, "Sample deals…");
+    assert.equal(panel.children.length, ids.length);
     for (let i = 0; i < ids.length; i++) {
         const id = ids[i];
-        const option = select.options[i + 1];
-        assert.equal(option.value, id);
-        assert.equal(option.textContent, ctx.SAMPLE_DEALS[id].name);
+        const item = panel.children[i];
+        assert.equal(item.dataset.sampleId, id);
+        assert.equal(item.textContent, ctx.SAMPLE_DEALS[id].name);
+        assert.equal(item.role || item.attributes.role, "menuitem");
+        assert.equal(item.getAttribute("tabindex"), "-1");
     }
+});
+
+test("focusAdjacentMenubarItem uses roving tabindex inside a panel", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const panel = {
+        querySelectorAll() {
+            return items;
+        },
+    };
+    const items = ["a", "b", "c"].map((id) => ({
+        id,
+        disabled: false,
+        attributes: { tabindex: "-1" },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                ? this.attributes[name]
+                : null;
+        },
+        closest() {
+            return null;
+        },
+        focus() {
+            document.activeElement = this;
+        },
+    }));
+
+    ctx.focusAdjacentMenubarItem(panel, items[0], 1);
+
+    assert.equal(document.activeElement, items[1]);
+    assert.equal(items[0].getAttribute("tabindex"), "-1");
+    assert.equal(items[1].getAttribute("tabindex"), "0");
+    assert.equal(items[2].getAttribute("tabindex"), "-1");
 });
 
 test("SAMPLE_DEALS entries have name and PBN deal string", () => {
@@ -2516,6 +2593,105 @@ test("typing at the caret inserts a pip at the insertion point", () => {
     assert.ok(a < q && q < eight);
 });
 
+test("leaving a suit input clears the hand-caret without rewriting card buttons", () => {
+    // Arrange: mousedown on a hand-card blurs the suit input before click/drag
+    // completes. A full holding redraw would replace the button and break the
+    // gesture (e2e: click Q to place caret, then Backspace).
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    const holder = document.element("north_spades_cards");
+    input.focus();
+    input.setSelectionRange(2, 2);
+    ctx.updateHandCardDisplays(ctx.collectHands());
+    assert.match(holder.innerHTML, /hand-caret/);
+    holder.innerHTML = holder.innerHTML.replace(
+        'data-card="SA"',
+        'data-card="SA" data-test-stable="1"'
+    );
+
+    // Act: focus leaves the suit input (as on card mousedown).
+    document.activeElement = document.body;
+    ctx.handleDocumentFocusOut({ target: input });
+
+    // Assert: caret gone; card markup otherwise untouched.
+    assert.doesNotMatch(holder.innerHTML, /hand-caret/);
+    assert.match(holder.innerHTML, /data-test-stable="1"/);
+});
+
+test("About restore skips disabled suit inputs during play", () => {
+    // Arrange: play mode disables suit inputs; lastFocusedHandInput may still
+    // point at the pre-play field. Prefer the menu label so dismiss leaves a
+    // focusable visible target.
+    const document = createMockDocument({ north_spades: "AK" });
+    const ctx = loadDdsWeb(document);
+    const input = document.element("north_spades");
+    input.focus();
+    ctx.noteHandInputFocus();
+    input.disabled = true;
+    const label = { id: "dds-label", focus() {} };
+
+    // Act
+    const target = ctx.aboutRestoreTarget(label);
+
+    // Assert
+    assert.equal(target, label);
+});
+
+test("About restore during play redraws via renderPlayUi not raw suit inputs", () => {
+    // Arrange: suit inputs still hold the original deal; play UI must show
+    // remaining cards only.
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsWeb(document);
+    let playUiCalls = 0;
+    ctx.isPlayMode = () => true;
+    ctx.renderPlayUi = () => {
+        playUiCalls += 1;
+    };
+    const label = {
+        id: "dds-label",
+        focus() {
+            document.activeElement = label;
+        },
+        classList: {
+            _names: new Set(),
+            add(name) {
+                this._names.add(name);
+            },
+            remove(name) {
+                this._names.delete(name);
+            },
+            contains(name) {
+                return this._names.has(name);
+            },
+        },
+        addEventListener() {},
+        removeEventListener() {},
+    };
+
+    // Act
+    ctx.focusAboutRestoreTarget(label);
+
+    // Assert
+    assert.equal(playUiCalls, 1);
+});
+
+test("pageLoad focuses North spades with a caret so typing needs no click", () => {
+    // Arrange / Act: refresh must leave North's spades keyboard-ready — same as
+    // before the About focus work — without requiring a click on the diagram.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+
+    // Assert
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+    assert.match(
+        document.element("north_spades_cards").innerHTML,
+        /hand-caret/
+    );
+});
+
 test("handleHandSuitClick focuses the suit input at end of the holding", () => {
     // Arrange
     const document = createMockDocument({ north_spades: "AK" });
@@ -3597,56 +3773,969 @@ test("result-cell-selected highlight is defined in CSS", () => {
     assert.match(css, /#result-table\s+td:focus-visible\s*\{/s);
 });
 
-test("sample-deals select uses the same background as native buttons", () => {
+test("menubar CSS styles dropdown panels and labels", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(css, /\.menubar\s*\{/s);
+    assert.match(css, /\.menu-panel\s*\{/s);
+    assert.match(css, /\.menu-label\s*\{/s);
+    assert.match(css, /\.menu-submenu\s*\{/s);
+    assert.match(css, /\.menu-label\.focus-visible-fallback\s*\{/s);
+    assert.match(css, /#dds-about-ok\.focus-visible-fallback\s*\{/s);
+    // A bare `.focus-visible-fallback` rule later in the file would override
+    // the menubar's var(--menu-focus) ring with the About OK blue.
+    assert.doesNotMatch(
+        css,
+        /(?:^|[,}\s])\.focus-visible-fallback\s*[,{]/
+    );
+    assert.doesNotMatch(css, /#sample-deals/);
+});
+
+test("menubar CSS uses Avenir Next stack and warm chrome colors", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     assert.match(
         css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*background(?:-color)?:\s*#efefef/is
+        /--menu-font:\s*"Avenir Next",\s*"Segoe UI",\s*"Helvetica Neue",\s*sans-serif/
+    );
+    assert.match(css, /--menu-ink:\s*#1c1a16/);
+    assert.match(css, /--menu-muted:\s*#5c574e/);
+    assert.match(css, /--menu-line:\s*#d2cbbd/);
+    assert.match(css, /--menu-accent-soft:\s*#dce8e3/);
+    assert.match(css, /--menu-focus:\s*#3b7a6a/);
+    assert.match(
+        css,
+        /\.menubar\s*\{[^}]*font-family:\s*var\(--menu-font\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-label:hover,\s*\.menu\.is-open\s*>\s*\.menu-label\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel\s*\{[^}]*border:\s*1px\s+solid\s+var\(--menu-line\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel\s*\{[^}]*box-shadow:\s*var\(--menu-shadow\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--menu-focus\)/s
+    );
+    assert.doesNotMatch(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*outline:\s*none/s
+    );
+    assert.doesNotMatch(css, /\.menu-label:hover[\s\S]*?background:\s*#e8eef8/);
+});
+
+test("formatMenuShortcut treats ctrl like mod on non-Mac", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    assert.equal(ctx.formatMenuShortcut("ctrl+o", { mac: false }), "Ctrl+O");
+    assert.equal(ctx.formatMenuShortcut("mod+o", { mac: false }), "Ctrl+O");
+    assert.equal(ctx.formatMenuShortcut("ctrl+shift+z", { mac: false }), "Ctrl+Shift+Z");
+    assert.equal(ctx.formatMenuShortcut("ctrl+o", { mac: true }), "⌘O");
+});
+
+test("showAboutDialog fills the About body with the product blurb", () => {
+    const document = createMockDocument();
+    const dialog = document.element("dds-about-dialog");
+    dialog.showModal = () => {
+        dialog.open = true;
+    };
+    const ctx = loadDdsWeb(document);
+
+    ctx.showAboutDialog();
+
+    assert.match(
+        document.element("dds-about-body").textContent,
+        /front end for DDS/
+    );
+    assert.match(
+        document.element("dds-about-body").textContent,
+        /Adam Wildavsky wrote this web front end/
+    );
+    assert.match(
+        document.element("dds-about-body").textContent,
+        /Bo Haglund wrote the original version of DDS/
     );
 });
 
-test("sample-deals select matches native toolbar button height chrome", () => {
-    // Shared toolbar rule sizes buttons and the Sample deals select together.
-    const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+test("showAboutDialog fallback open attribute keeps restore watch waiting", async () => {
+    // Environments without showModal() only set the open attribute. Polling
+    // dialog.open alone would restore focus immediately while the dialog is up.
+    const document = createMockDocument();
+    const dialog = document.element("dds-about-dialog");
+    delete dialog.showModal;
+    dialog.open = false;
+    const { menubar, label, about } = attachDdsMenuForKeyboard(document);
+    const ok = document.element("dds-about-ok");
+    ok.focus = () => {
+        document.activeElement = ok;
+    };
+    ok.addEventListener = () => {};
+    ok.removeEventListener = () => {};
+    label.addEventListener = () => {};
+    label.removeEventListener = () => {};
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    about.blur = () => {
+        if (document.activeElement === about) {
+            document.activeElement = document.body;
+        }
+    };
+    const ctx = loadDdsWeb(document);
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    about.focus();
 
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*box-sizing:\s*border-box/is
-    );
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*height:\s*20px/is
-    );
+    menubar.dispatch("click", { target: about, preventDefault() {} });
+
+    assert.equal(dialog.hasAttribute("open"), true);
+    assert.equal(dialog.open, false);
+    // Give the watch loop a couple of frames — focus must stay on OK.
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(document.activeElement && document.activeElement.id, "dds-about-ok");
+    assert.equal(label.classList.contains("focus-visible-fallback"), false);
+
+    dialog.removeAttribute("open");
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(document.activeElement, label);
 });
 
-test("sample-deals select uses the same border as native buttons", () => {
-    // Flat 1px solid border (no outset shadow), matching bridge-solver toolbar.
-    const here = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+/**
+ * Attach an extra Edit/File menuitem to an attachDdsMenuForKeyboard fixture.
+ */
+function attachExtraMenuitem(document, fixture, item) {
+    const { menubar, menu } = fixture;
+    const oldContains = menu.contains.bind(menu);
+    menu.contains = (node) => oldContains(node) || node === item;
+    const oldMenubarContains = menubar.contains.bind(menubar);
+    menubar.contains = (node) => oldMenubarContains(node) || node === item;
+    item.focus = item.focus || (() => {
+        document.activeElement = item;
+    });
+    item.closest = item.closest || ((selector) => {
+        if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+            return item;
+        }
+        if (selector === ".menu") {
+            return menu;
+        }
+        return null;
+    });
+    return item;
+}
 
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*border:\s*1px\s+solid\s+#767676/is
-    );
+test("anchor menu commands restore visible focus to their menu label after closing", () => {
+    // External/FAQ links close the menu; leave focus on the visible label so
+    // keyboard users are not stranded on a display:none menuitem.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, faq, panel } = attachDdsMenuForKeyboard(document);
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    label.addEventListener = () => {};
+    label.removeEventListener = () => {};
+    label.focus = () => {
+        document.activeElement = label;
+    };
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    assert.equal(menu.classList.contains("is-open"), true);
+    faq.focus();
+
+    menubar.dispatch("click", { target: faq, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(panel.hidden, true);
+    assert.equal(document.activeElement, label);
+    assert.equal(label.classList.contains("focus-visible-fallback"), true);
 });
 
-test("sample-deals select uses the same rectangular shape as native buttons", () => {
-    // appearance:none + shared radius; only the select keeps a dropdown chevron.
+test("Clear Entries via the menu leaves focus on North spades for typing", () => {
+    // clearTestData focuses North spades; the menubar must not steal focus
+    // back onto the Edit label afterward.
+    const document = createMockDocument({ north_spades: "AKQ" });
+    const ctx = loadDdsWeb(document);
+    const fixture = attachDdsMenuForKeyboard(document);
+    const { menubar, menu, label } = fixture;
+    const clear = attachExtraMenuitem(document, fixture, {
+        id: "menu-clear",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+    });
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    assert.equal(menu.classList.contains("is-open"), true);
+    clear.focus();
+
+    menubar.dispatch("click", { target: clear, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.element("north_spades").value, "");
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+});
+
+test("Rotate Hands via the menu leaves focus on North spades for typing", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const fixture = attachDdsMenuForKeyboard(document);
+    const { menubar, menu, label } = fixture;
+    const rotate = attachExtraMenuitem(document, fixture, {
+        id: "menu-rotate",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+    });
+    ctx.rotateClockwise = () => {};
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    rotate.focus();
+
+    menubar.dispatch("click", { target: rotate, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+});
+
+test("Sample Deal via the menu leaves focus on North spades for typing", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const fixture = attachDdsMenuForKeyboard(document);
+    const { menubar, menu, label } = fixture;
+    const sample = attachExtraMenuitem(document, fixture, {
+        id: "menu-sample-part-score",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: { sampleId: "part_score" },
+    });
+    ctx.loadSampleDealById = () => {};
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    sample.focus();
+
+    menubar.dispatch("click", { target: sample, preventDefault() {} });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.activeElement && document.activeElement.id, "north_spades");
+});
+
+test("opening About from the menu restores visible focus to the DDS label on close", async () => {
+    // Arrange: activating About… closes the menu first. If return focus stays
+    // on the hidden menuitem (or is restored without focusVisible), OK/Escape
+    // leaves no visible keyboard focus. When no suit input was focused first,
+    // land on the DDS label.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, about, panel } = attachDdsMenuForKeyboard(document);
+    const dialog = document.element("dds-about-dialog");
+    const closeListeners = [];
+    dialog.addEventListener = (type, listener) => {
+        if (type === "close") {
+            closeListeners.push(listener);
+        }
+    };
+    dialog.removeEventListener = (type, listener) => {
+        if (type === "close") {
+            const idx = closeListeners.indexOf(listener);
+            if (idx >= 0) {
+                closeListeners.splice(idx, 1);
+            }
+        }
+    };
+    const ok = document.element("dds-about-ok");
+    ok.blur = () => {
+        if (document.activeElement === ok) {
+            document.activeElement = document.body;
+        }
+    };
+    about.blur = () => {
+        if (document.activeElement === about) {
+            document.activeElement = document.body;
+        }
+    };
+    dialog.showModal = () => {
+        dialog.open = true;
+        // Mimic autofocus moving into the dialog.
+        document.activeElement = ok;
+    };
+    dialog.close = () => {
+        dialog.open = false;
+        for (const listener of closeListeners.slice()) {
+            listener();
+        }
+    };
+    let focusOpts = null;
+    label.focus = (opts) => {
+        focusOpts = opts || null;
+        document.activeElement = label;
+    };
+    ok.focus = (opts) => {
+        document.activeElement = ok;
+        if (opts && opts.focusVisible && ok.classList && ok.classList.add) {
+            ok.classList.add("focus-visible-fallback");
+        }
+    };
+    ok.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    ok.addEventListener = () => {};
+    ok.removeEventListener = () => {};
+
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    const blurListeners = [];
+    label.addEventListener = (type, listener) => {
+        if (type === "blur") {
+            blurListeners.push(listener);
+        }
+    };
+    label.removeEventListener = (type, listener) => {
+        if (type === "blur") {
+            const idx = blurListeners.indexOf(listener);
+            if (idx >= 0) {
+                blurListeners.splice(idx, 1);
+            }
+        }
+    };
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), true);
+    about.focus();
+
+    // Act: open About, then dismiss (OK / Escape both fire close).
+    menubar.dispatch("click", {
+        target: about,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(panel.hidden, true);
+    assert.equal(dialog.open, true);
+    // While open, focus should be on OK with a visible ring — not on DDS behind
+    // the dialog, and not on the hidden About menuitem.
+    assert.equal(document.activeElement && document.activeElement.id, "dds-about-ok");
+    assert.equal(label.classList.contains("focus-visible-fallback"), false);
+
+    dialog.close();
+    // close schedules restore on setTimeout(0).
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Assert: visible keyboard focus returns to the DDS menu label.
+    assert.equal(document.activeElement, label);
+    assert.equal(focusOpts && focusOpts.focusVisible, true);
+    assert.equal(label.classList.contains("focus-visible-fallback"), true);
+});
+
+test("dismissing About restores the prior suit input so typing matches the caret", async () => {
+    // Arrange: user was editing North spades, opened About from the menu, then
+    // dismissed. Focus must return to that suit input (not the DDS label) so the
+    // blinking hand-caret and keypresses agree.
+    const document = createMockDocument({ north_spades: "A" });
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+    const input = document.element("north_spades");
+    input.focus();
+    input.setSelectionRange(1, 1);
+    ctx.updateHandCardDisplays(ctx.collectHands());
+    assert.match(document.element("north_spades_cards").innerHTML, /hand-caret/);
+
+    const { menubar, label, about } = attachDdsMenuForKeyboard(document);
+    const dialog = document.element("dds-about-dialog");
+    const closeListeners = [];
+    dialog.addEventListener = (type, listener) => {
+        if (type === "close") {
+            closeListeners.push(listener);
+        }
+    };
+    dialog.removeEventListener = (type, listener) => {
+        if (type === "close") {
+            const idx = closeListeners.indexOf(listener);
+            if (idx >= 0) {
+                closeListeners.splice(idx, 1);
+            }
+        }
+    };
+    const ok = document.element("dds-about-ok");
+    ok.blur = () => {
+        if (document.activeElement === ok) {
+            document.activeElement = document.body;
+        }
+    };
+    about.blur = () => {
+        if (document.activeElement === about) {
+            document.activeElement = document.body;
+        }
+    };
+    input.blur = () => {
+        if (document.activeElement === input) {
+            document.activeElement = document.body;
+        }
+    };
+    dialog.showModal = () => {
+        dialog.open = true;
+        document.activeElement = ok;
+    };
+    dialog.close = () => {
+        dialog.open = false;
+        for (const listener of closeListeners.slice()) {
+            listener();
+        }
+    };
+    label.focus = () => {
+        document.activeElement = label;
+    };
+    ok.focus = () => {
+        document.activeElement = ok;
+    };
+    ok.addEventListener = () => {};
+    ok.removeEventListener = () => {};
+    label.addEventListener = () => {};
+    label.removeEventListener = () => {};
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+
+    ctx.mountMenubar(menubar);
+    // Open DDS menu from the suit input (blur remembers last hand focus).
+    document.dispatch("focusin", {});
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    label.focus();
+    document.dispatch("focusin", {});
+    about.focus();
+    menubar.dispatch("click", { target: about, preventDefault() {} });
+    assert.equal(dialog.open, true);
+
+    // Act
+    dialog.close();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Allow reassert + caret sync timers.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    // Assert: back on the suit input with a live caret (keys would insert pips).
+    assert.equal(document.activeElement, input);
+    assert.match(document.element("north_spades_cards").innerHTML, /hand-caret/);
+});
+
+test("selecting Sample Deals opens its submenu automatically", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const panel = document.element("menu-sample-deals-panel");
+    const trigger = document.element("menu-sample-deals");
+    panel.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+
+    // Act: open via the same helper the menubar uses when Sample Deals is selected.
+    ctx.setSampleSubmenuOpen(true);
+
+    assert.equal(panel.hidden, false);
+    assert.equal(trigger.getAttribute("aria-expanded"), "true");
+
+    // Selecting again stays open (does not toggle closed).
+    ctx.setSampleSubmenuOpen(true);
+    assert.equal(panel.hidden, false);
+});
+
+test("Sample Deals submenu expands under its parent in CSS", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    assert.match(css, /\.menu-submenu\s*\{[^}]*position:\s*static/s);
+    assert.doesNotMatch(css, /\.menu-submenu\s*\{[^}]*left:\s*100%/s);
+});
 
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*appearance:\s*none/is
-    );
-    assert.match(
-        css,
-        /body\s*>\s*button\[type="button"\],\s*#sample-deals\s*\{[^}]*border-radius:\s*2px/is
-    );
-    assert.match(css, /#sample-deals\s*\{[^}]*background-image:\s*url\(/is);
+/**
+ * Build a minimal DDS-menu tree on the mock menubar for keyboard tests.
+ * Returns { menubar, label, about, faq }.
+ */
+function attachDdsMenuForKeyboard(document) {
+    const menubar = document.element("menubar");
+    const label = {
+        className: "menu-label",
+        attributes: { "aria-expanded": "false", "aria-haspopup": "menu" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                ? this.attributes[name]
+                : null;
+        },
+        closest(selector) {
+            if (selector === ".menu-label") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+    };
+    const about = {
+        id: "menu-about",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return this.attributes[name] ?? null;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+        dataset: {},
+    };
+    const faq = {
+        id: "menu-how-to",
+        role: "menuitem",
+        disabled: false,
+        href: "dds_web_faq.html",
+        attributes: { role: "menuitem" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return this.attributes[name] ?? null;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return menu;
+            }
+            return null;
+        },
+        dataset: {},
+    };
+    const panel = {
+        className: "menu-panel",
+        hidden: true,
+        role: "menu",
+        querySelectorAll(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return [about, faq];
+            }
+            return [];
+        },
+        contains(node) {
+            return node === about || node === faq;
+        },
+    };
+    const menu = {
+        className: "menu",
+        classList: {
+            _open: false,
+            contains(name) {
+                return name === "is-open" ? this._open : false;
+            },
+            toggle(name, force) {
+                if (name === "is-open") {
+                    this._open = !!force;
+                }
+            },
+            add(name) {
+                if (name === "is-open") {
+                    this._open = true;
+                }
+            },
+            remove(name) {
+                if (name === "is-open") {
+                    this._open = false;
+                }
+            },
+        },
+        querySelector(selector) {
+            if (selector === ".menu-panel:not(.menu-submenu)" || selector === ".menu-panel") {
+                return panel;
+            }
+            if (selector === ".menu-label") {
+                return label;
+            }
+            if (selector === ".menu-submenu" || selector === "#menu-sample-deals") {
+                return null;
+            }
+            return null;
+        },
+        contains(node) {
+            return node === label || node === about || node === faq || node === panel;
+        },
+    };
+    // classList.toggle on menu uses menu.classList — bind _open to menu
+    menu.classList.toggle = function (name, force) {
+        if (name === "is-open") {
+            this._open = force === undefined ? !this._open : !!force;
+            menu.classList._open = this._open;
+        }
+    };
+    menu.classList.contains = function (name) {
+        return name === "is-open" ? this._open : false;
+    };
+
+    menubar.querySelectorAll = (selector) => {
+        if (selector === ".menu") {
+            return [menu];
+        }
+        return [];
+    };
+    menubar.querySelector = (selector) => {
+        if (selector === ".menu" || selector === '[data-menu="dds"]') {
+            return menu;
+        }
+        return null;
+    };
+    menubar.contains = (node) =>
+        node === menubar
+        || node === label
+        || node === about
+        || node === faq
+        || node === panel
+        || menu.contains(node);
+    menubar.addEventListener = document.addEventListener.bind(document);
+    // Re-route menubar listeners onto the document mock's element map via a local map.
+    const localListeners = new Map();
+    menubar.addEventListener = (type, listener) => {
+        const list = localListeners.get(type) ?? [];
+        list.push(listener);
+        localListeners.set(type, list);
+    };
+    menubar.removeEventListener = (type, listener) => {
+        const list = localListeners.get(type) ?? [];
+        localListeners.set(
+            type,
+            list.filter((fn) => fn !== listener)
+        );
+    };
+    menubar.dispatch = (type, event) => {
+        for (const listener of localListeners.get(type) ?? []) {
+            listener(event);
+        }
+    };
+
+    return { menubar, menu, label, panel, about, faq };
+}
+
+test("Escape closes the open menu and restores focus to its label", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, panel, about } = attachDdsMenuForKeyboard(document);
+
+    ctx.mountMenubar(menubar);
+    // Open as a click on the DDS label would.
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), true);
+    assert.equal(panel.hidden, false);
+
+    about.focus();
+    document.dispatch("keydown", {
+        key: "Escape",
+        preventDefault() {},
+    });
+
+    assert.equal(menu.classList.contains("is-open"), false);
+    assert.equal(document.activeElement, label);
+});
+
+test("ArrowDown moves focus between menuitems in the open menu", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, label, about, faq } = attachDdsMenuForKeyboard(document);
+
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    about.focus();
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+    assert.equal(document.activeElement, faq);
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+    assert.equal(document.activeElement, about);
+});
+
+test("ArrowDown on another menu label opens that menu instead of the prior panel", () => {
+    // Open DDS, move focus to the File label, then ArrowDown must open File
+    // (not jump back into DDS → About).
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const dds = attachDdsMenuForKeyboard(document);
+    const fileLabel = {
+        className: "menu-label",
+        attributes: { "aria-expanded": "false", "aria-haspopup": "menu" },
+        focus() {
+            document.activeElement = this;
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                ? this.attributes[name]
+                : null;
+        },
+        closest() {
+            return null;
+        },
+    };
+    const importItem = {
+        id: "menu-import-deals",
+        role: "menuitem",
+        disabled: false,
+        attributes: { role: "menuitem" },
+        dataset: {},
+        focus() {
+            document.activeElement = this;
+        },
+        closest(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return this;
+            }
+            if (selector === ".menu") {
+                return fileMenu;
+            }
+            return null;
+        },
+    };
+    const filePanel = {
+        className: "menu-panel",
+        hidden: true,
+        role: "menu",
+        querySelectorAll(selector) {
+            if (selector === '[role="menuitem"]' || selector === "[role=\"menuitem\"]") {
+                return [importItem];
+            }
+            return [];
+        },
+        contains(node) {
+            return node === importItem;
+        },
+    };
+    const fileMenu = {
+        className: "menu",
+        classList: {
+            _open: false,
+            contains(name) {
+                return name === "is-open" ? this._open : false;
+            },
+            toggle(name, force) {
+                if (name === "is-open") {
+                    this._open = !!force;
+                }
+            },
+            add(name) {
+                if (name === "is-open") {
+                    this._open = true;
+                }
+            },
+            remove(name) {
+                if (name === "is-open") {
+                    this._open = false;
+                }
+            },
+        },
+        querySelector(selector) {
+            if (
+                selector === ".menu-panel:not(.menu-submenu)"
+                || selector === ".menu-panel"
+            ) {
+                return filePanel;
+            }
+            if (selector === ".menu-label") {
+                return fileLabel;
+            }
+            return null;
+        },
+        contains(node) {
+            return node === fileLabel || node === importItem || node === filePanel;
+        },
+    };
+    fileMenu.classList.toggle = function (name, force) {
+        if (name === "is-open") {
+            this._open = force === undefined ? !this._open : !!force;
+            fileMenu.classList._open = this._open;
+        }
+    };
+    fileMenu.classList.contains = function (name) {
+        return name === "is-open" ? this._open : false;
+    };
+    fileLabel.closest = (selector) => {
+        if (selector === ".menu-label") {
+            return fileLabel;
+        }
+        if (selector === ".menu") {
+            return fileMenu;
+        }
+        return null;
+    };
+
+    const { menubar, menu: ddsMenu, label: ddsLabel, about } = dds;
+    const oldQueryAll = menubar.querySelectorAll;
+    menubar.querySelectorAll = (selector) => {
+        if (selector === ".menu") {
+            return [ddsMenu, fileMenu];
+        }
+        return oldQueryAll.call(menubar, selector);
+    };
+    const oldContains = menubar.contains;
+    menubar.contains = (node) =>
+        oldContains(node)
+        || node === fileLabel
+        || node === importItem
+        || node === filePanel
+        || fileMenu.contains(node);
+
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: ddsLabel, preventDefault() {} });
+    assert.equal(ddsMenu.classList.contains("is-open"), true);
+    about.focus();
+    fileLabel.focus();
+    assert.equal(document.activeElement, fileLabel);
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+
+    assert.equal(ddsMenu.classList.contains("is-open"), false);
+    assert.equal(fileMenu.classList.contains("is-open"), true);
+    assert.equal(filePanel.hidden, false);
+    assert.equal(document.activeElement, importItem);
+});
+
+test("Escape does nothing when no menu is open so dialogs can dismiss", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar } = attachDdsMenuForKeyboard(document);
+    // Match HTML: Sample Deals panel starts hidden / collapsed.
+    document.element("menu-sample-deals-panel").hidden = true;
+    document.element("menu-sample-deals").setAttribute("aria-expanded", "false");
+    ctx.mountMenubar(menubar);
+
+    let prevented = false;
+    document.dispatch("keydown", {
+        key: "Escape",
+        preventDefault() {
+            prevented = true;
+        },
+    });
+    assert.equal(prevented, false);
+});
+
+test("Arrow keys are ignored when focus is outside the open menubar", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const { menubar, menu, label, about, faq } = attachDdsMenuForKeyboard(document);
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", {
+        target: label,
+        preventDefault() {},
+    });
+    assert.equal(menu.classList.contains("is-open"), true);
+
+    // Focus leaves the menubar (e.g. Tab into a hand input).
+    const outside = document.element("north_spades");
+    outside.focus();
+
+    document.dispatch("keydown", {
+        key: "ArrowDown",
+        preventDefault() {},
+    });
+    assert.equal(document.activeElement, outside);
+    assert.notEqual(document.activeElement, faq);
+    assert.notEqual(document.activeElement, about);
 });
 
 test("dds_web html does not cache-bust css or js with query params", () => {
@@ -7781,4 +8870,230 @@ test("loadAllBoardsFromHandRecordPdf loads Madeira MiBO PDF", async () => {
     assert.equal(boards[0].hands.east.clubs, "A742");
     assert.equal(boards[0].hands.south.hearts, "K");
     assert.equal(boards[25].boardNumber, "26");
+});
+
+test("loadAllBoardsFromHandRecordPdf loads larger-scale Madeira teams PDF", async () => {
+    // Swiss Teams sheets use the same compass layout at ~1.7× the pair scale.
+    // This fixture stacks several rounds; board numbers 17–24 appear twice, so
+    // unique parsed boards are 1–24 (first occurrence kept).
+    const pdfPath = findHandRecordPdfPath("madeira_teams_saturday.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+
+    assert.equal(boards.length, 24);
+    assert.equal(boards[0].boardNumber, "1");
+    const board17 = boards.find((board) => board.boardNumber === "17");
+    assert.ok(board17);
+    assert.equal(board17.hands.north.spades, "8");
+    assert.equal(board17.hands.north.hearts, "AKT82");
+    assert.equal(board17.hands.north.diamonds, "K63");
+    assert.equal(board17.hands.north.clubs, "KT64");
+    assert.equal(board17.hands.west.spades, "KQT962");
+    assert.equal(board17.hands.west.hearts, "Q53");
+    assert.equal(board17.hands.west.diamonds, "A");
+    assert.equal(board17.hands.west.clubs, "A82");
+    assert.equal(board17.hands.east.spades, "AJ5");
+    assert.equal(board17.hands.east.hearts, "9764");
+    assert.equal(board17.hands.east.diamonds, "9854");
+    assert.equal(board17.hands.east.clubs, "Q7");
+    assert.equal(board17.hands.south.spades, "743");
+    assert.equal(board17.hands.south.hearts, "J");
+    assert.equal(board17.hands.south.diamonds, "QJT72");
+    assert.equal(board17.hands.south.clubs, "J953");
+    assert.equal(boards[23].boardNumber, "24");
+});
+
+test("extractPdfTextItems decodes hex Tj via ToUnicode CMap", async () => {
+    // Some host "unavailable" / placeholder PDFs emit <hhhh> Tj with a
+    // ToUnicode CMap instead of WinAnsi literal strings.
+    const pdfPath = findHandRecordPdfPath("s261108s_3.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const items = await ctx.extractPdfTextItems(bytes);
+    const joined = items.map((item) => item.text).join("");
+    assert.match(joined, /página ou ficheiro/i);
+    assert.match(joined, /ainda não está disponível/i);
+});
+
+test("parsePdfToUnicodeCMap skips hostile oversized bfrange endpoints", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const started = Date.now();
+    const parsed = ctx.parsePdfToUnicodeCMap(`
+begincmap
+1 beginbfrange
+<0000> <20000000000000> <0041>
+endbfrange
+1 beginbfrange
+<0041> <0043> <0061>
+endbfrange
+endcmap
+`);
+    assert.ok(Date.now() - started < 1000, "bfrange expand must not hang");
+    assert.equal(parsed.map[0x41], 0x61);
+    assert.equal(parsed.map[0x42], 0x62);
+    assert.equal(parsed.map[0x43], 0x63);
+    assert.equal(parsed.map[0], undefined);
+});
+
+test("pdfHexToCodePoints respects one-byte and two-byte widths", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    // Copy out of the VM realm before deepEqual (Node rejects cross-realm arrays).
+    assert.deepEqual(Array.from(ctx.pdfHexToCodePoints("41", 1)), [0x41]);
+    assert.deepEqual(Array.from(ctx.pdfHexToCodePoints("4142", 1)), [0x41, 0x42]);
+    assert.deepEqual(Array.from(ctx.pdfHexToCodePoints("0041", 2)), [0x41]);
+    assert.deepEqual(
+        Array.from(ctx.pdfHexToCodePoints("00410042", 2)),
+        [0x41, 0x42]
+    );
+});
+
+test("pdfLatin1 decodes high bytes via TextDecoder latin1", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array([0x41, 0xc3, 0xa9, 0xff]);
+    assert.equal(ctx.pdfLatin1(bytes), "A\u00c3\u00a9\u00ff");
+});
+
+test("extractPdfTextItemsFromContent keeps literal angle brackets out of hex path", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const content = Buffer.from("BT\n(<0041>) Tj\n(A < B) Tj\nET\n", "latin1");
+    const items = ctx.extractPdfTextItemsFromContent(
+        new Uint8Array(content),
+        { map: Object.create(null), codeByteWidth: 2 }
+    );
+    assert.equal(
+        Array.from(items, (item) => item.text).join("\n"),
+        "<0041>\nA < B"
+    );
+});
+
+test("extractPdfTextItemsFromContent uses the active Tf ToUnicode map", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const byFont = {
+        F1: { map: { 1: "N".charCodeAt(0) }, codeByteWidth: 2 },
+        F2: { map: { 1: "K".charCodeAt(0) }, codeByteWidth: 2 },
+    };
+    const content = Buffer.from(
+        "BT\n/F1 12 Tf\n<0001> Tj\n/F2 12 Tf\n<0001> Tj\nET\n",
+        "latin1"
+    );
+    const items = ctx.extractPdfTextItemsFromContent(
+        new Uint8Array(content),
+        byFont
+    );
+    assert.equal(Array.from(items, (item) => item.text).join(""), "NK");
+});
+
+test("pdfCollectContentFontToUnicodeMaps handles reordered page keys and separate Resources", () => {
+    // Contents / Resources may appear before /Type /Page; Resources may be a
+    // separate object. The collector must use the full page dictionary.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const pdf = `
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Contents 5 0 R /Resources 4 0 R /Type /Page /Parent 2 0 R >>
+endobj
+4 0 obj
+<< /Font << /F9 6 0 R >> >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type0 /Encoding /Identity-H /ToUnicode 7 0 R >>
+endobj
+`;
+    const cmapBytes = new TextEncoder().encode(`
+begincmap
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+1 beginbfchar
+<0001> <0041>
+endbfchar
+endcmap
+`);
+    const maps = ctx.pdfCollectContentFontToUnicodeMaps(
+        new TextEncoder().encode(pdf),
+        [{ objNum: 7, data: cmapBytes }]
+    );
+    assert.ok(maps[5], "content stream 5 must be bound to the page");
+    assert.equal(maps[5].F9.map[1], 0x41);
+});
+
+test("loadAllBoardsFromHandRecordPdf rejects placeholder PDFs clearly", async () => {
+    const pdfPath = findHandRecordPdfPath("s261108s_3.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    await assert.rejects(
+        () => ctx.loadAllBoardsFromHandRecordPdf(bytes),
+        /no hand-record board diagrams found/i
+    );
+});
+
+test("loadAllBoardsFromHandRecordPdf loads Deep Finesse regional PDF", async () => {
+    // Deep Finesse sheets use "N Deals" like BridgeComposer but print holdings
+    // as spaced ranks (and ----- for void) without suit-glyph prefixes.
+    const pdfPath = findHandRecordPdfPath("2611126-11061430.pdf");
+    if (!pdfPath) {
+        return;
+    }
+    const { inflateSync } = await import("node:zlib");
+    const document = createMockDocument();
+    document.__ddsInflateZlib = (bytes) =>
+        new Uint8Array(inflateSync(Buffer.from(bytes)));
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array(readFileSync(pdfPath));
+    const boards = await ctx.loadAllBoardsFromHandRecordPdf(bytes);
+
+    assert.equal(boards.length, 36);
+    assert.deepEqual(
+        [...boards.map((board) => board.boardNumber)],
+        Array.from({ length: 36 }, (_, i) => String(i + 1))
+    );
+    assert.equal(boards[0].hands.north.spades, "6");
+    assert.equal(boards[0].hands.north.hearts, "987");
+    assert.equal(boards[0].hands.north.diamonds, "Q8");
+    assert.equal(boards[0].hands.north.clubs, "AKQ9854");
+    assert.equal(boards[0].hands.west.spades, "T984");
+    assert.equal(boards[0].hands.west.hearts, "");
+    assert.equal(boards[0].hands.west.diamonds, "K75432");
+    assert.equal(boards[0].hands.west.clubs, "T32");
+    assert.equal(boards[0].hands.east.spades, "KQ3");
+    assert.equal(boards[0].hands.east.hearts, "AJ6543");
+    assert.equal(boards[0].hands.east.diamonds, "AT96");
+    assert.equal(boards[0].hands.east.clubs, "");
+    assert.equal(boards[0].hands.south.spades, "AJ752");
+    assert.equal(boards[0].hands.south.hearts, "KQT2");
+    assert.equal(boards[0].hands.south.diamonds, "J");
+    assert.equal(boards[0].hands.south.clubs, "J76");
 });

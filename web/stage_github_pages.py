@@ -13,6 +13,7 @@ from pathlib import Path
 
 DEPLOY_FILES = (
     "dds_web.html",
+    "dds_web_faq.html",
     "dds_web.css",
     "dds_web.js",
     "dds_web_deal_import.js",
@@ -33,8 +34,8 @@ def stage_github_pages(web_root: Path, dest: Path) -> Path:
     missing = [name for name in DEPLOY_FILES if not (web_root / name).is_file()]
     if missing:
         raise FileNotFoundError(
-            f"missing {missing[0]} under {web_root} "
-            "(run ./web/update_wasm.sh before staging)"
+            "missing required deploy files under "
+            f"{web_root}: {', '.join(missing)}"
         )
     dest.mkdir(parents=True, exist_ok=True)
     for name in DEPLOY_FILES:

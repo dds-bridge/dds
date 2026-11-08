@@ -86,6 +86,15 @@ class GenSampleDealsJsTest(unittest.TestCase):
             self.assertIn("file", entry)
             self.assertIn("name", entry)
 
+    def test_manifest_includes_thomas_and_smallest_ever_deals(self) -> None:
+        manifest = json.loads(
+            (WEB_ROOT / "sample_deals_manifest.json").read_text(encoding="utf-8")
+        )
+        files = [entry["file"] for entry in manifest]
+        self.assertIn("hands/smallest_ever_double_dummy_problem.pbn", files)
+        self.assertIn("hands/thomas1.pbn", files)
+        self.assertIn("hands/thomas2.pbn", files)
+
     def test_checked_in_sample_deals_js_matches_generator(self) -> None:
         # Arrange / Act: regenerate from the committed manifest and PBN files.
         gen = _load_gen()
@@ -126,6 +135,13 @@ class GenSampleDealsJsTest(unittest.TestCase):
             self.assertIn("Everyone makes 3N", text)
             self.assertIn("Part-score", text)
             self.assertIn("NS make 7", text)
+            self.assertIn("Smallest ever DD problem", text)
+            self.assertIn("Thomas 1", text)
+            self.assertIn("Thomas 2", text)
+            self.assertIn("Q8...7", text)
+            self.assertIn("Q853.AJ962.KT74.", text)
+            self.assertIn("AQT8642.KJ9753..", text)
+
 
 
 if __name__ == "__main__":

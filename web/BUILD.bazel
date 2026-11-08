@@ -93,6 +93,9 @@ py_test(
         "//hands:everyone_makes_3N.pbn",
         "//hands:ns_make_7.pbn",
         "//hands:part_score.pbn",
+        "//hands:smallest_ever_double_dummy_problem.pbn",
+        "//hands:thomas1.pbn",
+        "//hands:thomas2.pbn",
     ],
 )
 
@@ -104,6 +107,7 @@ py_test(
     data = [
         "coi-serviceworker.js",
         "dds_web.html",
+        "dds_web_faq.html",
     ],
 )
 
@@ -132,6 +136,9 @@ py_test(
         "tests/dds_web_test.mjs",
         "tests/testdata/262ROTH5F1.pdf",
         "tests/testdata/s261105m_1.pdf",
+        "tests/testdata/2611126-11061430.pdf",
+        "tests/testdata/s261108s_3.pdf",
+        "tests/testdata/madeira_teams_saturday.pdf",
     ],
 )
 
@@ -147,6 +154,7 @@ py_test(
         "coi-serviceworker.js",
         "dds_web.css",
         "dds_web.html",
+        "dds_web_faq.html",
         "dds_web.js",
         "dds_web_deal_import.js",
         "dds_web_pdf_import.js",
@@ -175,6 +183,7 @@ py_test(
         "coi-serviceworker.js",
         "dds_web.css",
         "dds_web.html",
+        "dds_web_faq.html",
         "dds_web.js",
         "dds_web_deal_import.js",
         "dds_web_pdf_import.js",

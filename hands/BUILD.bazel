@@ -7,6 +7,9 @@ exports_files(
         "everyone_makes_3N.pbn",
         "ns_make_7.pbn",
         "part_score.pbn",
+        "smallest_ever_double_dummy_problem.pbn",
+        "thomas1.pbn",
+        "thomas2.pbn",
     ],
     visibility = ["//visibility:public"],
 )

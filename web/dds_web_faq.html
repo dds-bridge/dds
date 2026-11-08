@@ -1,0 +1,78 @@
+<!doctype html>
+
+<!-- Copyright 2020-2026 Adam Wildavsky
+
+     Use of this source code is governed by an MIT-style
+     license that can be found in the LICENSE file or at
+     https://opensource.org/licenses/MIT
+-->
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="dds_web.css">
+    <title>FAQ — DDS Web</title>
+</head>
+<body>
+    <header class="site-header">
+        <h1 id="faq-heading">FAQ</h1>
+        <p class="site-tagline">
+            <a href="dds_web.html">Back to DDS Web</a>
+        </p>
+    </header>
+
+    <section id="faq" class="faq" aria-labelledby="faq-heading">
+        <details>
+            <summary>What is DDS Web?</summary>
+            <p>
+                DDS Web is a browser demo of
+                <a href="https://github.com/dds-bridge/dds"
+                   target="_blank"
+                   rel="noopener noreferrer">DDS</a>,
+                a double dummy originally written by Bo Haglund. It runs entirely
+                client-side via WebAssembly: enter a deal (or import one),
+                and the page fills a double-dummy table of max tricks by
+                declarer and strain.
+            </p>
+        </details>
+        <details>
+            <summary>Does my deal leave my browser?</summary>
+            <p>
+                No. Cards, imports, and solve results stay on your device.
+                The solver module is downloaded once with the page; nothing
+                is sent to a server to analyze a deal.
+            </p>
+        </details>
+        <details>
+            <summary>How do I play through a contract?</summary>
+            <p>
+                After the double-dummy table appears, click a cell to enter
+                play for that declarer and strain (or that seat on lead for a
+                partial deal). Drag or click a highlighted card to play it;
+                each card shows the contract outcome with best play and
+                defense. Undo with ⌘/Ctrl-Z, or choose Edit hands to leave
+                play mode.
+            </p>
+        </details>
+        <details>
+            <summary>Can I load a tournament hand-record PDF?</summary>
+            <p>
+                Yes. Use File → Import Deal(s)… and pick a hand-record PDF
+                (BridgeComposer / ACBL or compass layouts such as Madeira /
+                MiBO) or a multi-deal PBN file. Use the arrows to step through
+                numbered boards.
+            </p>
+        </details>
+        <details>
+            <summary>Do sample deals have to be complete 52-card deals?</summary>
+            <p>
+                No. DDS Web solves equal-length partial deals as well as full
+                deals. File → Sample Deals includes both ordinary 52-card
+                layouts and compact puzzles such as the “Smallest ever DD
+                problem.” After the table appears, click a cell to put that
+                seat on lead (partial) or declare that contract (full).
+            </p>
+        </details>
+    </section>
+</body>
+</html>

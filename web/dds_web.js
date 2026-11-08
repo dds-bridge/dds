@@ -68,8 +68,10 @@
             chooseDealFile
             handleDealFileSelected
             fillFormWithTestData
-            handleSampleDealSelected
-            populateSampleDealsSelect
+            loadSampleDealById
+            populateSampleDealsMenu
+            mountMenubar
+            updateEditMenuEnablement
             handRecordPrev
             handRecordNext
             showHandRecordBoard
@@ -81,10 +83,37 @@
 
 "use strict";
 
-function focusNorthSpades() {
-    // To allow the user to quickly enter a deal
+// Last suit input that held focus. About dismiss returns here so the blinking
+// hand-caret and keypresses stay aligned (restoring only the menu label left a
+// stale caret on North while keys went nowhere).
+let lastFocusedHandInput = null;
 
-    document.getElementById("north_spades").focus();
+function noteHandInputFocus() {
+    if (isHandInput(document.activeElement)) {
+        lastFocusedHandInput = document.activeElement;
+    }
+}
+
+function focusNorthSpades() {
+    // To allow the user to quickly enter a deal. Prefer pulling browsing-context
+    // focus first so refresh stays keyboard-ready without an extra click
+    // (embedded hosts often keep activeElement set while keys go elsewhere).
+    if (
+        typeof window !== "undefined"
+        && typeof window.focus === "function"
+    ) {
+        try {
+            window.focus();
+        } catch (_err) {
+            // Ignore hosts that block window.focus without a user gesture.
+        }
+    }
+
+    const input = document.getElementById("north_spades");
+    if (input && typeof input.focus === "function") {
+        input.focus();
+    }
+    noteHandInputFocus();
 }
 
 function fillFormWithTestData(nesw) {
@@ -108,8 +137,17 @@ function fillFormWithTestData(nesw) {
     updateActionButtons();
 }
 
-function handleSampleDealSelected(select) {
-    const sample = SAMPLE_DEALS[select.value];
+const DDS_ABOUT_TEXT =
+    "DDS Web is a front end for DDS, a double-dummy bridge solver. "
+    + "Enter or import a deal and the page fills a table of maximum tricks by "
+    + "declarer and strain assuming optimal play and defense. "
+    + "Click on a cell and you can play through the contract card by card. "
+    + "Solving runs entirely in your browser via WebAssembly.\n\n"
+    + "Bo Haglund wrote the original version of DDS. "
+    + "Adam Wildavsky wrote this web front end.";
+
+function loadSampleDealById(id) {
+    const sample = SAMPLE_DEALS[id];
     if (!sample) {
         return;
     }
@@ -122,33 +160,682 @@ function handleSampleDealSelected(select) {
         deal.south,
         deal.west,
     ]);
-    // Restore the placeholder so the control reads like a button again and the
-    // same sample can be re-selected after editing.
-    select.value = "";
 }
 
-function populateSampleDealsSelect() {
-    const select = document.getElementById("sample-deals");
-    if (!select) {
+function populateSampleDealsMenu() {
+    const panel = document.getElementById("menu-sample-deals-panel");
+    if (!panel) {
         return;
     }
-    // Rebuild from SAMPLE_DEALS so the menu tracks the data file.
-    while (select.options.length > 0) {
-        select.remove(0);
-    }
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Sample deals…";
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    select.appendChild(placeholder);
+    panel.textContent = "";
     for (const id of Object.keys(SAMPLE_DEALS)) {
         const deal = SAMPLE_DEALS[id];
-        const option = document.createElement("option");
-        option.value = id;
-        option.textContent = deal.name;
-        select.appendChild(option);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.setAttribute("role", "menuitem");
+        item.setAttribute("tabindex", "-1");
+        item.dataset.sampleId = id;
+        item.textContent = deal.name;
+        panel.appendChild(item);
     }
+}
+
+function isMacPlatform(nav) {
+    const n = nav || (typeof navigator !== "undefined" ? navigator : {});
+    const platform = n.platform || "";
+    const ua = n.userAgent || "";
+    return /Mac|iPhone|iPad|iPod/.test(platform) || /Mac OS X/.test(ua);
+}
+
+function formatMenuShortcut(spec, options) {
+    const mac = options && options.mac != null ? options.mac : isMacPlatform();
+    const parts = String(spec).toLowerCase().split("+").map(function (p) {
+        return p.trim();
+    }).filter(Boolean);
+    const hasMod = parts.indexOf("mod") >= 0 || parts.indexOf("ctrl") >= 0;
+    const hasShift = parts.indexOf("shift") >= 0;
+    const hasAlt = parts.indexOf("alt") >= 0;
+    const key = parts.find(function (p) {
+        return p !== "mod" && p !== "shift" && p !== "alt" && p !== "ctrl";
+    });
+    function formatKey(k) {
+        if (!k) {
+            return "";
+        }
+        return k.length === 1 ? k.toUpperCase() : k;
+    }
+    if (mac) {
+        let out = "";
+        if (hasAlt) {
+            out += "⌥";
+        }
+        if (hasShift) {
+            out += "⇧";
+        }
+        if (hasMod) {
+            out += "⌘";
+        }
+        out += formatKey(key);
+        return out;
+    }
+    const bits = [];
+    if (hasMod) {
+        bits.push("Ctrl");
+    }
+    if (hasAlt) {
+        bits.push("Alt");
+    }
+    if (hasShift) {
+        bits.push("Shift");
+    }
+    const keyLabel = formatKey(key);
+    if (keyLabel) {
+        bits.push(keyLabel);
+    }
+    return bits.join("+");
+}
+
+function applyMenuShortcuts(root) {
+    if (!root || !root.querySelectorAll) {
+        return;
+    }
+    const mac = isMacPlatform();
+    const nodes = root.querySelectorAll(".menu-shortcut[data-keys]");
+    for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        const spec = el.getAttribute("data-keys");
+        if (!spec) {
+            continue;
+        }
+        el.textContent = formatMenuShortcut(spec, { mac: mac });
+    }
+}
+
+function setMenuOpen(menu, open) {
+    if (!menu) {
+        return;
+    }
+    menu.classList.toggle("is-open", open);
+    const panel = menu.querySelector(".menu-panel:not(.menu-submenu)");
+    const label = menu.querySelector(".menu-label");
+    if (panel) {
+        panel.hidden = !open;
+    }
+    if (label) {
+        label.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    if (!open) {
+        const submenu = menu.querySelector(".menu-submenu");
+        const submenuTrigger = menu.querySelector("#menu-sample-deals");
+        if (submenu) {
+            submenu.hidden = true;
+        }
+        if (submenuTrigger) {
+            submenuTrigger.setAttribute("aria-expanded", "false");
+        }
+    }
+}
+
+function setSampleSubmenuOpen(open) {
+    const submenu = document.getElementById("menu-sample-deals-panel");
+    const trigger = document.getElementById("menu-sample-deals");
+    if (submenu) {
+        submenu.hidden = !open;
+    }
+    if (trigger) {
+        trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+}
+
+function menubarItemsInPanel(panel) {
+    if (!panel || !panel.querySelectorAll) {
+        return [];
+    }
+    const nodes = panel.querySelectorAll('[role="menuitem"]');
+    const items = [];
+    for (let i = 0; i < nodes.length; i++) {
+        const item = nodes[i];
+        if (item.disabled) {
+            continue;
+        }
+        // When scanning a parent panel, skip items that live in a nested submenu.
+        if (item.closest) {
+            const nested = item.closest(".menu-submenu");
+            if (nested && nested !== panel) {
+                continue;
+            }
+        }
+        items.push(item);
+    }
+    return items;
+}
+
+function setRovingMenubarTabindex(items, active) {
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item || typeof item.setAttribute !== "function") {
+            continue;
+        }
+        item.setAttribute("tabindex", item === active ? "0" : "-1");
+    }
+}
+
+function focusAdjacentMenubarItem(panel, current, delta) {
+    const items = menubarItemsInPanel(panel);
+    if (!items.length) {
+        return;
+    }
+    let index = items.indexOf(current);
+    if (index < 0) {
+        index = delta > 0 ? -1 : 0;
+    }
+    const next = items[(index + delta + items.length) % items.length];
+    if (next && typeof next.focus === "function") {
+        setRovingMenubarTabindex(items, next);
+        next.focus();
+    }
+}
+
+function focusForKeyboard(el) {
+    if (!el || typeof el.focus !== "function") {
+        return;
+    }
+    try {
+        el.focus({ focusVisible: true });
+    } catch (err) {
+        el.focus();
+    }
+    // Some engines ignore focusVisible on programmatic focus (and mouse
+    // dismissal of a dialog does not set :focus-visible). Force a visible
+    // ring until the next blur so keyboard users can see where they landed.
+    if (el.classList && el.classList.add) {
+        el.classList.add("focus-visible-fallback");
+        const clear = function () {
+            el.classList.remove("focus-visible-fallback");
+            if (el.removeEventListener) {
+                el.removeEventListener("blur", clear);
+            }
+        };
+        if (el.addEventListener) {
+            el.addEventListener("blur", clear);
+        }
+    }
+}
+
+function menuLabelForItem(item) {
+    if (!item || !item.closest) {
+        return null;
+    }
+    const ownerMenu = item.closest(".menu");
+    return ownerMenu ? ownerMenu.querySelector(".menu-label") : null;
+}
+
+function aboutRestoreTarget(returnFocus) {
+    // Prefer the suit input the user was editing so Escape from About does not
+    // leave a blinking hand-caret while focus sits on the DDS menu label.
+    // Play mode disables those inputs — fall back to the menu label then.
+    if (
+        lastFocusedHandInput
+        && isHandInput(lastFocusedHandInput)
+        && !lastFocusedHandInput.disabled
+        && document.getElementById(lastFocusedHandInput.id) === lastFocusedHandInput
+    ) {
+        return lastFocusedHandInput;
+    }
+    return returnFocus || null;
+}
+
+function syncDiagramAfterAboutRestore() {
+    // Suit inputs keep the full original deal during play; redrawing from them
+    // would resurrect cards already in the trick/history.
+    if (
+        typeof isPlayMode === "function"
+        && isPlayMode()
+        && typeof renderPlayUi === "function"
+    ) {
+        renderPlayUi();
+        return;
+    }
+    updateHandCardDisplays(collectHands());
+}
+
+function focusAboutRestoreTarget(target) {
+    if (!target) {
+        return;
+    }
+    if (isHandInput(target)) {
+        if (typeof target.focus === "function") {
+            target.focus();
+        }
+        noteHandInputFocus();
+    } else {
+        focusForKeyboard(target);
+    }
+    // Keep the glyph caret in sync with activeElement (selectionchange alone
+    // does not always fire for programmatic focus moves).
+    syncDiagramAfterAboutRestore();
+}
+
+function showAboutDialog(returnFocus) {
+    const dialog = document.getElementById("dds-about-dialog");
+    const body = document.getElementById("dds-about-body");
+    if (!dialog) {
+        return;
+    }
+    if (body) {
+        body.textContent = DDS_ABOUT_TEXT;
+    }
+
+    // Snapshot before blur/showModal so we can return to the editing field.
+    noteHandInputFocus();
+    const restoreTarget = aboutRestoreTarget(returnFocus);
+
+    // Restore visible keyboard focus after dismiss. showModal would otherwise
+    // remember the About menuitem that closeAll() just hid. Some engines
+    // (and some automation hosts) close the dialog without firing "close",
+    // so also poll the open attribute (fallback path never sets dialog.open).
+    let restored = false;
+    const dialogIsOpen = function () {
+        if (typeof dialog.hasAttribute === "function") {
+            return dialog.hasAttribute("open");
+        }
+        return !!dialog.open;
+    };
+    const restore = function () {
+        if (restored || !restoreTarget) {
+            return;
+        }
+        restored = true;
+        focusAboutRestoreTarget(restoreTarget);
+        // Fight late UA focus restoration.
+        let attempts = 0;
+        const reassert = function () {
+            if (document.activeElement === restoreTarget || attempts >= 5) {
+                return;
+            }
+            attempts += 1;
+            focusAboutRestoreTarget(restoreTarget);
+            setTimeout(reassert, 10);
+        };
+        setTimeout(reassert, 10);
+    };
+    if (restoreTarget) {
+        const onClose = function () {
+            dialog.removeEventListener("close", onClose);
+            setTimeout(restore, 0);
+        };
+        dialog.addEventListener("close", onClose);
+    }
+
+    // Drop focus from the (soon-hidden) menuitem before the dialog opens.
+    if (
+        document.activeElement
+        && document.activeElement !== document.body
+        && typeof document.activeElement.blur === "function"
+    ) {
+        document.activeElement.blur();
+    }
+    if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+    } else {
+        dialog.setAttribute("open", "");
+    }
+    // Autofocus does not always paint :focus-visible; force a ring on OK.
+    focusForKeyboard(document.getElementById("dds-about-ok"));
+
+    if (restoreTarget) {
+        const watch = function () {
+            if (!dialogIsOpen()) {
+                setTimeout(restore, 0);
+                return;
+            }
+            if (typeof requestAnimationFrame === "function") {
+                requestAnimationFrame(watch);
+            } else {
+                setTimeout(watch, 16);
+            }
+        };
+        if (typeof requestAnimationFrame === "function") {
+            requestAnimationFrame(watch);
+        } else {
+            setTimeout(watch, 16);
+        }
+    }
+}
+
+function updateEditMenuEnablement() {
+    const undo = document.getElementById("menu-undo");
+    const editHands = document.getElementById("menu-edit-hands");
+    const playing = typeof isPlayMode === "function" && isPlayMode();
+    if (editHands) {
+        editHands.disabled = !playing;
+    }
+    if (undo) {
+        const canUndo = typeof canUndoPlay === "function" && canUndoPlay();
+        undo.disabled = !canUndo;
+    }
+}
+
+function mountMenubar(menubar) {
+    if (!menubar) {
+        return function () {};
+    }
+    const menus = menubar.querySelectorAll
+        ? Array.prototype.slice.call(menubar.querySelectorAll(".menu"))
+        : [];
+
+    function closeAll() {
+        for (let i = 0; i < menus.length; i++) {
+            setMenuOpen(menus[i], false);
+        }
+        setSampleSubmenuOpen(false);
+    }
+
+    function onMenubarClick(event) {
+        const target = event.target;
+        if (!target || !target.closest) {
+            return;
+        }
+        const label = target.closest(".menu-label");
+        if (label && menubar.contains(label)) {
+            event.preventDefault();
+            const menu = label.closest(".menu");
+            const willOpen = !menu.classList.contains("is-open");
+            closeAll();
+            if (willOpen) {
+                setMenuOpen(menu, true);
+            }
+            return;
+        }
+
+        const sampleTrigger = target.closest("#menu-sample-deals");
+        if (sampleTrigger && menubar.contains(sampleTrigger)) {
+            event.preventDefault();
+            // Selecting Sample Deals always opens the flyout (macOS submenu).
+            setSampleSubmenuOpen(true);
+            return;
+        }
+
+        const item = target.closest("[role=\"menuitem\"]");
+        if (!item || !menubar.contains(item) || item.disabled) {
+            return;
+        }
+
+        const trigger = menuLabelForItem(item);
+
+        const sampleId = item.dataset && item.dataset.sampleId;
+        if (sampleId) {
+            loadSampleDealById(sampleId);
+            closeAll();
+            // Deal is ready to edit — do not steal focus back to File.
+            focusNorthSpades();
+            return;
+        }
+
+        if (item.id === "menu-about") {
+            closeAll();
+            // Hand the visible DDS label to showAboutDialog so close restores
+            // keyboard-visible focus there, not to the hidden About menuitem.
+            showAboutDialog(trigger);
+            return;
+        }
+        if (
+            item.id === "menu-how-to"
+            || item.id === "menu-source-code"
+            || item.id === "menu-changelog"
+            || item.id === "menu-report-issue"
+        ) {
+            // Anchor menuitems — close the menu and let the browser follow href.
+            closeAll();
+            focusForKeyboard(trigger);
+            return;
+        }
+        if (item.id === "menu-import-deals") {
+            chooseDealFile();
+            closeAll();
+            focusForKeyboard(trigger);
+            return;
+        }
+        if (item.id === "menu-undo") {
+            if (typeof undoPlay === "function") {
+                undoPlay();
+            }
+            closeAll();
+            focusForKeyboard(trigger);
+            return;
+        }
+        if (item.id === "menu-rotate") {
+            rotateClockwise();
+            closeAll();
+            focusNorthSpades();
+            return;
+        }
+        if (item.id === "menu-clear") {
+            clearTestData();
+            closeAll();
+            // clearTestData already focused North spades for typing.
+            return;
+        }
+        if (item.id === "menu-edit-hands") {
+            if (typeof exitPlay === "function") {
+                exitPlay();
+            }
+            closeAll();
+            focusNorthSpades();
+            return;
+        }
+        closeAll();
+        // Menu panels are display:none when closed; leave focus on a visible
+        // label so keyboard users are not stranded on a hidden menuitem.
+        focusForKeyboard(trigger);
+    }
+
+    function onDocumentPointerDown(event) {
+        if (menubar.contains(event.target)) {
+            return;
+        }
+        closeAll();
+    }
+
+    function openMenu() {
+        for (let i = 0; i < menus.length; i++) {
+            if (menus[i].classList.contains("is-open")) {
+                return menus[i];
+            }
+        }
+        return null;
+    }
+
+    function sampleSubmenuIsOpen() {
+        const submenu = document.getElementById("menu-sample-deals-panel");
+        const trigger = document.getElementById("menu-sample-deals");
+        if (!submenu || submenu.hidden) {
+            return false;
+        }
+        // Prefer the trigger's expanded state when present so a stray visible
+        // panel without an open File menu does not capture Escape.
+        if (trigger && trigger.getAttribute) {
+            return trigger.getAttribute("aria-expanded") === "true";
+        }
+        return true;
+    }
+
+    function onKeyDown(event) {
+        const key = event.key;
+        let menu = openMenu();
+        const submenuOpen = sampleSubmenuIsOpen();
+
+        if (key === "Escape") {
+            // Do not swallow Escape when nothing menu-related is open — About
+            // and other native dialogs need it to dismiss.
+            if (!menu && !submenuOpen) {
+                return;
+            }
+            if (submenuOpen) {
+                setSampleSubmenuOpen(false);
+                const sampleTrigger = document.getElementById("menu-sample-deals");
+                if (sampleTrigger && typeof sampleTrigger.focus === "function") {
+                    sampleTrigger.focus();
+                }
+                if (typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                return;
+            }
+            const trigger = menu.querySelector(".menu-label");
+            closeAll();
+            if (trigger && typeof trigger.focus === "function") {
+                trigger.focus();
+            }
+            if (typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            return;
+        }
+
+        const active = document.activeElement;
+        // Arrow navigation applies only while focus remains inside the menubar.
+        if (
+            !active
+            || (typeof menubar.contains === "function"
+                && !menubar.contains(active))
+        ) {
+            return;
+        }
+
+        // If focus sits on another top-level label, switch to that menu before
+        // arrowing — otherwise ArrowDown jumps back into the previously open panel.
+        const focusMenu = active.closest ? active.closest(".menu") : null;
+        const onMenuLabel = !!(
+            focusMenu
+            && focusMenu.querySelector
+            && focusMenu.querySelector(".menu-label") === active
+        );
+        if (onMenuLabel && focusMenu !== menu) {
+            if (
+                key !== "ArrowDown"
+                && key !== "ArrowUp"
+                && key !== "ArrowLeft"
+                && key !== "ArrowRight"
+            ) {
+                return;
+            }
+            closeAll();
+            setMenuOpen(focusMenu, true);
+            menu = focusMenu;
+        }
+
+        if (!menu) {
+            return;
+        }
+
+        const mainPanel = menu.querySelector(".menu-panel:not(.menu-submenu)");
+        const submenu = document.getElementById("menu-sample-deals-panel");
+        const inSubmenu = !!(
+            submenuOpen
+            && submenu
+            && (
+                (submenu.contains && submenu.contains(active))
+                || active.id === "menu-sample-deals"
+            )
+        );
+        const panel = inSubmenu && key !== "ArrowRight" ? submenu : mainPanel;
+
+        if (key === "ArrowDown") {
+            if (typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            focusAdjacentMenubarItem(panel || mainPanel, active, 1);
+            return;
+        }
+        if (key === "ArrowUp") {
+            if (typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            focusAdjacentMenubarItem(panel || mainPanel, active, -1);
+            return;
+        }
+        if (key === "ArrowRight") {
+            if (active.id === "menu-sample-deals") {
+                if (typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                setSampleSubmenuOpen(true);
+                const first = menubarItemsInPanel(submenu)[0];
+                if (first && typeof first.focus === "function") {
+                    first.focus();
+                }
+            }
+            return;
+        }
+        if (key === "ArrowLeft") {
+            if (submenuOpen) {
+                if (typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                setSampleSubmenuOpen(false);
+                const sampleTrigger = document.getElementById("menu-sample-deals");
+                if (sampleTrigger && typeof sampleTrigger.focus === "function") {
+                    sampleTrigger.focus();
+                }
+            }
+        }
+    }
+
+    function onOpenShortcut(event) {
+        if (!event || event.shiftKey || event.altKey) {
+            return;
+        }
+        const key = event.key && String(event.key).toLowerCase();
+        if (key !== "o") {
+            return;
+        }
+        if (!(event.metaKey || event.ctrlKey)) {
+            return;
+        }
+        event.preventDefault();
+        chooseDealFile();
+    }
+
+    function fileMenuIsOpen() {
+        const fileMenu = menubar.querySelector
+            ? menubar.querySelector('[data-menu="file"]')
+            : null;
+        return !!(fileMenu && fileMenu.classList.contains("is-open"));
+    }
+
+    function onMenubarPointerOver(event) {
+        const target = event.target;
+        if (!target || !target.closest || !fileMenuIsOpen()) {
+            return;
+        }
+        if (
+            target.closest("#menu-sample-deals")
+            || target.closest("#menu-sample-deals-panel")
+            || target.closest(".menu-item-submenu")
+        ) {
+            setSampleSubmenuOpen(true);
+            return;
+        }
+        // Hovering other File items dismisses the Sample Deals flyout.
+        if (target.closest('[data-menu="file"]')) {
+            setSampleSubmenuOpen(false);
+        }
+    }
+
+    menubar.addEventListener("click", onMenubarClick);
+    menubar.addEventListener("pointerover", onMenubarPointerOver);
+    document.addEventListener("pointerdown", onDocumentPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onOpenShortcut);
+
+    return function () {
+        menubar.removeEventListener("click", onMenubarClick);
+        menubar.removeEventListener("pointerover", onMenubarPointerOver);
+        document.removeEventListener("pointerdown", onDocumentPointerDown);
+        document.removeEventListener("keydown", onKeyDown);
+        document.removeEventListener("keydown", onOpenShortcut);
+    };
 }
 
 // Deal-format parsers (PBN/LIN/DLM/sol) live in dds_web_deal_import.js and
@@ -1401,7 +2088,64 @@ function handleSuitSelectionChange() {
         return;
     }
 
+    noteHandInputFocus();
     updateHandCardDisplays(collectHands());
+}
+
+function clearHandCarets() {
+    // Prefer removing caret nodes in place so a mousedown→focusout→click/drag
+    // sequence keeps the same .hand-card button identity.
+    const carets = document.querySelectorAll
+        ? Array.prototype.slice.call(document.querySelectorAll(".hand-caret"))
+        : [];
+    if (carets.length) {
+        for (let i = 0; i < carets.length; i++) {
+            const node = carets[i];
+            if (node && node.parentNode) {
+                node.parentNode.removeChild(node);
+            }
+        }
+        return;
+    }
+    // Unit-test hosts store holdings as HTML strings without a live NodeList.
+    for (const direction of DIRECTIONS) {
+        for (const suit of SUITS) {
+            const holder = document.getElementById(direction + "_" + suit + "_cards");
+            if (
+                holder
+                && typeof holder.innerHTML === "string"
+                && holder.innerHTML.indexOf("hand-caret") >= 0
+            ) {
+                holder.innerHTML = holder.innerHTML.replace(
+                    /<span class="hand-caret"[^>]*><\/span>/g,
+                    ""
+                );
+            }
+        }
+    }
+}
+
+function handleDocumentFocusOut(event) {
+    // Clear only the glyph caret when leaving a suit input. A full holding
+    // redraw here replaces card buttons and breaks click-to-place-caret / drag
+    // (mousedown blurs the input before the gesture completes).
+    if (!isHandInput(event && event.target)) {
+        return;
+    }
+
+    const clear = function () {
+        if (isHandInput(document.activeElement)) {
+            return;
+        }
+        clearHandCarets();
+    };
+
+    if (!isHandInput(document.activeElement)) {
+        clear();
+        return;
+    }
+
+    setTimeout(clear, 0);
 }
 
 function handleHandSuitClick(event) {
@@ -2351,7 +3095,12 @@ function inputIsValid(hands) {
 
 function pageLoad() {
     document.getElementById("valid-pips").innerHTML = PIPS;
-    populateSampleDealsSelect();
+    populateSampleDealsMenu();
+    applyMenuShortcuts(document);
+    mountMenubar(document.querySelector
+        ? document.querySelector(".menubar")
+        : document.getElementById("menubar"));
+    updateEditMenuEnablement();
 
     for (const element of hand_elements()) {
         element.addEventListener("input", handleHandSuitInput);
@@ -2375,10 +3124,14 @@ function pageLoad() {
         document.addEventListener("beforeinput", handlePlayHistoryUndo);
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
+    document.addEventListener("focusout", handleDocumentFocusOut);
     if (typeof window !== "undefined" && window.addEventListener) {
         window.addEventListener("resize", fitDiagramFonts);
     }
     updateActionButtons();
     focusNorthSpades();
+    // Programmatic focus may not emit selectionchange; paint the caret so
+    // refresh is ready for typed pips with no extra click.
+    updateHandCardDisplays(collectHands());
 }
 
