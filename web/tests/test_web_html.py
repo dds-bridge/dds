@@ -64,9 +64,11 @@ class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
             "Does my deal leave my browser?",
             "How do I play through a contract?",
             "Can I load a tournament hand-record PDF?",
+            "Do sample deals have to be complete 52-card deals?",
         ):
             self.assertIn(question, faq)
             self.assertNotIn(question, main)
+        self.assertIn("partial deals", faq)
         self.assertNotIn("Why won't solving start?", faq)
 
 
@@ -98,6 +100,15 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         text = HTML_PATH.read_text(encoding="utf-8")
         for glyph in ("♠", "♥", "♦", "♣"):
             self.assertIn(glyph, text)
+
+    def test_deal_entry_hint_mentions_partial_deals(self) -> None:
+        text = HTML_PATH.read_text(encoding="utf-8")
+        self.assertRegex(
+            text,
+            r'(?is)<p\b[^>]*class="deal-entry-hint"[^>]*>\s*'
+            r"Enter a full or partial deal using only these pips:",
+        )
+        self.assertNotIn("Enter a 52-card deal", text)
 
     def test_import_deal_button_and_file_input(self) -> None:
         text = HTML_PATH.read_text(encoding="utf-8")

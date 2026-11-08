@@ -421,8 +421,14 @@ function showAboutDialog(returnFocus) {
     // Restore visible keyboard focus after dismiss. showModal would otherwise
     // remember the About menuitem that closeAll() just hid. Some engines
     // (and some automation hosts) close the dialog without firing "close",
-    // so also poll dialog.open.
+    // so also poll the open attribute (fallback path never sets dialog.open).
     let restored = false;
+    const dialogIsOpen = function () {
+        if (typeof dialog.hasAttribute === "function") {
+            return dialog.hasAttribute("open");
+        }
+        return !!dialog.open;
+    };
     const restore = function () {
         if (restored || !restoreTarget) {
             return;
@@ -467,7 +473,7 @@ function showAboutDialog(returnFocus) {
 
     if (restoreTarget) {
         const watch = function () {
-            if (!dialog.open) {
+            if (!dialogIsOpen()) {
                 setTimeout(restore, 0);
                 return;
             }

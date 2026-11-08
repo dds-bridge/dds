@@ -10,7 +10,7 @@
 /* eslint-env es6 */
 /* exported normalizeBridgeHolding parseBridgeComposerBoard
             parseAllBridgeComposerBoards parseAllDeepFinesseBoards
-            parseAllCompassHandRecordBoards
+            parseAllCompassHandRecordBoards pdfLatin1
             extractPdfTextItems loadAllBoardsFromHandRecordPdf handsToDottedDeal */
 
 "use strict";
@@ -907,6 +907,13 @@
     }
 
     function pdfLatin1(bytes) {
+        if (typeof TextDecoder === "function") {
+            try {
+                return new TextDecoder("latin1").decode(bytes);
+            } catch (_err) {
+                // Fall through when the label is unavailable.
+            }
+        }
         return Array.from(bytes, function (b) {
             return String.fromCharCode(b);
         }).join("");
@@ -1370,6 +1377,7 @@
     global.parseAllCompassHandRecordBoards = parseAllCompassHandRecordBoards;
     global.parsePdfToUnicodeCMap = parsePdfToUnicodeCMap;
     global.pdfHexToCodePoints = pdfHexToCodePoints;
+    global.pdfLatin1 = pdfLatin1;
     global.pdfCollectContentFontToUnicodeMaps = pdfCollectContentFontToUnicodeMaps;
     global.extractPdfTextItemsFromContent = extractPdfTextItemsFromContent;
     global.extractPdfTextItems = extractPdfTextItems;

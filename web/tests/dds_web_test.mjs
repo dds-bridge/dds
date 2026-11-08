@@ -152,6 +152,12 @@ function createMockDocument(initialValues = {}) {
                     ? this.attributes[name]
                     : null;
             },
+            hasAttribute(name) {
+                return Object.prototype.hasOwnProperty.call(this.attributes, name);
+            },
+            removeAttribute(name) {
+                delete this.attributes[name];
+            },
             addEventListener(type, listener) {
                 const typeListeners = elementListeners.get(type) ?? [];
                 typeListeners.push(listener);
@@ -3738,7 +3744,14 @@ test("menubar CSS styles dropdown panels and labels", () => {
     assert.match(css, /\.menu-panel\s*\{/s);
     assert.match(css, /\.menu-label\s*\{/s);
     assert.match(css, /\.menu-submenu\s*\{/s);
-    assert.match(css, /\.focus-visible-fallback\s*\{/s);
+    assert.match(css, /\.menu-label\.focus-visible-fallback\s*\{/s);
+    assert.match(css, /#dds-about-ok\.focus-visible-fallback\s*\{/s);
+    // A bare `.focus-visible-fallback` rule later in the file would override
+    // the menubar's var(--menu-focus) ring with the About OK blue.
+    assert.doesNotMatch(
+        css,
+        /(?:^|[,}\s])\.focus-visible-fallback\s*[,{]/
+    );
     assert.doesNotMatch(css, /#sample-deals/);
 });
 
@@ -3800,6 +3813,58 @@ test("showAboutDialog fills the About body with the product blurb", () => {
         document.element("dds-about-body").textContent,
         /Bo Haglund wrote the original version of DDS/
     );
+});
+
+test("showAboutDialog fallback open attribute keeps restore watch waiting", async () => {
+    // Environments without showModal() only set the open attribute. Polling
+    // dialog.open alone would restore focus immediately while the dialog is up.
+    const document = createMockDocument();
+    const dialog = document.element("dds-about-dialog");
+    delete dialog.showModal;
+    dialog.open = false;
+    const { menubar, label, about } = attachDdsMenuForKeyboard(document);
+    const ok = document.element("dds-about-ok");
+    ok.focus = () => {
+        document.activeElement = ok;
+    };
+    ok.addEventListener = () => {};
+    ok.removeEventListener = () => {};
+    label.addEventListener = () => {};
+    label.removeEventListener = () => {};
+    label.classList = {
+        _names: new Set(),
+        add(name) {
+            this._names.add(name);
+        },
+        remove(name) {
+            this._names.delete(name);
+        },
+        contains(name) {
+            return this._names.has(name);
+        },
+    };
+    about.blur = () => {
+        if (document.activeElement === about) {
+            document.activeElement = document.body;
+        }
+    };
+    const ctx = loadDdsWeb(document);
+    ctx.mountMenubar(menubar);
+    menubar.dispatch("click", { target: label, preventDefault() {} });
+    about.focus();
+
+    menubar.dispatch("click", { target: about, preventDefault() {} });
+
+    assert.equal(dialog.hasAttribute("open"), true);
+    assert.equal(dialog.open, false);
+    // Give the watch loop a couple of frames — focus must stay on OK.
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(document.activeElement && document.activeElement.id, "dds-about-ok");
+    assert.equal(label.classList.contains("focus-visible-fallback"), false);
+
+    dialog.removeAttribute("open");
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(document.activeElement, label);
 });
 
 /**
@@ -8840,6 +8905,13 @@ test("pdfHexToCodePoints respects one-byte and two-byte widths", () => {
         Array.from(ctx.pdfHexToCodePoints("00410042", 2)),
         [0x41, 0x42]
     );
+});
+
+test("pdfLatin1 decodes high bytes via TextDecoder latin1", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const bytes = new Uint8Array([0x41, 0xc3, 0xa9, 0xff]);
+    assert.equal(ctx.pdfLatin1(bytes), "A\u00c3\u00a9\u00ff");
 });
 
 test("extractPdfTextItemsFromContent keeps literal angle brackets out of hex path", () => {
