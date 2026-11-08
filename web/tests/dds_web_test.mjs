@@ -1395,7 +1395,44 @@ test("pageLoad fills Sample Deals submenu from SAMPLE_DEALS", () => {
         assert.equal(item.dataset.sampleId, id);
         assert.equal(item.textContent, ctx.SAMPLE_DEALS[id].name);
         assert.equal(item.role || item.attributes.role, "menuitem");
+        assert.equal(item.getAttribute("tabindex"), "-1");
     }
+});
+
+test("focusAdjacentMenubarItem uses roving tabindex inside a panel", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const panel = {
+        querySelectorAll() {
+            return items;
+        },
+    };
+    const items = ["a", "b", "c"].map((id) => ({
+        id,
+        disabled: false,
+        attributes: { tabindex: "-1" },
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(this.attributes, name)
+                ? this.attributes[name]
+                : null;
+        },
+        closest() {
+            return null;
+        },
+        focus() {
+            document.activeElement = this;
+        },
+    }));
+
+    ctx.focusAdjacentMenubarItem(panel, items[0], 1);
+
+    assert.equal(document.activeElement, items[1]);
+    assert.equal(items[0].getAttribute("tabindex"), "-1");
+    assert.equal(items[1].getAttribute("tabindex"), "0");
+    assert.equal(items[2].getAttribute("tabindex"), "-1");
 });
 
 test("SAMPLE_DEALS entries have name and PBN deal string", () => {
@@ -3786,7 +3823,19 @@ test("menubar CSS uses Avenir Next stack and warm chrome colors", () => {
     );
     assert.match(
         css,
-        /\.menu-panel \[role=["']menuitem["']\]:hover:not\(:disabled\),\s*\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+        /\.menu-panel \[role=["']menuitem["']\]:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*background:\s*var\(--menu-accent-soft\)/s
+    );
+    assert.match(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--menu-focus\)/s
+    );
+    assert.doesNotMatch(
+        css,
+        /\.menu-panel \[role=["']menuitem["']\]:focus-visible\s*\{[^}]*outline:\s*none/s
     );
     assert.doesNotMatch(css, /\.menu-label:hover[\s\S]*?background:\s*#e8eef8/);
 });

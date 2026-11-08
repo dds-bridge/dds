@@ -173,6 +173,7 @@ function populateSampleDealsMenu() {
         const item = document.createElement("button");
         item.type = "button";
         item.setAttribute("role", "menuitem");
+        item.setAttribute("tabindex", "-1");
         item.dataset.sampleId = id;
         item.textContent = deal.name;
         panel.appendChild(item);
@@ -309,6 +310,16 @@ function menubarItemsInPanel(panel) {
     return items;
 }
 
+function setRovingMenubarTabindex(items, active) {
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item || typeof item.setAttribute !== "function") {
+            continue;
+        }
+        item.setAttribute("tabindex", item === active ? "0" : "-1");
+    }
+}
+
 function focusAdjacentMenubarItem(panel, current, delta) {
     const items = menubarItemsInPanel(panel);
     if (!items.length) {
@@ -320,6 +331,7 @@ function focusAdjacentMenubarItem(panel, current, delta) {
     }
     const next = items[(index + delta + items.length) % items.length];
     if (next && typeof next.focus === "function") {
+        setRovingMenubarTabindex(items, next);
         next.focus();
     }
 }

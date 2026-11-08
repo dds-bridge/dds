@@ -152,10 +152,14 @@
   font-size: 0.85em;
 }
 
-.menu-panel [role="menuitem"]:hover:not(:disabled),
+.menu-panel [role="menuitem"]:hover:not(:disabled) {
+  background: var(--menu-accent-soft);
+}
+
 .menu-panel [role="menuitem"]:focus-visible {
   background: var(--menu-accent-soft);
-  outline: none;
+  outline: 2px solid var(--menu-focus);
+  outline-offset: 1px;
 }
 
 .menu-panel [role="menuitem"]:disabled {

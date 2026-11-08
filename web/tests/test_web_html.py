@@ -171,6 +171,15 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn(">DDS</button>", text)
         self.assertIn('id="menu-about"', text)
         self.assertIn(">About…</button>", text)
+        # Panel menuitems use roving tabindex; top-level labels stay tabbable.
+        self.assertRegex(
+            text,
+            r'(?is)<button\b(?=[^>]*\bid="menu-about")(?=[^>]*\btabindex="-1")[^>]*>',
+        )
+        self.assertNotRegex(
+            text,
+            r'(?is)<button\b(?=[^>]*\bclass="[^"]*\bmenu-label\b)(?=[^>]*\btabindex="-1")[^>]*>',
+        )
         self.assertIn('id="menu-how-to"', text)
         self.assertRegex(
             text,

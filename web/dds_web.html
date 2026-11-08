@@ -36,23 +36,27 @@
         <div class="menu" data-menu="dds">
             <button type="button" class="menu-label" role="menuitem" aria-haspopup="menu" aria-expanded="false">DDS</button>
             <div class="menu-panel" role="menu" hidden>
-                <button type="button" role="menuitem" id="menu-about">About…</button>
+                <button type="button" role="menuitem" tabindex="-1" id="menu-about">About…</button>
                 <a role="menuitem"
+                   tabindex="-1"
                    id="menu-how-to"
                    href="dds_web_faq.html"
                    target="_blank"
                    rel="noopener noreferrer">FAQ</a>
                 <a role="menuitem"
+                   tabindex="-1"
                    id="menu-source-code"
                    href="https://github.com/dds-bridge/dds"
                    target="_blank"
                    rel="noopener noreferrer">Source code</a>
                 <a role="menuitem"
+                   tabindex="-1"
                    id="menu-changelog"
                    href="https://github.com/dds-bridge/dds/blob/develop/ChangeLog"
                    target="_blank"
                    rel="noopener noreferrer">Changelog</a>
                 <a role="menuitem"
+                   tabindex="-1"
                    id="menu-report-issue"
                    href="https://github.com/dds-bridge/dds/issues"
                    target="_blank"
@@ -62,12 +66,13 @@
         <div class="menu" data-menu="file">
             <button type="button" class="menu-label" role="menuitem" aria-haspopup="menu" aria-expanded="false">File</button>
             <div class="menu-panel" role="menu" hidden>
-                <button type="button" role="menuitem" id="menu-import-deals">
+                <button type="button" role="menuitem" tabindex="-1" id="menu-import-deals">
                     Import Deal(s)…<span class="menu-shortcut" data-keys="mod+o"></span>
                 </button>
                 <div class="menu-item-submenu">
                     <button type="button"
                             role="menuitem"
+                            tabindex="-1"
                             id="menu-sample-deals"
                             aria-haspopup="menu"
                             aria-expanded="false">
@@ -83,14 +88,14 @@
         <div class="menu" data-menu="edit">
             <button type="button" class="menu-label" role="menuitem" aria-haspopup="menu" aria-expanded="false">Edit</button>
             <div class="menu-panel" role="menu" hidden>
-                <button type="button" role="menuitem" id="menu-undo" disabled>
+                <button type="button" role="menuitem" tabindex="-1" id="menu-undo" disabled>
                     Undo<span class="menu-shortcut" data-keys="mod+z"></span>
                 </button>
                 <hr class="menu-sep" />
-                <button type="button" role="menuitem" id="menu-rotate">Rotate Hands Clockwise</button>
-                <button type="button" role="menuitem" id="menu-clear">Clear Entries</button>
+                <button type="button" role="menuitem" tabindex="-1" id="menu-rotate">Rotate Hands Clockwise</button>
+                <button type="button" role="menuitem" tabindex="-1" id="menu-clear">Clear Entries</button>
                 <hr class="menu-sep" />
-                <button type="button" role="menuitem" id="menu-edit-hands" disabled>Edit Hands</button>
+                <button type="button" role="menuitem" tabindex="-1" id="menu-edit-hands" disabled>Edit Hands</button>
             </div>
         </div>
     </nav>
