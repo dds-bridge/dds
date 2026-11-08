@@ -53,7 +53,16 @@ class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
             r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*>',
             msg="dds_web_faq.html must include an FAQ landmark",
         )
-        self.assertRegex(faq, r"(?is)<h1[^>]*>\s*FAQ\s*</h1>")
+        self.assertRegex(
+            faq,
+            r'(?is)<h1\b[^>]*id="faq-heading"[^>]*>\s*FAQ\s*</h1>',
+        )
+        self.assertRegex(
+            faq,
+            r'(?is)<(?:section|div)\b[^>]*id="faq"[^>]*'
+            r'aria-labelledby="faq-heading"',
+        )
+        self.assertNotIn('class="visually-hidden"', faq)
         self.assertRegex(
             faq,
             r'(?is)<a\b[^>]*href="dds_web\.html"[^>]*>',
@@ -250,6 +259,14 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         self.assertIn('id="menu-clear"', text)
         self.assertIn("Clear Entries", text)
         self.assertIn('id="menu-edit-hands"', text)
+        self.assertRegex(
+            text,
+            r'(?is)<hr\b[^>]*class="menu-sep"[^>]*role="separator"',
+        )
+        self.assertRegex(
+            text,
+            r'(?is)<hr\b[^>]*class="menu-sep"[^>]*aria-orientation="horizontal"',
+        )
         self.assertNotIn("<select", text)
         self.assertNotIn('id="sample-deals"', text)
         self.assertNotIn("handleSampleDealSelected(this)", text)
