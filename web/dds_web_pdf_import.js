@@ -894,21 +894,21 @@
 
     function pdfFontObjectToUnicodeObjectNums(pdfText) {
         const out = Object.create(null);
-        // Flat font dictionaries only (`[^>]+` stops before nested `<<` /
-        // stream dicts). Type0 parents carry /ToUnicode here; binary streams
-        // must not be scanned for a false /Type /Font match.
-        const objRe = /(\d+)\s+0\s+obj\s*<<([^>]+)>>/g;
-        let match;
-        while ((match = objRe.exec(pdfText)) !== null) {
-            const body = match[2];
+        const dicts = pdfExtractObjectDicts(pdfText);
+        for (let i = 0; i < dicts.length; i++) {
+            const body = dicts[i].body;
             if (!/\/Type\s*\/Font\b/.test(body)) {
+                continue;
+            }
+            // Skip CID descendants; Type0 parents own /ToUnicode.
+            if (/\/Subtype\s*\/CIDFont/.test(body)) {
                 continue;
             }
             const tu = /\/ToUnicode\s+(\d+)\s+0\s+R/.exec(body);
             if (!tu) {
                 continue;
             }
-            out[parseInt(match[1], 10)] = parseInt(tu[1], 10);
+            out[dicts[i].objNum] = parseInt(tu[1], 10);
         }
         return out;
     }
@@ -957,6 +957,87 @@
     }
 
     /**
+     * Walk top-level `N 0 obj << ... >>` dictionaries with balanced nesting.
+     * @returns {{objNum: number, body: string}[]}
+     */
+    function pdfExtractObjectDicts(pdfText) {
+        const results = [];
+        const startRe = /(\d+)\s+0\s+obj\s*<</g;
+        let match;
+        while ((match = startRe.exec(pdfText)) !== null) {
+            const objNum = parseInt(match[1], 10);
+            const dictOpen = match.index + match[0].length - 2;
+            let depth = 0;
+            let i = dictOpen;
+            let closed = -1;
+            for (; i < pdfText.length - 1; i++) {
+                if (pdfText.charAt(i) === "<" && pdfText.charAt(i + 1) === "<") {
+                    depth++;
+                    i++;
+                    continue;
+                }
+                if (pdfText.charAt(i) === ">" && pdfText.charAt(i + 1) === ">") {
+                    depth--;
+                    i++;
+                    if (depth === 0) {
+                        closed = i - 1;
+                        break;
+                    }
+                }
+            }
+            if (closed < 0) {
+                continue;
+            }
+            results.push({
+                objNum: objNum,
+                body: pdfText.slice(dictOpen + 2, closed)
+            });
+            startRe.lastIndex = closed + 2;
+        }
+        return results;
+    }
+
+    function pdfContentObjectNumsFromPageBody(body) {
+        const contentNums = [];
+        const single = /\/Contents\s+(\d+)\s+0\s+R/.exec(body);
+        if (single) {
+            contentNums.push(parseInt(single[1], 10));
+        }
+        const arr = /\/Contents\s*\[([^\]]*)\]/.exec(body);
+        if (arr) {
+            const refRe = /(\d+)\s+0\s+R/g;
+            let ref;
+            while ((ref = refRe.exec(arr[1])) !== null) {
+                contentNums.push(parseInt(ref[1], 10));
+            }
+        }
+        return contentNums;
+    }
+
+    function pdfFontNameToObjFromPageBody(body, resourceFonts) {
+        let fontNameToObj = Object.create(null);
+        const inlineFont = /\/Font\s*<<([^>]*)>>/.exec(body);
+        if (inlineFont) {
+            fontNameToObj = pdfFontBlockObjectNums(inlineFont[1]);
+        }
+        if (Object.keys(fontNameToObj).length === 0) {
+            const resRef = /\/Resources\s+(\d+)\s+0\s+R/.exec(body);
+            if (resRef) {
+                fontNameToObj = resourceFonts[parseInt(resRef[1], 10)]
+                    || fontNameToObj;
+            }
+        }
+        if (Object.keys(fontNameToObj).length === 0) {
+            const parentRef = /\/Parent\s+(\d+)\s+0\s+R/.exec(body);
+            if (parentRef) {
+                fontNameToObj = resourceFonts[parseInt(parentRef[1], 10)]
+                    || fontNameToObj;
+            }
+        }
+        return fontNameToObj;
+    }
+
+    /**
      * Map each content-stream object number to font-name → ToUnicode CMap.
      * Page /Resources (and inherited Pages resources) scope /F1 per page so
      * reused names on later pages do not overwrite earlier boards.
@@ -982,56 +1063,20 @@
         const fontToCmap = pdfFontObjectToUnicodeObjectNums(pdfText);
         const resourceFonts = pdfResourceObjectFontMaps(pdfText);
         const contentMaps = Object.create(null);
+        const dicts = pdfExtractObjectDicts(pdfText);
 
-        let search = 0;
-        while (search < pdfText.length) {
-            const pageType = pdfText.indexOf("/Type /Page", search);
-            if (pageType < 0) {
-                break;
-            }
-            search = pageType + 11;
-            // Skip the /Pages tree node (`/Type /Pages`).
-            if (pdfText.charAt(pageType + 11) === "s") {
+        for (let d = 0; d < dicts.length; d++) {
+            const body = dicts[d].body;
+            // Exact page nodes only — not the /Pages tree.
+            if (!/\/Type\s*\/Page(?!s)\b/.test(body)) {
                 continue;
             }
-            const windowText = pdfText.slice(pageType, pageType + 1200);
-            let fontNameToObj = Object.create(null);
-            const inlineFont = /\/Font\s*<<([^>]*)>>/.exec(windowText);
-            if (inlineFont) {
-                fontNameToObj = pdfFontBlockObjectNums(inlineFont[1]);
-            }
-            if (Object.keys(fontNameToObj).length === 0) {
-                const resRef = /\/Resources\s+(\d+)\s+0\s+R/.exec(windowText);
-                if (resRef) {
-                    fontNameToObj = resourceFonts[parseInt(resRef[1], 10)]
-                        || fontNameToObj;
-                }
-            }
-            if (Object.keys(fontNameToObj).length === 0) {
-                const parentRef = /\/Parent\s+(\d+)\s+0\s+R/.exec(windowText);
-                if (parentRef) {
-                    fontNameToObj = resourceFonts[parseInt(parentRef[1], 10)]
-                        || fontNameToObj;
-                }
-            }
             const byFont = pdfResolveFontNamesToCmaps(
-                fontNameToObj,
+                pdfFontNameToObjFromPageBody(body, resourceFonts),
                 fontToCmap,
                 byCmapObj
             );
-            const contentNums = [];
-            const single = /\/Contents\s+(\d+)\s+0\s+R/.exec(windowText);
-            if (single) {
-                contentNums.push(parseInt(single[1], 10));
-            }
-            const arr = /\/Contents\s*\[([^\]]*)\]/.exec(windowText);
-            if (arr) {
-                const refRe = /(\d+)\s+0\s+R/g;
-                let ref;
-                while ((ref = refRe.exec(arr[1])) !== null) {
-                    contentNums.push(parseInt(ref[1], 10));
-                }
-            }
+            const contentNums = pdfContentObjectNumsFromPageBody(body);
             for (let c = 0; c < contentNums.length; c++) {
                 contentMaps[contentNums[c]] = byFont;
             }
@@ -1291,6 +1336,7 @@
     global.parseAllCompassHandRecordBoards = parseAllCompassHandRecordBoards;
     global.parsePdfToUnicodeCMap = parsePdfToUnicodeCMap;
     global.pdfHexToCodePoints = pdfHexToCodePoints;
+    global.pdfCollectContentFontToUnicodeMaps = pdfCollectContentFontToUnicodeMaps;
     global.extractPdfTextItemsFromContent = extractPdfTextItemsFromContent;
     global.extractPdfTextItems = extractPdfTextItems;
     global.loadAllBoardsFromHandRecordPdf = loadAllBoardsFromHandRecordPdf;

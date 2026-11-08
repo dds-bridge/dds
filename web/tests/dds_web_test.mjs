@@ -8835,6 +8835,46 @@ test("extractPdfTextItemsFromContent uses the active Tf ToUnicode map", () => {
     assert.equal(Array.from(items, (item) => item.text).join(""), "NK");
 });
 
+test("pdfCollectContentFontToUnicodeMaps handles reordered page keys and separate Resources", () => {
+    // Contents / Resources may appear before /Type /Page; Resources may be a
+    // separate object. The collector must use the full page dictionary.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    const pdf = `
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Contents 5 0 R /Resources 4 0 R /Type /Page /Parent 2 0 R >>
+endobj
+4 0 obj
+<< /Font << /F9 6 0 R >> >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type0 /Encoding /Identity-H /ToUnicode 7 0 R >>
+endobj
+`;
+    const cmapBytes = new TextEncoder().encode(`
+begincmap
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+1 beginbfchar
+<0001> <0041>
+endbfchar
+endcmap
+`);
+    const maps = ctx.pdfCollectContentFontToUnicodeMaps(
+        new TextEncoder().encode(pdf),
+        [{ objNum: 7, data: cmapBytes }]
+    );
+    assert.ok(maps[5], "content stream 5 must be bound to the page");
+    assert.equal(maps[5].F9.map[1], 0x41);
+});
+
 test("loadAllBoardsFromHandRecordPdf rejects placeholder PDFs clearly", async () => {
     const pdfPath = findHandRecordPdfPath("s261108s_3.pdf");
     if (!pdfPath) {
