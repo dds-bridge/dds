@@ -300,7 +300,8 @@ auto format_par_line(ParResultsMaster const sidesRes[2])
     }
 
     const ContractType& contract = chosen.contracts[0];
-    char result[8];
+    // A 32-bit positive int needs up to 10 digits, a sign, and a terminator.
+    char result[12];
     if (contract.under_tricks > 0)
         std::snprintf(result, sizeof(result), "-%d", contract.under_tricks);
     else if (contract.over_tricks > 0)
