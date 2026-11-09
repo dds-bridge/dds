@@ -25,7 +25,7 @@ auto sequence_to_int_vector(
 
     std::vector<int> result;
     result.reserve(expected_size);
-    for (const py::handle value : values) {
+    for (const py::handle& value : values) {
         result.push_back(py::cast<int>(value));
     }
 

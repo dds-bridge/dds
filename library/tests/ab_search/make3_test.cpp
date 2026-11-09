@@ -93,7 +93,9 @@ TEST_F(Make3Test, RemovesFourthHandCardAndSetsNextLeader)
     for (int s = 0; s < DDS_SUITS; ++s)
     {
         if (s != suit_)
+        {
             EXPECT_EQ(trick_cards[s], 0);
+        }
     }
 }
 
