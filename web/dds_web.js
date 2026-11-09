@@ -75,6 +75,7 @@
             updateSavePbnMenuEnablement
             formatDealPbnText
             downloadTextFile
+            promptSavePbnFilename
             saveDealToPbn
             handRecordPrev
             handRecordNext
@@ -576,6 +577,22 @@ function saveDealPbnFilename() {
     return "deal.pbn";
 }
 
+function promptSavePbnFilename(defaultFilename) {
+    const suggested = defaultFilename || "deal.pbn";
+    if (typeof prompt !== "function") {
+        return suggested;
+    }
+    const chosen = prompt("Save PBN as:", suggested);
+    if (chosen == null) {
+        return null;
+    }
+    const trimmed = String(chosen).trim();
+    if (!trimmed) {
+        return null;
+    }
+    return trimmed;
+}
+
 function saveDealToPbn() {
     if (typeof formatDealPbnText !== "function") {
         return;
@@ -598,7 +615,11 @@ function saveDealToPbn() {
         }
         text = formatDealPbnText({ hands: hands });
     }
-    downloadTextFile(saveDealPbnFilename(), text);
+    const filename = promptSavePbnFilename(saveDealPbnFilename());
+    if (!filename) {
+        return;
+    }
+    downloadTextFile(filename, text);
 }
 
 function mountMenubar(menubar) {

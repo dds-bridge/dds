@@ -765,7 +765,46 @@ test("updateSavePbnMenuEnablement disables when the diagram is empty", () => {
     assert.equal(save.disabled, false);
 });
 
-test("saveDealToPbn downloads board-N.pbn for a hand-record board", () => {
+test("promptSavePbnFilename returns the chosen name and null on cancel", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const calls = [];
+    ctx.prompt = (message, defaultName) => {
+        calls.push({ message, defaultName });
+        return "custom.pbn";
+    };
+    assert.equal(ctx.promptSavePbnFilename("deal.pbn"), "custom.pbn");
+    assert.deepEqual(calls, [{
+        message: "Save PBN as:",
+        defaultName: "deal.pbn",
+    }]);
+
+    ctx.prompt = () => null;
+    assert.equal(ctx.promptSavePbnFilename("deal.pbn"), null);
+
+    ctx.prompt = () => "   ";
+    assert.equal(ctx.promptSavePbnFilename("deal.pbn"), null);
+});
+
+test("saveDealToPbn prompts with deal.pbn by default", () => {
+    const document = createMockDocument(PART_SCORE_PBN);
+    const ctx = loadDdsWeb(document);
+    const prompts = [];
+    ctx.promptSavePbnFilename = (defaultName) => {
+        prompts.push(defaultName);
+        return defaultName;
+    };
+    const downloads = [];
+    ctx.downloadTextFile = (filename, text) => {
+        downloads.push({ filename, text });
+    };
+    ctx.saveDealToPbn();
+    assert.deepEqual(prompts, ["deal.pbn"]);
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].filename, "deal.pbn");
+    assert.equal(downloads[0].text, `[Deal "${PART_SCORE_PBN}"]\n`);
+});
+
+test("saveDealToPbn prompts with board-N.pbn for a hand-record board", () => {
     const document = createMockDocument(PART_SCORE_PBN);
     const ctx = loadDdsWeb(document);
     ctx.handRecordBoards = [
@@ -773,14 +812,32 @@ test("saveDealToPbn downloads board-N.pbn for a hand-record board", () => {
     ];
     ctx.handRecordIndex = 0;
 
+    const prompts = [];
+    ctx.promptSavePbnFilename = (defaultName) => {
+        prompts.push(defaultName);
+        return "my-board.pbn";
+    };
     const downloads = [];
     ctx.downloadTextFile = (filename, text) => {
         downloads.push({ filename, text });
     };
     ctx.saveDealToPbn();
+    assert.deepEqual(prompts, ["board-17.pbn"]);
     assert.equal(downloads.length, 1);
-    assert.equal(downloads[0].filename, "board-17.pbn");
+    assert.equal(downloads[0].filename, "my-board.pbn");
     assert.equal(downloads[0].text, `[Deal "${PART_SCORE_PBN}"]\n`);
+});
+
+test("saveDealToPbn skips download when the filename prompt is cancelled", () => {
+    const document = createMockDocument(PART_SCORE_PBN);
+    const ctx = loadDdsWeb(document);
+    ctx.promptSavePbnFilename = () => null;
+    const downloads = [];
+    ctx.downloadTextFile = (filename, text) => {
+        downloads.push({ filename, text });
+    };
+    ctx.saveDealToPbn();
+    assert.equal(downloads.length, 0);
 });
 
 test("saveDealToPbn includes play history while in play mode", () => {
@@ -790,6 +847,7 @@ test("saveDealToPbn includes play history while in play mode", () => {
     // Bypass solver badges: append the opening lead directly.
     ctx.appendPlay(ctx.playState, "west", "HT", false);
 
+    ctx.promptSavePbnFilename = (defaultName) => defaultName;
     const downloads = [];
     ctx.downloadTextFile = (filename, text) => {
         downloads.push({ filename, text });
