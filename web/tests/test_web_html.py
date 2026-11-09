@@ -74,10 +74,12 @@ class DdsWebHtmlProfessionalizationTest(unittest.TestCase):
             "How do I play through a contract?",
             "Can I load a tournament hand-record PDF?",
             "Do sample deals have to be complete 52-card deals?",
+            "How do I save a deal as PBN?",
         ):
             self.assertIn(question, faq)
             self.assertNotIn(question, main)
         self.assertIn("partial deals", faq)
+        self.assertIn("Save to PBN", faq)
         self.assertNotIn("Why won't solving start?", faq)
 
 
@@ -123,6 +125,17 @@ class DdsWebHtmlCharsetTest(unittest.TestCase):
         text = HTML_PATH.read_text(encoding="utf-8")
         self.assertIn('id="menu-import-deals"', text)
         self.assertIn("Import Deal(s)…", text)
+        self.assertIn('id="menu-save-pbn"', text)
+        self.assertIn("Save to PBN…", text)
+        # Save follows Import in the File menu.
+        self.assertLess(
+            text.index('id="menu-import-deals"'),
+            text.index('id="menu-save-pbn"'),
+        )
+        self.assertLess(
+            text.index('id="menu-save-pbn"'),
+            text.index('id="menu-sample-deals"'),
+        )
         self.assertNotIn(">Import deal…</button>", text)
         self.assertRegex(
             text,

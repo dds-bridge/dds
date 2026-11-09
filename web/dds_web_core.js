@@ -9,7 +9,8 @@
 
 /* eslint-env es6 */
 /* exported DIRECTIONS SUITS PIPS DENOMINATIONS DENOM_TO_STRAIN DIR_TO_HAND
-            Card handsToPbn openingLeader pipFromDdsRank leadTricksMapFromSolverOutput
+            Card handsToPbn formatDealPbnText openingLeader pipFromDdsRank
+            leadTricksMapFromSolverOutput
             fourthHandFillState cardsToSuitHoldings sortedPipInsertIndex
             allHandsHaveEqualCardCounts dealIsPartial dealIsFull
             ddMatrixCellTricks sanitizeSuitHolding
@@ -142,6 +143,107 @@
             }).join(".");
         });
         return "N:" + handStrings.join(" ");
+    }
+
+    function directionLetter(direction) {
+        if (!direction) {
+            return "";
+        }
+        return String(direction).charAt(0).toUpperCase();
+    }
+
+    function pbnContractDenomination(denomination) {
+        const value = String(denomination || "").toUpperCase();
+        if (value === "N" || value === "NT") {
+            return "NT";
+        }
+        return value;
+    }
+
+    // PBN export columns are fixed from the opening leader, then clockwise.
+    function playColumnSeats(leadSeat) {
+        const start = DIRECTIONS.indexOf(leadSeat);
+        if (start < 0) {
+            return DIRECTIONS.slice();
+        }
+        const seats = [];
+        for (let i = 0; i < DIRECTIONS.length; i++) {
+            seats.push(DIRECTIONS[(start + i) % DIRECTIONS.length]);
+        }
+        return seats;
+    }
+
+    function formatPlaySectionLines(leadSeat, history) {
+        const columns = playColumnSeats(leadSeat);
+        const lines = ['[Play "' + directionLetter(leadSeat) + '"]'];
+        const plays = history || [];
+        for (let offset = 0; offset < plays.length; offset += 4) {
+            const trick = plays.slice(offset, offset + 4);
+            const bySeat = {};
+            for (let i = 0; i < trick.length; i++) {
+                const entry = trick[i];
+                if (!entry || !entry.seat) {
+                    continue;
+                }
+                bySeat[entry.seat] = String(entry.key).toUpperCase();
+            }
+            const cells = columns.map(function (seat) {
+                return bySeat[seat] || "-";
+            });
+            lines.push(cells.join(" "));
+        }
+        return lines;
+    }
+
+    /**
+     * Build a PBN 2.1 text record for the current diagram.
+     * When leadSeat is set, emit Declarer/Contract/Play so remaining cards are
+     * Deal minus the play history (standard encoding).
+     */
+    function formatDealPbnText(options) {
+        const opts = options || {};
+        const hands = opts.hands || {};
+        const lines = ['[Deal "' + handsToPbn(hands) + '"]'];
+        if (opts.declarer) {
+            lines.push('[Declarer "' + directionLetter(opts.declarer) + '"]');
+        }
+        if (
+            opts.declarer
+            && opts.denomination
+            && !opts.absoluteSideTricks
+            && opts.targetTricks != null
+            && !isNaN(Number(opts.targetTricks))
+        ) {
+            // DD-table play can target 0–13 tricks; PBN Contract levels are
+            // 1–7. Clamp so denomination/trump is preserved for replay even
+            // when the selected target is below a one-level contract.
+            const level = Math.max(
+                1,
+                Math.min(7, Number(opts.targetTricks) - 6)
+            );
+            lines.push(
+                '[Contract "'
+                    + level
+                    + pbnContractDenomination(opts.denomination)
+                    + '"]'
+            );
+        }
+        if (opts.leadSeat) {
+            const history = opts.history || [];
+            const playLines = formatPlaySectionLines(opts.leadSeat, history);
+            for (let i = 0; i < playLines.length; i++) {
+                lines.push(playLines[i]);
+            }
+            let totalCards = 0;
+            for (let d = 0; d < DIRECTIONS.length; d++) {
+                const seatCards = hands[DIRECTIONS[d]];
+                totalCards += seatCards ? seatCards.length : 0;
+            }
+            if (history.length < totalCards) {
+                lines.push("*");
+            }
+        }
+        return lines.join("\n") + "\n";
     }
 
     function openingLeader(declarerDirection) {
@@ -400,6 +502,7 @@
     global.suitTag = suitTag;
     global.suitSymbolHtml = suitSymbolHtml;
     global.handsToPbn = handsToPbn;
+    global.formatDealPbnText = formatDealPbnText;
     global.openingLeader = openingLeader;
     global.pipFromDdsRank = pipFromDdsRank;
     global.leadTricksMapFromSolverOutput = leadTricksMapFromSolverOutput;

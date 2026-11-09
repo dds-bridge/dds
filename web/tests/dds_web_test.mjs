@@ -206,6 +206,8 @@ function createMockDocument(initialValues = {}) {
     makeElement("menubar");
     makeElement("menu-undo").disabled = true;
     makeElement("menu-edit-hands").disabled = true;
+    makeElement("menu-import-deals");
+    makeElement("menu-save-pbn");
     makeElement("menu-sample-deals");
     const samplePanel = makeElement("menu-sample-deals-panel");
     samplePanel.children = [];
@@ -642,6 +644,221 @@ test("handsToPbn formats part-score deal", () => {
     loadSampleDeal(ctx, "part_score");
     const pbn = ctx.handsToPbn(ctx.collectHands());
     assert.equal(pbn, PART_SCORE_PBN);
+});
+
+test("formatDealPbnText emits a Deal tag for edit-mode hands", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    loadSampleDeal(ctx, "part_score");
+    const text = ctx.formatDealPbnText({ hands: ctx.collectHands() });
+    assert.equal(text, `[Deal "${PART_SCORE_PBN}"]\n`);
+});
+
+test("formatDealPbnText includes Declarer Contract and incomplete Play", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    loadSampleDeal(ctx, "part_score");
+    const text = ctx.formatDealPbnText({
+        hands: ctx.collectHands(),
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 9,
+        leadSeat: "west",
+        history: [
+            { seat: "west", key: "HK" },
+            { seat: "north", key: "H2" },
+            { seat: "east", key: "H9" },
+        ],
+        absoluteSideTricks: false,
+    });
+    assert.equal(
+        text,
+        [
+            `[Deal "${PART_SCORE_PBN}"]`,
+            '[Declarer "S"]',
+            '[Contract "3NT"]',
+            '[Play "W"]',
+            "HK H2 H9 -",
+            "*",
+            "",
+        ].join("\n")
+    );
+});
+
+test("formatDealPbnText emits a one-level Contract for sub-game targets", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    loadSampleDeal(ctx, "part_score");
+    const text = ctx.formatDealPbnText({
+        hands: ctx.collectHands(),
+        declarer: "south",
+        denomination: "H",
+        targetTricks: 5,
+        leadSeat: "west",
+        history: [{ seat: "west", key: "HK" }],
+        absoluteSideTricks: false,
+    });
+    assert.match(text, /\[Contract "1H"\]/);
+    assert.match(text, /\[Play "W"\]\nHK - - -\n\*\n/);
+});
+
+test("formatDealPbnText uses fixed Play columns when the trick leader changes", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands = handsFromKeys(ctx, {
+        north: ["H2", "S5"],
+        east: ["H9", "SQ"],
+        south: ["HA", "SK"],
+        west: ["HK", "S2"],
+    });
+    // Trick 1: West leads hearts and South wins. Trick 2: South leads S.
+    const text = ctx.formatDealPbnText({
+        hands,
+        declarer: "south",
+        denomination: "N",
+        targetTricks: 9,
+        leadSeat: "west",
+        history: [
+            { seat: "west", key: "HK" },
+            { seat: "north", key: "H2" },
+            { seat: "east", key: "H9" },
+            { seat: "south", key: "HA" },
+            { seat: "south", key: "SK" },
+            { seat: "west", key: "S2" },
+        ],
+        absoluteSideTricks: false,
+    });
+    assert.match(text, /\[Contract "3NT"\]/);
+    assert.match(
+        text,
+        /\[Play "W"\]\nHK H2 H9 HA\nS2 - - SK\n\*\n$/
+    );
+});
+
+test("formatDealPbnText omits Contract for partial-deal lead mode", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const hands = handsFromKeys(ctx, {
+        north: ["SA"],
+        east: ["HK"],
+        south: ["DQ"],
+        west: ["C2"],
+    });
+    const text = ctx.formatDealPbnText({
+        hands,
+        declarer: "north",
+        denomination: "S",
+        targetTricks: 1,
+        leadSeat: "north",
+        history: [{ seat: "north", key: "SA" }],
+        absoluteSideTricks: true,
+    });
+    assert.match(text, /\[Deal "/);
+    assert.match(text, /\[Declarer "N"\]/);
+    assert.doesNotMatch(text, /\[Contract /);
+    assert.match(text, /\[Play "N"\]\nSA - - -\n\*\n/);
+});
+
+test("updateSavePbnMenuEnablement disables when the diagram is empty", () => {
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    ctx.pageLoad();
+    const save = document.element("menu-save-pbn");
+    assert.equal(save.disabled, true);
+    loadSampleDeal(ctx, "part_score");
+    ctx.updateSavePbnMenuEnablement();
+    assert.equal(save.disabled, false);
+});
+
+test("promptSavePbnFilename returns the chosen name and null on cancel", () => {
+    const ctx = loadDdsWeb(createMockDocument());
+    const calls = [];
+    ctx.prompt = (message, defaultName) => {
+        calls.push({ message, defaultName });
+        return "custom.pbn";
+    };
+    assert.equal(ctx.promptSavePbnFilename("deal.pbn"), "custom.pbn");
+    assert.deepEqual(calls, [{
+        message: "Save PBN as:",
+        defaultName: "deal.pbn",
+    }]);
+
+    ctx.prompt = () => null;
+    assert.equal(ctx.promptSavePbnFilename("deal.pbn"), null);
+
+    ctx.prompt = () => "   ";
+    assert.equal(ctx.promptSavePbnFilename("deal.pbn"), null);
+});
+
+test("saveDealToPbn prompts with deal.pbn by default", () => {
+    const document = createMockDocument(PART_SCORE_PBN);
+    const ctx = loadDdsWeb(document);
+    const prompts = [];
+    ctx.promptSavePbnFilename = (defaultName) => {
+        prompts.push(defaultName);
+        return defaultName;
+    };
+    const downloads = [];
+    ctx.downloadTextFile = (filename, text) => {
+        downloads.push({ filename, text });
+    };
+    ctx.saveDealToPbn();
+    assert.deepEqual(prompts, ["deal.pbn"]);
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].filename, "deal.pbn");
+    assert.equal(downloads[0].text, `[Deal "${PART_SCORE_PBN}"]\n`);
+});
+
+test("saveDealToPbn prompts with board-N.pbn for a hand-record board", () => {
+    const document = createMockDocument(PART_SCORE_PBN);
+    const ctx = loadDdsWeb(document);
+    ctx.handRecordBoards = [
+        { boardNumber: "17", hands: ctx.collectHands() },
+    ];
+    ctx.handRecordIndex = 0;
+
+    const prompts = [];
+    ctx.promptSavePbnFilename = (defaultName) => {
+        prompts.push(defaultName);
+        return "my-board.pbn";
+    };
+    const downloads = [];
+    ctx.downloadTextFile = (filename, text) => {
+        downloads.push({ filename, text });
+    };
+    ctx.saveDealToPbn();
+    assert.deepEqual(prompts, ["board-17.pbn"]);
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].filename, "my-board.pbn");
+    assert.equal(downloads[0].text, `[Deal "${PART_SCORE_PBN}"]\n`);
+});
+
+test("saveDealToPbn skips download when the filename prompt is cancelled", () => {
+    const document = createMockDocument(PART_SCORE_PBN);
+    const ctx = loadDdsWeb(document);
+    ctx.promptSavePbnFilename = () => null;
+    const downloads = [];
+    ctx.downloadTextFile = (filename, text) => {
+        downloads.push({ filename, text });
+    };
+    ctx.saveDealToPbn();
+    assert.equal(downloads.length, 0);
+});
+
+test("saveDealToPbn includes play history while in play mode", () => {
+    const document = createMockDocument(PART_SCORE_PBN);
+    const ctx = loadDdsWeb(document);
+    assert.equal(ctx.startPlay("south", "N", 9), true);
+    // Bypass solver badges: append the opening lead directly.
+    ctx.appendPlay(ctx.playState, "west", "HT", false);
+
+    ctx.promptSavePbnFilename = (defaultName) => defaultName;
+    const downloads = [];
+    ctx.downloadTextFile = (filename, text) => {
+        downloads.push({ filename, text });
+    };
+    ctx.saveDealToPbn();
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].filename, "deal.pbn");
+    assert.match(downloads[0].text, /\[Declarer "S"\]/);
+    assert.match(downloads[0].text, /\[Contract "3NT"\]/);
+    assert.match(downloads[0].text, /\[Play "W"\]\nHT - - -\n/);
+    assert.match(downloads[0].text, /\*\n$/);
 });
 
 test("inputIsValid rejects incomplete deal", () => {
