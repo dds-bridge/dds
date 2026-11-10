@@ -1112,6 +1112,98 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_narrow_window_shared_scale_keeps_long_holdings_and_status_readable(
+        self,
+    ) -> None:
+        """Long holdings shrink the whole frame; SE status stays inside the cell."""
+        with _HttpSite(self.site_dir) as site:
+            page, errors = self._open_page(site.url)
+            try:
+                # Full-suit South forces a shared frame shrink; other seats stay short.
+                page.locator("#south_spades").fill("AKQJT98765432")
+                page.locator("#south_spades").dispatch_event("input")
+                page.locator("#north_hearts").fill("A")
+                page.locator("#north_hearts").dispatch_event("input")
+                page.locator("#east_clubs").fill("K")
+                page.locator("#east_clubs").dispatch_event("input")
+                page.locator("#west_diamonds").fill("Q")
+                page.locator("#west_diamonds").dispatch_event("input")
+
+                page.set_viewport_size({"width": 720, "height": 900})
+                page.wait_for_function(
+                    """() => {
+                      const frame = document.querySelector('.grid-container');
+                      return parseFloat(getComputedStyle(frame).fontSize) < 30;
+                    }"""
+                )
+
+                layout = page.evaluate(
+                    """() => {
+                      const frame = document.querySelector('.grid-container');
+                      const se = document.querySelector('.grid-filler-se');
+                      const hint = document.getElementById('result-table-hint');
+                      const result = document.getElementById('result');
+                      const southLast = document.querySelector(
+                        '.hand-south .hand-card[data-card="S2"]'
+                      );
+                      const matrix = document.getElementById('result-table');
+                      const seatFonts = {};
+                      for (const seat of ['north', 'east', 'south', 'west']) {
+                        const hand = document.querySelector('.hand-' + seat);
+                        seatFonts[seat] = parseFloat(getComputedStyle(hand).fontSize);
+                      }
+                      // Force a long status line the way a solve error would.
+                      result.textContent =
+                        'Deal incomplete: enter all 52 cards before solving.';
+                      const seBox = se.getBoundingClientRect();
+                      const hintBox = hint.getBoundingClientRect();
+                      const resultBox = result.getBoundingClientRect();
+                      const lastBox = southLast.getBoundingClientRect();
+                      const matrixBox = matrix.getBoundingClientRect();
+                      return {
+                        frameFont: parseFloat(getComputedStyle(frame).fontSize),
+                        seatFonts,
+                        lastRight: lastBox.right,
+                        matrixLeft: matrixBox.left,
+                        hintRight: hintBox.right,
+                        resultRight: resultBox.right,
+                        seRight: seBox.right,
+                        statusWhiteSpace: getComputedStyle(result).whiteSpace,
+                      };
+                    }"""
+                )
+
+                self.assertLess(
+                    layout["frameFont"],
+                    30,
+                    msg="narrow long holding must shrink the shared diagram frame",
+                )
+                for seat, font in layout["seatFonts"].items():
+                    self.assertAlmostEqual(
+                        font,
+                        layout["frameFont"],
+                        delta=0.25,
+                        msg=f"{seat} must inherit the shared frame scale",
+                    )
+                self.assertLessEqual(
+                    layout["lastRight"],
+                    layout["matrixLeft"] - 1,
+                    msg="shrunk South holding must not cover the result table",
+                )
+                self.assertNotEqual(
+                    layout["statusWhiteSpace"],
+                    "nowrap",
+                    msg="status text must be allowed to wrap in a narrow SE cell",
+                )
+                self.assertLessEqual(
+                    layout["resultRight"],
+                    layout["seRight"] + 1.0,
+                    msg="long #result text must stay inside the SE cell",
+                )
+                self.assertEqual(errors, [])
+            finally:
+                page.close()
+
     def test_undeployed_cards_match_dealt_hand_card_chrome(self) -> None:
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
