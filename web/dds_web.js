@@ -34,6 +34,7 @@
             handHoldingHtml
             escapeHtml
             fitCenterDeckCards
+            fitHandCards
             fitSouthHandCards
             fitEastHandCards
             fitDiagramFonts
@@ -1453,7 +1454,25 @@ function fitFontToContentWidth(element, available, rowSelector, baseFontPx) {
     }
 }
 
-function fitCenterDeckCards() {
+function diagramFrameElement() {
+    if (typeof document.querySelector !== "function") {
+        return null;
+    }
+    return document.querySelector(".grid-container");
+}
+
+function diagramFrameFontPx() {
+    const frame = diagramFrameElement();
+    if (frame && frame.style && frame.style.fontSize) {
+        const parsed = parseFloat(frame.style.fontSize);
+        if (Number.isFinite(parsed) && parsed > 0) {
+            return parsed;
+        }
+    }
+    return SEAT_FONT_PX;
+}
+
+function fitCenterDeckCards(baseFontPx) {
     const deckStatus = document.getElementById("deck-status");
 
     if (!deckStatus) {
@@ -1474,47 +1493,164 @@ function fitCenterDeckCards() {
         return;
     }
 
+    const base = baseFontPx != null && baseFontPx > 0
+        ? baseFontPx
+        : diagramFrameFontPx();
+
     fitFontToContentWidth(
         deckStatus,
         contentBoxWidth(center),
         ".deck-suit-row",
-        SEAT_FONT_PX
+        base
     );
 }
 
-function fitSeatHandCards(seatSelector) {
-    const hand = typeof document.querySelector === "function"
-        ? document.querySelector(seatSelector)
-        : null;
+const HAND_SEAT_SELECTORS = [
+    ".hand-north",
+    ".hand-east",
+    ".hand-south",
+    ".hand-west",
+];
 
-    if (!hand) {
+function handSeatElements() {
+    if (typeof document.querySelector !== "function") {
+        return [];
+    }
+
+    const hands = [];
+    for (let i = 0; i < HAND_SEAT_SELECTORS.length; i++) {
+        const hand = document.querySelector(HAND_SEAT_SELECTORS[i]);
+        if (hand) {
+            hands.push(hand);
+        }
+    }
+    return hands;
+}
+
+function requiredHandFontPx(hand, available) {
+    if (!(available > 0)) {
+        return null;
+    }
+
+    const neededFull = maxRowScrollWidth(hand, ".hand-suit-content");
+    if (!(neededFull > available + FIT_EPSILON_PX)) {
+        return SEAT_FONT_PX;
+    }
+
+    // 1px card borders do not scale with font-size. Probe near-zero font to
+    // estimate that fixed chrome, then solve for the font that fits in one shot.
+    hand.style.fontSize = "0.01px";
+    const fixedPx = maxRowScrollWidth(hand, ".hand-suit-content");
+    hand.style.fontSize = "";
+    const scalablePx = neededFull - fixedPx;
+
+    if (!(fixedPx <= available + FIT_EPSILON_PX) || !(scalablePx > 0)) {
+        return null;
+    }
+
+    const fontPx = SEAT_FONT_PX * (available - fixedPx) / scalablePx;
+    return fontPx > 0 ? fontPx : null;
+}
+
+function applySharedDiagramFont(sharedFontPx, plan) {
+    const frame = diagramFrameElement();
+    const shrink = sharedFontPx < SEAT_FONT_PX - FIT_EPSILON_PX;
+
+    if (frame) {
+        if (shrink) {
+            frame.style.fontSize = sharedFontPx + "px";
+        }
+        // Seats inherit the frame scale; only clip when a holding still spills.
+        for (let i = 0; i < plan.length; i++) {
+            const entry = plan[i];
+            entry.hand.style.fontSize = "";
+            if (!(entry.available > 0)) {
+                continue;
+            }
+            if (entry.fontPx == null) {
+                clipElementToAvailable(entry.hand, entry.available);
+                continue;
+            }
+            if (
+                shrink
+                && maxRowScrollWidth(entry.hand, ".hand-suit-content")
+                    > entry.available + FIT_EPSILON_PX
+            ) {
+                clipElementToAvailable(entry.hand, entry.available);
+            }
+        }
         return;
+    }
+
+    // Tests / partial DOMs without .grid-container: scale each seat directly.
+    for (let i = 0; i < plan.length; i++) {
+        const entry = plan[i];
+        if (!(entry.available > 0)) {
+            continue;
+        }
+        if (entry.fontPx == null) {
+            clipElementToAvailable(entry.hand, entry.available);
+            continue;
+        }
+        if (shrink) {
+            entry.hand.style.fontSize = sharedFontPx + "px";
+            if (
+                maxRowScrollWidth(entry.hand, ".hand-suit-content")
+                    > entry.available + FIT_EPSILON_PX
+            ) {
+                clipElementToAvailable(entry.hand, entry.available);
+            }
+        }
+    }
+}
+
+function fitHandCards() {
+    const hands = handSeatElements();
+    const frame = diagramFrameElement();
+    if (hands.length === 0 && !frame) {
+        return SEAT_FONT_PX;
+    }
+
+    if (frame) {
+        frame.style.fontSize = "";
+        frame.style.maxWidth = "";
+        frame.style.overflowX = "";
     }
 
     // Clear clip/maxWidth before measuring: an earlier narrow fit's inline
     // maxWidth would otherwise keep clientWidth stuck at the clipped size.
-    clearFitStyles(hand);
+    for (let i = 0; i < hands.length; i++) {
+        clearFitStyles(hands[i]);
+    }
 
-    fitFontToContentWidth(
-        hand,
-        contentBoxWidth(hand),
-        ".hand-suit-content",
-        SEAT_FONT_PX
-    );
+    let sharedFontPx = SEAT_FONT_PX;
+    const plan = [];
+
+    for (let i = 0; i < hands.length; i++) {
+        const hand = hands[i];
+        const available = contentBoxWidth(hand);
+        const fontPx = requiredHandFontPx(hand, available);
+        plan.push({ hand: hand, available: available, fontPx: fontPx });
+        if (fontPx != null && fontPx < sharedFontPx) {
+            sharedFontPx = fontPx;
+        }
+    }
+
+    applySharedDiagramFont(sharedFontPx, plan);
+    return sharedFontPx;
 }
 
 function fitSouthHandCards() {
-    fitSeatHandCards(".hand-south");
+    fitHandCards();
 }
 
 function fitEastHandCards() {
-    fitSeatHandCards(".hand-east");
+    fitHandCards();
 }
 
 function fitDiagramFonts() {
-    fitCenterDeckCards();
-    fitSouthHandCards();
-    fitEastHandCards();
+    const sharedFontPx = fitHandCards();
+    fitCenterDeckCards(sharedFontPx);
 }
 
 function updateDeckStatus(hands) {
@@ -1871,8 +2007,7 @@ function updateHandCardDisplays(hands) {
         }
     }
 
-    fitSouthHandCards();
-    fitEastHandCards();
+    fitHandCards();
 }
 
 function onHandCardClick(direction, card) {

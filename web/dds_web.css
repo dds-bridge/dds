@@ -302,13 +302,15 @@
 }
 
 .grid-container {
+  background-color: #2196F3;
   display: grid;
+  /* Base diagram type size; JS may shrink this for the whole frame. */
+  font-size: 30px;
   grid-template-areas:
     "nw north ne"
     "west center east"
     "sw south se";
   grid-template-columns: 1.5fr 1.5fr 1.5fr;
-  background-color: #2196F3;
 }
 
 .hand-north {
@@ -342,7 +344,7 @@
 .grid-item.grid-filler-center {
   align-items: center;
   display: flex;
-  font-size: 30px;
+  font-size: 1em;
   justify-content: flex-start;
   /* Keep left padding so suit glyphs line up with N/S; free space toward East. */
   padding-right: 0.25rem;
@@ -359,10 +361,11 @@
 .grid-item {
   background-color: rgba(255, 255, 255, 0.8);
   border: 0px solid rgba(0, 0, 0, 0.8);
+  /* Inherit .grid-container so hands and the result table share one scale. */
+  font-size: 1em;
   /* Allow long holdings to overflow the cell instead of widening the column. */
   min-width: 0;
   padding: 20px;
-  font-size: 30px;
   text-align: center;
 }
 
@@ -377,11 +380,11 @@
   padding: 20px;
 }
 
-/* After .grid-item so font-size wins over the hand diagram's 30px. */
+/* After .grid-item so relative em sizes win for contract / result chrome. */
 .grid-item.grid-filler-ne {
   align-items: center;
   display: flex;
-  font-size: 1.25rem;
+  font-size: 1.25em;
   justify-content: center;
 }
 
@@ -389,23 +392,25 @@
   align-items: center;
   display: flex;
   flex-direction: column;
-  font-size: 1rem;
+  font-size: 1em;
   justify-content: center;
 }
 
-.result-table-hint {
-  font-size: 0.85rem;
+.result-table-hint,
+#result {
+  /* em tracks .grid-container shrink; keep hint and Solved in identical. */
+  font-size: 0.85em;
   line-height: 1.2;
-  margin-bottom: 0.35em;
   text-align: center;
 }
 
+.result-table-hint {
+  margin-bottom: 0.35em;
+}
+
 #result {
-  font-size: 0.9rem;
-  line-height: 1.2;
   margin: 0.45em 0 0;
   min-height: 1.2em;
-  text-align: center;
 }
 
 .contract-status-panel {
@@ -450,10 +455,10 @@
 }
 
 .hand-card-count {
-  font-size: 1rem;
+  font-size: 1em;
   margin-top: 0.25rem;
-  /* Match .grid-item's 30px × 1em suit-glyph column (not 1em of 1rem). */
-  padding-left: 30px;
+  /* One suit-glyph column; em tracks the shared diagram scale. */
+  padding-left: 1em;
 }
 
 .hand-holding {
@@ -617,7 +622,7 @@ td {
 .grid-item.grid-filler-nw {
   align-items: flex-start;
   display: flex;
-  font-size: 30px;
+  font-size: 1em;
   justify-content: flex-start;
 }
 

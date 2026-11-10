@@ -5013,10 +5013,10 @@ test("undeployed cards live in the hand diagram center in four suit rows", () =>
         css,
         /\.grid-item\.grid-filler-center\s*\{[^}]*justify-content:\s*center/s
     );
-    // Match dealt-hand type size so .hand-card 0.72em chrome matches N/S.
+    // Inherit the diagram frame scale so .hand-card 0.72em chrome matches N/S.
     assert.match(
         css,
-        /\.grid-item\.grid-filler-center\s*\{[^}]*font-size:\s*30px/s
+        /\.grid-item\.grid-filler-center\s*\{[^}]*font-size:\s*1em/s
     );
     assert.doesNotMatch(css, /\.deck-card\s*\{/);
 });
@@ -5747,9 +5747,39 @@ test("hand card-count note indents to the suit pip column", () => {
     const count = css.match(/\.hand-card-count\s*\{([^}]*)\}/s);
 
     assert.ok(count, ".hand-card-count rule present");
-    // Count uses font-size 1rem, so em would be wrong; match the seat's
-    // 30px glyph column (.grid-item font-size × 1em suit width).
-    assert.match(count[1], /padding-left:\s*30px/);
+    // Indent one glyph column in em so it tracks the shared diagram scale.
+    assert.match(count[1], /padding-left:\s*1em/);
+});
+
+test("diagram frame owns the base font so seats and result table share one scale", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+
+    assert.match(css, /\.grid-container\s*\{[^}]*font-size:\s*30px/s);
+    assert.match(css, /\.grid-item\s*\{[^}]*font-size:\s*1em/s);
+    assert.match(
+        css,
+        /\.grid-item\.grid-filler-se\s*\{[^}]*font-size:\s*1em/s
+    );
+    assert.match(
+        css,
+        /\.result-table-hint,\s*\n\s*#result\s*\{[^}]*font-size:\s*0\.85em/s
+    );
+});
+
+test("Click a cell hint and Solved in text share one scalable status font", () => {
+    // Both live in the SE cell; rem would ignore the diagram frame shrink.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    const shared = css.match(
+        /\.result-table-hint,\s*\n\s*#result\s*\{([^}]*)\}/s
+    );
+
+    assert.ok(shared, "hint and #result share one font rule");
+    assert.match(shared[1], /font-size:\s*0\.85em/);
+    assert.match(shared[1], /line-height:\s*1\.2/);
+    assert.doesNotMatch(css, /#result[^{]*\{[^}]*0\.9rem/s);
+    assert.doesNotMatch(css, /#result[^{]*\{[^}]*font-size:\s*[^e}]*rem/s);
 });
 
 test("center undeployed pips share dealt hand-card spacing", () => {
@@ -6168,6 +6198,74 @@ function mockEastHandLayout(options) {
     return mockSeatHandLayout({ ...options, seat: "east" });
 }
 
+function mockNorthHandLayout(options) {
+    return mockSeatHandLayout({ ...options, seat: "north" });
+}
+
+function mockWestHandLayout(options) {
+    return mockSeatHandLayout({ ...options, seat: "west" });
+}
+
+/** Combine per-seat mocks so fitHandCards can see all four diagram hands. */
+function mockDiagramHandLayouts(seatOptions) {
+    const handsBySelector = {};
+    const handsBySeat = {};
+    let sharedDocument = null;
+    const paddingByHand = new Map();
+    let frameFontPx = 30;
+    const frame = {
+        className: "grid-container",
+        style: {
+            maxWidth: "",
+            overflowX: "",
+            get fontSize() {
+                return frameFontPx === 30 ? "" : frameFontPx + "px";
+            },
+            set fontSize(value) {
+                if (value === "" || value == null) {
+                    frameFontPx = 30;
+                    return;
+                }
+                const parsed = parseFloat(value);
+                frameFontPx = Number.isFinite(parsed) ? parsed : 30;
+            },
+        },
+    };
+
+    for (const [seat, options] of Object.entries(seatOptions)) {
+        const layout = mockSeatHandLayout({ ...options, seat });
+        handsBySeat[seat] = layout.hand;
+        handsBySelector[".hand-" + seat] = layout.hand;
+        paddingByHand.set(layout.hand, {
+            paddingLeft: options.paddingLeft || "20px",
+            paddingRight: options.paddingRight || "20px",
+        });
+        if (!sharedDocument) {
+            sharedDocument = layout.document;
+        }
+    }
+
+    sharedDocument.querySelector = (selector) => {
+        if (selector === ".grid-container") {
+            return frame;
+        }
+        return handsBySelector[selector] || null;
+    };
+
+    return {
+        document: sharedDocument,
+        frame,
+        ...handsBySeat,
+        getComputedStyle(element) {
+            const padding = paddingByHand.get(element);
+            if (padding) {
+                return padding;
+            }
+            return { paddingLeft: "0px", paddingRight: "0px" };
+        },
+    };
+}
+
 test("fitSouthHandCards shrinks font when suit rows overflow the south cell", () => {
     // Arrange: south content box narrower than the longest holding row.
     const layout = mockSouthHandLayout({
@@ -6188,6 +6286,36 @@ test("fitSouthHandCards shrinks font when suit rows overflow the south cell", ()
     assert.ok(Number.isFinite(size), "font-size set on .hand-south");
     assert.ok(size < 30, "south cards shrink below the seat default");
     assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
+});
+
+test("fitHandCards applies one shared scale to north east south and west", () => {
+    // South overflows (needs ~13.5px); north/west/east fit at 30px. Scale the
+    // whole .grid-container so seats and the SE result table inherit together.
+    const diagram = mockDiagramHandLayouts({
+        north: { clientWidth: 400, rowScrollWidths: [200, 180, 160, 140] },
+        east: { clientWidth: 400, rowScrollWidths: [220, 200, 180, 160] },
+        south: { clientWidth: 220, rowScrollWidths: [400, 350, 300, 280] },
+        west: { clientWidth: 400, rowScrollWidths: [210, 190, 170, 150] },
+    });
+    const ctx = loadDdsWeb(diagram.document, {
+        getComputedStyle: diagram.getComputedStyle,
+    });
+
+    ctx.fitHandCards();
+
+    const frameSize = parseFloat(diagram.frame.style.fontSize);
+    assert.ok(Number.isFinite(frameSize), "diagram frame gets an inline font-size");
+    assert.ok(
+        Math.abs(frameSize - 13.5) < 0.2,
+        `expected ~13.5px on the frame, got ${frameSize}`
+    );
+    for (const seat of ["north", "east", "south", "west"]) {
+        assert.equal(
+            diagram[seat].style.fontSize,
+            "",
+            seat + " inherits the frame scale instead of a private font-size"
+        );
+    }
 });
 
 test("fitSouthHandCards measures .hand-suit-content not the full-width hit target", () => {
