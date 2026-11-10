@@ -149,7 +149,7 @@ const DDS_ABOUT_TEXT =
     + "Click on a cell and you can play through the contract card by card. "
     + "Solving runs entirely in your browser via WebAssembly.\n\n"
     + "Bo Haglund wrote the original version of DDS. "
-    + "Adam Wildavsky wrote this web front end.";
+    + "Adam Wildavsky wrote this web front end with able assistance from Cursor.";
 
 function loadSampleDealById(id) {
     const sample = SAMPLE_DEALS[id];

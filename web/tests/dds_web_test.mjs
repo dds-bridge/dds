@@ -4087,6 +4087,10 @@ test("showAboutDialog fills the About body with the product blurb", () => {
         document.element("dds-about-body").textContent,
         /Bo Haglund wrote the original version of DDS/
     );
+    assert.match(
+        document.element("dds-about-body").textContent,
+        /with able assistance from Cursor/
+    );
 });
 
 test("showAboutDialog fallback open attribute keeps restore watch waiting", async () => {
