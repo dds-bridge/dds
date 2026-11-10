@@ -1373,6 +1373,26 @@ function deckStatusHtml(hands) {
 const SEAT_FONT_PX = 30;
 const FIT_EPSILON_PX = 0.5;
 
+function rowIntrinsicContentWidth(row) {
+    if (!row) {
+        return 0;
+    }
+
+    // .hand-suit uses width:100% as a click hit-target, so laid-out scrollWidth
+    // is at least the cell width — including during the near-zero font probe.
+    // Measure with max-content so fitting sees the holding, not the stretch.
+    const style = row.style;
+    if (style && typeof style === "object") {
+        const previousWidth = style.width;
+        style.width = "max-content";
+        const width = row.scrollWidth || 0;
+        style.width = previousWidth;
+        return width;
+    }
+
+    return row.scrollWidth || 0;
+}
+
 function maxRowScrollWidth(root, rowSelector) {
     let needed = 0;
 
@@ -1381,7 +1401,7 @@ function maxRowScrollWidth(root, rowSelector) {
     }
 
     for (const row of root.querySelectorAll(rowSelector)) {
-        needed = Math.max(needed, row.scrollWidth || 0);
+        needed = Math.max(needed, rowIntrinsicContentWidth(row));
     }
 
     return needed;

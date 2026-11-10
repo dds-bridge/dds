@@ -6182,6 +6182,84 @@ test("fitSouthHandCards shrinks font when suit rows overflow the south cell", ()
     assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
 });
 
+test("fitSouthHandCards measures holdings through full-width suit row stretch", () => {
+    // .hand-suit is width:100%, so laid-out scrollWidth is at least the cell
+    // content box — including during the near-zero font probe. Fitting must
+    // use intrinsic holding width or it collapses to clip / ~0px.
+    const available = 180;
+    const padLeft = 20;
+    const padRight = 20;
+    let fontPx = 30;
+    let laidOutWidth = 220;
+    const intrinsicAt30 = 400;
+    const hand = {
+        className: "grid-item hand-south",
+        style: {
+            maxWidth: "",
+            overflowX: "",
+            get fontSize() {
+                return fontPx === 30 ? "" : fontPx + "px";
+            },
+            set fontSize(value) {
+                if (value === "" || value == null) {
+                    fontPx = 30;
+                    return;
+                }
+                const parsed = parseFloat(value);
+                fontPx = Number.isFinite(parsed) ? parsed : 30;
+            },
+        },
+        get clientWidth() {
+            const max = parseFloat(this.style.maxWidth);
+            if (this.style.maxWidth !== "" && Number.isFinite(max)) {
+                return max + padLeft + padRight;
+            }
+            return laidOutWidth;
+        },
+        querySelectorAll(selector) {
+            if (selector !== ".hand-suit") {
+                return [];
+            }
+            const scale = fontPx / 30;
+            const intrinsic = intrinsicAt30 * scale;
+            const rowStyle = { width: "" };
+            return [{
+                style: rowStyle,
+                get scrollWidth() {
+                    // Stretched hit-target: never narrower than the cell.
+                    if (rowStyle.width === "max-content") {
+                        return intrinsic;
+                    }
+                    return Math.max(intrinsic, available);
+                },
+            }];
+        },
+    };
+    const document = createMockDocument();
+    document.querySelector = (selector) => {
+        return selector === ".hand-south" ? hand : null;
+    };
+    const ctx = loadDdsWeb(document, {
+        getComputedStyle(element) {
+            if (element === hand) {
+                return {
+                    paddingLeft: padLeft + "px",
+                    paddingRight: padRight + "px",
+                };
+            }
+            return { paddingLeft: "0px", paddingRight: "0px" };
+        },
+    });
+
+    ctx.fitSouthHandCards();
+
+    const size = parseFloat(hand.style.fontSize);
+    assert.ok(Number.isFinite(size), "font-size set on .hand-south");
+    assert.ok(size < 30, "south cards shrink below the seat default");
+    assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
+    assert.equal(hand.style.maxWidth, "", "must not fall back to clipping");
+});
+
 test("fitSouthHandCards solves font size so fixed chrome still fits", () => {
     // Arrange: 20px non-scaling borders; closed form must land inside available=180.
     const layout = mockSouthHandLayout({
