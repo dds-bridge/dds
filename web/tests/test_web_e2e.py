@@ -1129,12 +1129,29 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                 page.locator("#west_diamonds").fill("Q")
                 page.locator("#west_diamonds").dispatch_event("input")
 
-                page.set_viewport_size({"width": 720, "height": 900})
+                # Full-suit South already shrinks under the 1100px diagram cap;
+                # wait for that wide fit before recording the baseline.
+                page.set_viewport_size({"width": 1280, "height": 900})
                 page.wait_for_function(
                     """() => {
                       const frame = document.querySelector('.grid-container');
                       return parseFloat(getComputedStyle(frame).fontSize) < 30;
                     }"""
+                )
+                wide_frame_font = page.evaluate(
+                    """() => parseFloat(
+                      getComputedStyle(document.querySelector('.grid-container')).fontSize
+                    )"""
+                )
+
+                page.set_viewport_size({"width": 720, "height": 900})
+                # Wide fit is already < 30px; wait for a further shrink on narrow.
+                page.wait_for_function(
+                    """(wideFont) => {
+                      const frame = document.querySelector('.grid-container');
+                      return parseFloat(getComputedStyle(frame).fontSize) < wideFont - 0.25;
+                    }""",
+                    arg=wide_frame_font,
                 )
 
                 layout = page.evaluate(
@@ -1175,8 +1192,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
 
                 self.assertLess(
                     layout["frameFont"],
-                    30,
-                    msg="narrow long holding must shrink the shared diagram frame",
+                    wide_frame_font - 0.25,
+                    msg="narrow window must shrink the shared diagram frame further",
                 )
                 for seat, font in layout["seatFonts"].items():
                     self.assertAlmostEqual(
