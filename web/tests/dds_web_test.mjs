@@ -5763,23 +5763,34 @@ test("diagram frame owns the base font so seats and result table share one scale
     );
     assert.match(
         css,
-        /\.result-table-hint,\s*\n\s*#result\s*\{[^}]*font-size:\s*0\.85em/s
+        /\.diagram-status-text\s*\{[^}]*font-size:\s*0\.5em/s
     );
 });
 
 test("Click a cell hint and Solved in text share one scalable status font", () => {
     // Both live in the SE cell; rem would ignore the diagram frame shrink.
+    // Fixed 0.5em fits the hint on one line across the result table at full
+    // scale and still tracks .grid-container when the diagram shrinks.
     const here = dirname(fileURLToPath(import.meta.url));
+    const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
-    const shared = css.match(
-        /\.result-table-hint,\s*\n\s*#result\s*\{([^}]*)\}/s
-    );
+    const shared = css.match(/\.diagram-status-text\s*\{([^}]*)\}/s);
 
-    assert.ok(shared, "hint and #result share one font rule");
-    assert.match(shared[1], /font-size:\s*0\.85em/);
+    assert.match(
+        html,
+        /id="result-table-hint"[^>]*class="[^"]*\bdiagram-status-text\b/
+    );
+    assert.match(
+        html,
+        /id="result"[^>]*class="[^"]*\bdiagram-status-text\b/
+    );
+    assert.ok(shared, ".diagram-status-text rule present");
+    assert.match(shared[1], /font-size:\s*0\.5em/);
     assert.match(shared[1], /line-height:\s*1\.2/);
+    assert.match(shared[1], /white-space:\s*nowrap/);
+    assert.doesNotMatch(css, /#result[^{]*\{[^}]*font-size:/s);
+    assert.doesNotMatch(css, /\.result-table-hint[^{]*\{[^}]*font-size:/s);
     assert.doesNotMatch(css, /#result[^{]*\{[^}]*0\.9rem/s);
-    assert.doesNotMatch(css, /#result[^{]*\{[^}]*font-size:\s*[^e}]*rem/s);
 });
 
 test("center undeployed pips share dealt hand-card spacing", () => {

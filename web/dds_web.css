@@ -396,12 +396,15 @@
   justify-content: center;
 }
 
-.result-table-hint,
-#result {
-  /* em tracks .grid-container shrink; keep hint and Solved in identical. */
-  font-size: 0.85em;
+/* Shared by Click a cell… and Solved in…. Fixed em fits one line across the
+   result table at full scale and tracks .grid-container when the diagram shrinks. */
+.diagram-status-text {
+  font-family: inherit;
+  font-size: 0.5em;
+  font-weight: inherit;
   line-height: 1.2;
   text-align: center;
+  white-space: nowrap;
 }
 
 .result-table-hint {
