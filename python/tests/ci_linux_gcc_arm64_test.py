@@ -35,12 +35,43 @@ def _workflow() -> str:
 
 
 def _job_block(text: str, job: str) -> str:
+    # A sibling job header is indented 2 spaces, the same as "  <job>:"
+    # itself; only a line indented 3+ spaces (job bodies start at 4) or a
+    # blank/whitespace-only line continues this job's block.
     match = re.search(
-        rf"(?m)^  {re.escape(job)}:\s*\n((?:[ \t]+[^\n]*\n|\n)*)",
+        rf"(?m)^  {re.escape(job)}:\s*\n((?:[ \t]{{3,}}[^\n]*\n|[ \t]*\n)*)",
         text,
     )
     assert match is not None, f"expected a {job!r} job in ci_linux.yml"
     return match.group(1)
+
+
+class TestJobBlockScoping(unittest.TestCase):
+    """_job_block must stop at the next sibling job, not swallow it.
+
+    Job bodies are indented 4+ spaces; a sibling job header is indented 2
+    spaces, the same as the "  <job>:" line _job_block starts from. Matching
+    "[ \\t]+" for continuation lines accepts that 2-space indent too, so a
+    job added below gcc_arm64 would silently join its block -- and could
+    then satisfy (or fail) these guards on another job's commands entirely.
+    """
+
+    def test_job_block_stops_at_the_next_sibling_job(self) -> None:
+        sample = (
+            "jobs:\n"
+            "  gcc_arm64:\n"
+            "    runs-on: ubuntu-24.04-arm\n"
+            "    steps:\n"
+            "      - run: bazelisk build //library/...\n"
+            "\n"
+            "  zzz_added_later:\n"
+            "    runs-on: ubuntu-latest\n"
+            "    steps:\n"
+            "      - run: bazelisk build --extra_toolchains=@llvm_toolchain//:all //...\n"
+        )
+        block = _job_block(sample, "gcc_arm64")
+        self.assertNotIn("zzz_added_later", block)
+        self.assertNotIn("--extra_toolchains", block)
 
 
 class TestGccArm64Job(unittest.TestCase):
@@ -81,6 +112,19 @@ class TestGccArm64Job(unittest.TestCase):
         self.assertRegex(
             block,
             r"bazelisk\s+test\b[^\n]*//library/\.\.\.[^\n]*//python/\.\.\.[^\n]*//utilities/\.\.\.",
+        )
+
+    def test_gcc_arm64_job_disables_the_disk_cache(self) -> None:
+        """Host headers/compiler are undeclared inputs; a cache hit after a
+
+        runner image update (new GCC, new headers) could hide exactly the
+        compatibility failure this job exists to catch -- same reasoning
+        as the Linux distro CI job's disk-cache opt-out.
+        """
+        block = _job_block(_workflow(), "gcc_arm64")
+        self.assertRegex(
+            block,
+            r'uses:\s*\./\.github/actions/setup-bazelisk\s*\n\s+with:\s*\n\s+disk-cache:\s*"false"',
         )
 
     def test_gcc_arm64_job_uploads_test_logs_on_failure(self) -> None:

@@ -366,8 +366,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Host headers and the GCC fallback itself are undeclared action
+      # inputs, so a cache hit after a runner image update could hide the
+      # exact compatibility failure this job exists to catch (same
+      # reasoning as ci_linux_distros.yml's disk-cache opt-out).
       - name: Setup Bazelisk
         uses: ./.github/actions/setup-bazelisk
+        with:
+          disk-cache: "false"
 
       - name: Prefetch external repos
         run: |
