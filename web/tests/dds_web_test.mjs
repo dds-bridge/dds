@@ -5722,6 +5722,19 @@ test("suit rows pin glyphs so card columns left-align vertically", () => {
     );
 });
 
+test("suit rows stretch full width so empty space right of the glyph is clickable", () => {
+    // Clicking past a short/empty holding should still hit .hand-suit and place
+    // the caret via handleHandSuitClick — not only the glyph or pip buttons.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    const rule = css.match(/\.hand-suit\s*\{([^}]*)\}/s);
+
+    assert.ok(rule, ".hand-suit rule present");
+    assert.match(rule[1], /display:\s*inline-flex/);
+    assert.match(rule[1], /width:\s*100%/);
+    assert.match(rule[1], /cursor:\s*text/);
+});
+
 test("hand card-count note indents to the suit pip column", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");

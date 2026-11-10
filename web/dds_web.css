@@ -469,8 +469,10 @@
 }
 
 .hand-suit {
+  /* Full cell width so clicks past a short/empty holding still focus the suit. */
   cursor: text;
   display: inline-flex;
+  width: 100%;
 }
 
 .deck-suit-row {
