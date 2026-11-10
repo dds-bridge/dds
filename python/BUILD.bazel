@@ -171,6 +171,17 @@ py_test(
     ],
 )
 
+# Guard: Linux CI keeps a native arm64 job, since MODULE.bazel's llvm_versions
+# has no linux-aarch64 entry (see docs/BUILD_SYSTEM.md) and that host falls
+# back to GCC -- the only place this project's GCC support is exercised.
+py_test(
+    name = "ci_linux_gcc_arm64_test",
+    size = "small",
+    main = "tests/ci_linux_gcc_arm64_test.py",
+    srcs = ["tests/ci_linux_gcc_arm64_test.py"],
+    data = ["//.github/workflows:all_workflows"],
+)
+
 # Guard: apple_support stays pinned past the release that fixed Xcode 27
 # libc++ -W#warnings / libtool nodiscard noise in its ASAN crosstool helpers,
 # without the patches that release made obsolete.

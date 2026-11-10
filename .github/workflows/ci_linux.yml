@@ -353,3 +353,47 @@ jobs:
           path: bazel-testlogs/
           if-no-files-found: ignore
           retention-days: 30
+
+  # MODULE.bazel's llvm_versions has no linux-aarch64 entry (see
+  # docs/BUILD_SYSTEM.md), so on this native arm64 runner Bazel falls back to
+  # the autodetected host toolchain -- GCC, not the hermetic clang every other
+  # Linux job above uses. Scoped to //library/... //python/... //utilities/...,
+  # the host-toolchain-sensitive packages (see issue #450).
+  gcc_arm64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Bazelisk
+        uses: ./.github/actions/setup-bazelisk
+
+      - name: Prefetch external repos
+        run: |
+          max=3
+          for i in $(seq 1 "$max"); do
+            if bazelisk fetch //library/... //python/... //utilities/...; then
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Fetch failed (attempt $i/$max). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          exit 1
+
+      - name: Build with GCC
+        run: bazelisk build --verbose_failures //library/... //python/... //utilities/...
+
+      - name: Test with GCC
+        run: bazelisk test --verbose_failures --test_output=errors //library/... //python/... //utilities/...
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bazel-test-logs-linux-gcc-arm64
+          path: bazel-testlogs/
+          if-no-files-found: ignore
+          retention-days: 30
