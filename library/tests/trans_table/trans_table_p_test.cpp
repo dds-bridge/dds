@@ -1073,11 +1073,16 @@ TEST(TransTablePMemoryTest, LoweringTheMaximumBelowCurrentUsageIsEnforcedImmedia
     const auto deal = TestDeal::random(rng);
     tt.init(deal.hand_lookup);
     const double baseline_kb = tt.memory_in_use();
+    const double fill_target_kb = baseline_kb + 3 * 1024.0;
     int i = 0;
-    while (tt.memory_in_use() < baseline_kb + 3 * 1024.0 && i < 400000) {
+    // <=, not <: a block-size layout that lands memory_in_use() exactly on
+    // fill_target_kb must still keep filling, or the ASSERT_GT below is a
+    // coin flip on struct packing -- that is what failed the new gcc_arm64
+    // CI job (PR #451) but not the hermetic clang build.
+    while (tt.memory_in_use() <= fill_target_kb && i < 400000) {
         add_random_entry(tt, deal, rng, i++);
     }
-    ASSERT_GT(tt.memory_in_use(), baseline_kb + 3 * 1024.0) << "could not fill the table";
+    ASSERT_GT(tt.memory_in_use(), fill_target_kb) << "could not fill the table";
 
     // Act
     tt.set_memory_maximum(1);
