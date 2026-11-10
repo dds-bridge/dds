@@ -1554,7 +1554,9 @@ function requiredHandFontPx(hand, available) {
 
 function applySharedDiagramFont(sharedFontPx, plan) {
     const frame = diagramFrameElement();
-    const shrink = sharedFontPx < SEAT_FONT_PX - FIT_EPSILON_PX;
+    // Apply every reduction below the base size. FIT_EPSILON_PX is for row
+    // widths, not font-size deltas (a 0.3px shrink can still clear overflow).
+    const shrink = sharedFontPx < SEAT_FONT_PX;
 
     if (frame) {
         if (shrink) {
@@ -2007,7 +2009,7 @@ function updateHandCardDisplays(hands) {
         }
     }
 
-    fitHandCards();
+    fitDiagramFonts();
 }
 
 function onHandCardClick(direction, card) {

@@ -6288,6 +6288,27 @@ test("fitSouthHandCards shrinks font when suit rows overflow the south cell", ()
     assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
 });
 
+test("fitHandCards applies font reductions smaller than the width epsilon", () => {
+    // 400px holding in a 396px box needs ~29.7px. Comparing against the 0.5px
+    // width epsilon would skip that shrink and leave the holding overflowing.
+    const layout = mockSouthHandLayout({
+        clientWidth: 436,
+        paddingLeft: "20px",
+        paddingRight: "20px",
+        rowScrollWidths: [400],
+    });
+    const ctx = loadDdsWeb(layout.document, {
+        getComputedStyle: layout.getComputedStyle,
+    });
+
+    ctx.fitHandCards();
+
+    const size = parseFloat(layout.south.style.fontSize);
+    assert.ok(Number.isFinite(size), "font-size set for a sub-epsilon reduction");
+    assert.ok(size < 30, "must shrink below the 30px base");
+    assert.ok(Math.abs(size - 29.7) < 0.05, `expected ~29.7px, got ${size}`);
+});
+
 test("fitHandCards applies one shared scale to north east south and west", () => {
     // South overflows (needs ~13.5px); north/west/east fit at 30px. Scale the
     // whole .grid-container so seats and the SE result table inherit together.
@@ -6481,6 +6502,26 @@ test("updateHandCardDisplays refits south after rewriting holdings", () => {
     // Assert
     const size = parseFloat(layout.south.style.fontSize);
     assert.ok(size < 30, "updateHandCardDisplays must refit south holdings");
+});
+
+test("updateHandCardDisplays refits the center deck after the frame scale changes", () => {
+    // Hands may restore the shared frame font after updateActionButtons already
+    // fitted the undeployed deck; refit the whole diagram so the deck tracks.
+    const document = createMockDocument();
+    const ctx = loadDdsWeb(document);
+    let diagramFits = 0;
+    ctx.fitDiagramFonts = () => {
+        diagramFits += 1;
+    };
+
+    ctx.updateHandCardDisplays({
+        north: [],
+        east: [],
+        south: [],
+        west: [],
+    });
+
+    assert.equal(diagramFits, 1);
 });
 
 test("fitEastHandCards shrinks font when suit rows overflow the east cell", () => {
