@@ -460,7 +460,7 @@
   display: inline;
 }
 
-.hand-suit,
+.hand-suit-content,
 .deck-suit-row {
   align-items: baseline;
   gap: 0;
@@ -468,11 +468,15 @@
   white-space: nowrap;
 }
 
+/* Full-width hit target; content width stays intrinsic for font fitting. */
 .hand-suit {
-  /* Full cell width so clicks past a short/empty holding still focus the suit. */
   cursor: text;
-  display: inline-flex;
+  display: block;
   width: 100%;
+}
+
+.hand-suit-content {
+  display: inline-flex;
 }
 
 .deck-suit-row {
@@ -481,7 +485,7 @@
 }
 
 /* Fixed glyph column so first pip of each suit / seat shares one vertical edge. */
-.hand-suit > :is(spade-suit, heart-suit, diamond-suit, club-suit),
+.hand-suit-content > :is(spade-suit, heart-suit, diamond-suit, club-suit),
 .deck-suit-row > :is(spade-suit, heart-suit, diamond-suit, club-suit) {
   display: inline-block;
   flex: 0 0 1em;

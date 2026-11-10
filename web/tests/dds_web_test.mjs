@@ -5653,12 +5653,13 @@ test("hand diagram markup uses hand-suit rows with concealed text inputs", () =>
     const html = readFileSync(htmlPath, "utf8");
     const css = readFileSync(cssPath, "utf8");
 
-    // Assert: each suit is a hand-suit row; cards replace visible text.
+    // Assert: outer hit-target wraps inner content (glyph + holding + input).
     assert.match(
         html,
-        /<span class="hand-suit">\s*<spade-suit>[\s\S]*?id="north_spades_cards"[\s\S]*?id="north_spades"[^>]*class="[^"]*hand-suit-input/
+        /<span class="hand-suit">\s*<span class="hand-suit-content">\s*<spade-suit>[\s\S]*?id="north_spades_cards"[\s\S]*?id="north_spades"[^>]*class="[^"]*hand-suit-input/
     );
     assert.equal((html.match(/class="hand-suit"/g) ?? []).length, 16);
+    assert.equal((html.match(/class="hand-suit-content"/g) ?? []).length, 16);
     assert.equal((html.match(/class="hand-suit-input"/g) ?? []).length, 16);
     // Concealed inputs still need accessible names for keyboard/AT users.
     assert.match(
@@ -5709,30 +5710,35 @@ test("suit rows pin glyphs so card columns left-align vertically", () => {
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
 
     // Assert: fixed-width suit glyph column for hands and center undeployed.
-    assert.match(css, /\.hand-suit\s*\{[^}]*display:\s*inline-flex/s);
+    // Content sizing lives on .hand-suit-content; .hand-suit is the hit target.
+    assert.match(css, /\.hand-suit-content\s*\{[^}]*display:\s*inline-flex/s);
     assert.match(css, /\.deck-suit-row\s*\{[^}]*display:\s*flex/s);
     // Tight glyph-to-card gap shared by hands and center.
     assert.match(
         css,
-        /\.hand-suit,\s*\n\s*\.deck-suit-row\s*\{[^}]*gap:\s*0(?:em|px)?/s
+        /\.hand-suit-content,\s*\n\s*\.deck-suit-row\s*\{[^}]*gap:\s*0(?:em|px)?/s
     );
     assert.match(
         css,
-        /\.hand-suit\s*>\s*:is\(spade-suit,\s*heart-suit,\s*diamond-suit,\s*club-suit\)\s*,\s*\n\s*\.deck-suit-row\s*>\s*:is\(spade-suit,\s*heart-suit,\s*diamond-suit,\s*club-suit\)\s*\{[^}]*flex:\s*0\s+0\s+1em/s
+        /\.hand-suit-content\s*>\s*:is\(spade-suit,\s*heart-suit,\s*diamond-suit,\s*club-suit\)\s*,\s*\n\s*\.deck-suit-row\s*>\s*:is\(spade-suit,\s*heart-suit,\s*diamond-suit,\s*club-suit\)\s*\{[^}]*flex:\s*0\s+0\s+1em/s
     );
 });
 
 test("suit rows stretch full width so empty space right of the glyph is clickable", () => {
-    // Clicking past a short/empty holding should still hit .hand-suit and place
-    // the caret via handleHandSuitClick — not only the glyph or pip buttons.
+    // Outer .hand-suit is the navigation/hit target; inner content stays
+    // intrinsic so font fitting can measure holdings with plain scrollWidth.
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
-    const rule = css.match(/\.hand-suit\s*\{([^}]*)\}/s);
+    const hit = css.match(/\.hand-suit\s*\{([^}]*)\}/s);
+    const content = css.match(/\.hand-suit-content\s*\{([^}]*)\}/s);
 
-    assert.ok(rule, ".hand-suit rule present");
-    assert.match(rule[1], /display:\s*inline-flex/);
-    assert.match(rule[1], /width:\s*100%/);
-    assert.match(rule[1], /cursor:\s*text/);
+    assert.ok(hit, ".hand-suit rule present");
+    assert.match(hit[1], /width:\s*100%/);
+    assert.match(hit[1], /cursor:\s*text/);
+    assert.doesNotMatch(hit[1], /display:\s*inline-flex/);
+    assert.ok(content, ".hand-suit-content rule present");
+    assert.match(content[1], /display:\s*inline-flex/);
+    assert.doesNotMatch(content[1], /width:\s*100%/);
 });
 
 test("hand card-count note indents to the suit pip column", () => {
@@ -6115,7 +6121,9 @@ function mockSeatHandLayout({
             return laidOutWidth;
         },
         querySelectorAll(selector) {
-            if (selector !== ".hand-suit") {
+            // Fitting measures .hand-suit-content (intrinsic), not the full-width
+            // .hand-suit hit target.
+            if (selector !== ".hand-suit-content") {
                 return [];
             }
             const scale = fontPx / 30;
@@ -6182,16 +6190,16 @@ test("fitSouthHandCards shrinks font when suit rows overflow the south cell", ()
     assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
 });
 
-test("fitSouthHandCards measures holdings through full-width suit row stretch", () => {
-    // .hand-suit is width:100%, so laid-out scrollWidth is at least the cell
-    // content box — including during the near-zero font probe. Fitting must
-    // use intrinsic holding width or it collapses to clip / ~0px.
-    const available = 180;
+test("fitSouthHandCards measures .hand-suit-content not the full-width hit target", () => {
+    // Outer .hand-suit is width:100% for clicks; fitting must query the inner
+    // content row so stretched scrollWidth never enters the measurement.
     const padLeft = 20;
     const padRight = 20;
     let fontPx = 30;
     let laidOutWidth = 220;
     const intrinsicAt30 = 400;
+    const available = 180;
+    const measuredSelectors = [];
     const hand = {
         className: "grid-item hand-south",
         style: {
@@ -6217,22 +6225,17 @@ test("fitSouthHandCards measures holdings through full-width suit row stretch", 
             return laidOutWidth;
         },
         querySelectorAll(selector) {
-            if (selector !== ".hand-suit") {
-                return [];
-            }
+            measuredSelectors.push(selector);
             const scale = fontPx / 30;
             const intrinsic = intrinsicAt30 * scale;
-            const rowStyle = { width: "" };
-            return [{
-                style: rowStyle,
-                get scrollWidth() {
-                    // Stretched hit-target: never narrower than the cell.
-                    if (rowStyle.width === "max-content") {
-                        return intrinsic;
-                    }
-                    return Math.max(intrinsic, available);
-                },
-            }];
+            if (selector === ".hand-suit") {
+                // Stretched hit-target would poison fitting if selected.
+                return [{ scrollWidth: Math.max(intrinsic, available) }];
+            }
+            if (selector === ".hand-suit-content") {
+                return [{ scrollWidth: intrinsic }];
+            }
+            return [];
         },
     };
     const document = createMockDocument();
@@ -6253,9 +6256,16 @@ test("fitSouthHandCards measures holdings through full-width suit row stretch", 
 
     ctx.fitSouthHandCards();
 
+    assert.ok(
+        measuredSelectors.includes(".hand-suit-content"),
+        "fitting queries inner content rows"
+    );
+    assert.ok(
+        !measuredSelectors.includes(".hand-suit"),
+        "fitting must not measure the stretched hit target"
+    );
     const size = parseFloat(hand.style.fontSize);
     assert.ok(Number.isFinite(size), "font-size set on .hand-south");
-    assert.ok(size < 30, "south cards shrink below the seat default");
     assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
     assert.equal(hand.style.maxWidth, "", "must not fall back to clipping");
 });
@@ -6277,7 +6287,7 @@ test("fitSouthHandCards solves font size so fixed chrome still fits", () => {
     // Assert
     const size = parseFloat(layout.south.style.fontSize);
     assert.ok(size < 13.5, `should shrink below pure proportional 13.5px, got ${size}`);
-    const needed = layout.south.querySelectorAll(".hand-suit")[0].scrollWidth;
+    const needed = layout.south.querySelectorAll(".hand-suit-content")[0].scrollWidth;
     assert.ok(
         needed <= layout.available + 0.5,
         `south row must not spill into the contract matrix, needed=${needed}`
@@ -6382,7 +6392,7 @@ test("fitEastHandCards solves font size so fixed chrome still fits", () => {
     // Assert
     const size = parseFloat(layout.east.style.fontSize);
     assert.ok(size < 13.5, `should shrink below pure proportional 13.5px, got ${size}`);
-    const needed = layout.east.querySelectorAll(".hand-suit")[0].scrollWidth;
+    const needed = layout.east.querySelectorAll(".hand-suit-content")[0].scrollWidth;
     assert.ok(
         needed <= layout.available + 0.5,
         `east row must not spill past the window edge, needed=${needed}`
@@ -6430,7 +6440,7 @@ test("fitEastHandCards recovers after clip when the cell widens", () => {
     assert.equal(layout.east.style.overflowX, "");
     const size = parseFloat(layout.east.style.fontSize);
     assert.ok(size < 30, `expected a fitted font below 30px, got ${size}`);
-    const needed = layout.east.querySelectorAll(".hand-suit")[0].scrollWidth;
+    const needed = layout.east.querySelectorAll(".hand-suit-content")[0].scrollWidth;
     assert.ok(
         needed <= layout.available + 0.5,
         `widened east row must fit, needed=${needed} available=${layout.available}`
