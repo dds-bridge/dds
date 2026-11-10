@@ -6234,9 +6234,26 @@ function mockDiagramHandLayouts(seatOptions) {
 
     for (const [seat, options] of Object.entries(seatOptions)) {
         const layout = mockSeatHandLayout({ ...options, seat });
-        handsBySeat[seat] = layout.hand;
-        handsBySelector[".hand-" + seat] = layout.hand;
-        paddingByHand.set(layout.hand, {
+        const hand = layout.hand;
+        const baseWidths = (options.rowScrollWidths || []).slice();
+        const fixedOverflowPx = options.fixedOverflowPx || 0;
+        // Model CSS inheritance: cleared seat font-size tracks the frame scale.
+        hand.querySelectorAll = (selector) => {
+            if (selector !== ".hand-suit-content") {
+                return [];
+            }
+            const privateSize = hand.style.fontSize;
+            const fontPx = privateSize
+                ? parseFloat(privateSize) || frameFontPx
+                : frameFontPx;
+            const scale = fontPx / 30;
+            return baseWidths.map((scrollWidth) => ({
+                scrollWidth: scrollWidth * scale + fixedOverflowPx,
+            }));
+        };
+        handsBySeat[seat] = hand;
+        handsBySelector[".hand-" + seat] = hand;
+        paddingByHand.set(hand, {
             paddingLeft: options.paddingLeft || "20px",
             paddingRight: options.paddingRight || "20px",
         });
@@ -6335,6 +6352,18 @@ test("fitHandCards applies one shared scale to north east south and west", () =>
             diagram[seat].style.fontSize,
             "",
             seat + " inherits the frame scale instead of a private font-size"
+        );
+        assert.equal(
+            diagram[seat].style.maxWidth,
+            "",
+            seat + " must not clip when inheritance matches the shared scale"
+        );
+        const needed = diagram[seat].querySelectorAll(".hand-suit-content")[0]
+            .scrollWidth;
+        const available = diagram[seat].clientWidth - 40;
+        assert.ok(
+            needed <= available + 0.5,
+            seat + ` holding must fit after inheritance (needed=${needed})`
         );
     }
 });
