@@ -1300,6 +1300,9 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <td>-103</td><td>RETURN_THREAD_WAIT</td><td>Returned from multi-threading functions when something went wrong while waiting for all threads to complete.</td>
 </tr>
 <tr>
+<td>-104</td><td>RETURN_THREAD_MISSING</td><td>Tried to set a multi-threading system that is not present in DLL.</td>
+</tr>
+<tr>
 <td>-201</td><td>RETURN_NO_SUIT</td><td>CalcAllTables\*(), returned when the denomination filter vector has no entries.</td>
 </tr>
 <tr>
