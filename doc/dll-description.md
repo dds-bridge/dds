@@ -1233,8 +1233,9 @@ It is possible to ask DDS to give up its dynamically allocated memory by calling
 <td>1</td><td>RETURN_NO_FAULT</td><td>&nbsp;</td>
 </tr>
 <tr>
-<td>-1</td><td>RETURN_UNKNOWN_FAULT</td><td>Currently happens when fopen() returns an error or when AnalyseAllPlaysBin() gets a
-different number of boards in its first two arguments.</td>
+<td>-1</td><td>RETURN_UNKNOWN_FAULT</td><td>General catch-all, used across the solver, par calculation, table
+calculation, the C-ABI validation layer, and parallel board solving (a worker-thread exception maps here). See
+`grep -rn RETURN_UNKNOWN_FAULT library/src` for the current call sites rather than relying on this description.</td>
 </tr>
 <tr>
 <td>-2</td><td>RETURN_ZERO_CARDS</td><td>SolveBoard(), self-explanatory.</td>
