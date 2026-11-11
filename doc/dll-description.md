@@ -1255,10 +1255,10 @@ different number of boards in its first two arguments.</td>
 <td>-8</td><td>RETURN_SOLNS_WRONG_LO</td><td>SolveBoard(), solutions is less than 1.</td>
 </tr>
 <tr>
-<td>-10</td><td>RETURN_SOLNS_WRONG_HI</td><td>SolveBoard(), solutions is higher than 3.</td>
+<td>-9</td><td>RETURN_SOLNS_WRONG_HI</td><td>SolveBoard(), solutions is higher than 3.</td>
 </tr>
 <tr>
-<td>-11</td><td>RETURN_TOO_MANY_CARDS</td><td>SolveBoard(), self-explanatory.</td>
+<td>-10</td><td>RETURN_TOO_MANY_CARDS</td><td>SolveBoard(), self-explanatory.</td>
 </tr>
 <tr>
 <td>-12</td><td>RETURN_SUIT_OR_RANK</td><td>SolveBoard(), either currentTrickSuit or currentTrickRank have wrong data.</td>
