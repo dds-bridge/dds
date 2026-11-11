@@ -1291,7 +1291,7 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <tr>
 <td>-99</td><td>RETURN_PBN_FAULT</td><td>Returned from a number of places if a PBN string is faulty.</td>
 </tr>
-<tr><td>-101</td><td>RETURN_TOO_MANY_THREADS</td><td>Currently never returned.</td>
+<tr><td>-101</td><td>RETURN_TOO_MANY_BOARDS</td><td>SolveBoard() and AnalysePlay*(), returned when a batch exceeds MAXNOOFBOARDS.</td>
 </tr>
 <tr>
 <td>-102</td><td>RETURN_THREAD_CREATE</td><td>Returned from multi-threading functions.</td>
