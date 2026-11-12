@@ -1045,6 +1045,59 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
+    def test_south_hand_stays_clear_of_matrix_below_720px(self) -> None:
+        """Container-query rem scale + flex-shrink keep a full suit inside South."""
+        page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
+        try:
+            page.locator("#south_spades").fill("AKQJT98765432")
+            page.locator("#south_spades").dispatch_event("input")
+            page.set_viewport_size({"width": 480, "height": 900})
+            page.wait_for_function(
+                """() => {
+                  const last = document.querySelector(
+                    '.hand-south .hand-card[data-card="S2"]'
+                  );
+                  const matrix = document.getElementById('result-table');
+                  return !!last && !!matrix &&
+                    last.getBoundingClientRect().right <=
+                      matrix.getBoundingClientRect().left - 1;
+                }"""
+            )
+            layout = page.evaluate(
+                """() => {
+                  const frame = document.querySelector('.grid-container');
+                  const last = document.querySelector(
+                    '.hand-south .hand-card[data-card="S2"]'
+                  );
+                  const matrix = document.getElementById('result-table');
+                  return {
+                    frameFont: parseFloat(getComputedStyle(frame).fontSize),
+                    lastRight: last.getBoundingClientRect().right,
+                    matrixLeft: matrix.getBoundingClientRect().left,
+                    cardWidth: last.getBoundingClientRect().width,
+                  };
+                }"""
+            )
+
+            self.assertLess(
+                layout["frameFont"],
+                30,
+                msg="narrow viewport must scale the diagram rem base via container query",
+            )
+            self.assertLessEqual(
+                layout["lastRight"],
+                layout["matrixLeft"] - 1,
+                msg="full South suit must stay clear of the matrix below 720px",
+            )
+            self.assertGreater(
+                layout["cardWidth"],
+                0,
+                msg="scaled South pips must remain visible below 720px",
+            )
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_narrow_window_flex_pack_keeps_long_holdings_and_status_readable(
         self,
     ) -> None:

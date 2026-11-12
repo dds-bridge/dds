@@ -5753,14 +5753,20 @@ test("hand card-count note indents to the suit pip column", () => {
 });
 
 test("diagram frame uses a rem base font inherited by seats and result chrome", () => {
-    // rem (not px) so tablets / user font scaling are not locked to one device.
+    // rem + container query (not px) so tablets / narrow windows / user font
+    // scaling are not locked to one device, without a JS font fitter.
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
     const frame = css.match(/\.grid-container\s*\{([^}]*)\}/s);
 
     assert.ok(frame, ".grid-container rule present");
-    assert.match(frame[1], /font-size:\s*1\.875rem/);
+    assert.match(frame[1], /container-type:\s*inline-size/);
+    assert.match(
+        frame[1],
+        /font-size:\s*clamp\(\s*0\.75rem\s*,\s*[\d.]+cqi\s*,\s*1\.875rem\s*\)/
+    );
     assert.doesNotMatch(frame[1], /font-size:\s*\d+px/);
+    assert.doesNotMatch(frame[1], /font-size:\s*1\.875rem\s*;/);
     assert.match(css, /\.grid-item\s*\{[^}]*font-size:\s*1em/s);
     assert.match(
         css,
