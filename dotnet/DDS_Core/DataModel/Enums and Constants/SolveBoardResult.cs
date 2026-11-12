@@ -12,8 +12,9 @@ public enum SolveBoardResult
     NoFault = 1,
 
     /// <summary>
-    /// General error. Currently happens when fopen() fails or when AnalyseAllPlaysBin()
-    /// gets a different number of Boards in its first two arguments.
+    /// General catch-all, used across the solver, par calculation, table
+    /// calculation, the C-ABI validation layer, and parallel board solving
+    /// (a worker-thread exception maps here).
     /// </summary>
     UnknownFault = -1,
 
