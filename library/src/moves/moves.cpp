@@ -439,6 +439,29 @@ auto Moves::GetLength(const int trick, const int relHand) const -> int {
     return moveList[trick][relHand].last + 1;
 }
 
+auto Moves::GetMove(const int trick, const int relHand, const int idx) const
+        -> const MoveType & {
+    return moveList[trick][relHand].move[idx];
+}
+
+auto Moves::PromoteNext(const int trick, const int relHand, const MoveType &m)
+        -> bool {
+    MovePlyType &list = moveList[trick][relHand];
+    const int bit = bit_map_rank[m.rank];
+    for (int r = list.current; r <= list.last; r++) {
+        const MoveType &mv = list.move[r];
+        if (mv.suit != m.suit ||
+                ((bit_map_rank[mv.rank] | mv.sequence) & bit) == 0)
+            continue;
+        const MoveType tmp = mv;
+        for (int n = r; n > list.current; n--)
+            list.move[n] = list.move[n - 1];
+        list.move[list.current] = tmp;
+        return true;
+    }
+    return false;
+}
+
 auto Moves::apply_move_to_track(const MoveType &move, const int relHand,
                                                                 const int trick) -> void {
     assert(trick >= 0 && trick < 13 && "apply_move_to_track: trick out of range");

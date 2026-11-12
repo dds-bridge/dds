@@ -385,6 +385,16 @@ public:
             const int trick,
             const int relHand) const -> int;
 
+        auto get_move(
+            const int trick,
+            const int relHand,
+            const int idx) const -> const MoveType&;
+
+        auto promote_next(
+            const int trick,
+            const int relHand,
+            const MoveType& m) -> bool;
+
         auto rewind(
             const int tricks,
             const int relHand) -> void;
