@@ -5763,7 +5763,7 @@ test("diagram frame uses a rem base font inherited by seats and result chrome", 
     assert.match(frame[1], /container-type:\s*inline-size/);
     assert.match(
         frame[1],
-        /font-size:\s*clamp\(\s*0\.75rem\s*,\s*[\d.]+cqi\s*,\s*1\.875rem\s*\)/
+        /font-size:\s*clamp\(\s*0\.5rem\s*,\s*[\d.]+cqi\s*,\s*1\.875rem\s*\)/
     );
     assert.doesNotMatch(frame[1], /font-size:\s*\d+px/);
     assert.doesNotMatch(frame[1], /font-size:\s*1\.875rem\s*;/);
@@ -5821,8 +5821,9 @@ test("long suit holdings flex-shrink inside the seat instead of overflowing", ()
     assert.match(holding[1], /flex:\s*1\s+1\s+auto/);
     assert.ok(card, ".hand-card rule present");
     assert.match(card[1], /flex:\s*1\s+1\s+auto/);
-    assert.match(card[1], /min-width:\s*0\.55em/);
+    assert.match(card[1], /min-width:\s*0\.4em/);
     assert.match(card[1], /box-sizing:\s*border-box/);
+    assert.match(card[1], /overflow:\s*hidden/);
     assert.ok(deck, ".deck-suit-row rule present");
     assert.match(deck[1], /max-width:\s*100%/);
     const undeployed = css.match(/#deck-status\s*\{([^}]*)\}/s);

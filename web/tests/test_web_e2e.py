@@ -1051,7 +1051,8 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         try:
             page.locator("#south_spades").fill("AKQJT98765432")
             page.locator("#south_spades").dispatch_event("input")
-            page.set_viewport_size({"width": 480, "height": 900})
+            # Phone-narrow: clamp floor + card min-width must still pack the suit.
+            page.set_viewport_size({"width": 360, "height": 900})
             page.wait_for_function(
                 """() => {
                   const last = document.querySelector(
@@ -1075,6 +1076,7 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     lastRight: last.getBoundingClientRect().right,
                     matrixLeft: matrix.getBoundingClientRect().left,
                     cardWidth: last.getBoundingClientRect().width,
+                    cardOverflow: getComputedStyle(last).overflow,
                   };
                 }"""
             )
@@ -1087,12 +1089,17 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
             self.assertLessEqual(
                 layout["lastRight"],
                 layout["matrixLeft"] - 1,
-                msg="full South suit must stay clear of the matrix below 720px",
+                msg="full South suit must stay clear of the matrix at 360px",
             )
             self.assertGreater(
                 layout["cardWidth"],
                 0,
-                msg="scaled South pips must remain visible below 720px",
+                msg="scaled South pips must remain visible at 360px",
+            )
+            self.assertEqual(
+                layout["cardOverflow"],
+                "hidden",
+                msg="tight cards must clip rank text inside the pip chrome",
             )
             self.assertEqual(errors, [])
         finally:

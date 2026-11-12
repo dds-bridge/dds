@@ -306,7 +306,7 @@
   container-type: inline-size;
   display: grid;
   /* Rem + cqi so tablets / narrow windows / user font scaling stay fluid. */
-  font-size: clamp(0.75rem, 2.75cqi, 1.875rem);
+  font-size: clamp(0.5rem, 2.75cqi, 1.875rem);
   grid-template-areas:
     "nw north ne"
     "west center east"
@@ -538,7 +538,8 @@
   line-height: 1.15;
   /* No left margin: suit glyph sits flush; right margin separates dealt pips. */
   margin: 0 0.04em 0 0;
-  min-width: 0.55em;
+  min-width: 0.4em;
+  overflow: hidden;
   padding: 0 0.28em 0.18em 0.02em;
   position: relative;
 }
