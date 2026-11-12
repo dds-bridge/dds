@@ -3215,7 +3215,7 @@ test("hand-card-tricks CSS places a small numeral in the lower-right corner", ()
     assert.ok(handCardMatch, ".hand-card rule present");
     const handCardRules = handCardMatch[1];
     assert.match(handCardRules, /position:\s*relative/);
-    // Smaller than the seat's 30px so the corner tricks digit does not intersect the pip.
+    // Smaller than the seat base so the corner tricks digit does not intersect the pip.
     assert.match(handCardRules, /font-size:\s*(?:0\.\d+em|[1-2]?\d(?:\.\d+)?px)/);
     assert.doesNotMatch(handCardRules, /font-size:\s*30px/);
     assert.match(css, /\.hand-card-tricks\s*\{[^}]*position:\s*absolute/s);
@@ -5013,7 +5013,7 @@ test("undeployed cards live in the hand diagram center in four suit rows", () =>
         css,
         /\.grid-item\.grid-filler-center\s*\{[^}]*justify-content:\s*center/s
     );
-    // Inherit the diagram frame scale so .hand-card 0.72em chrome matches N/S.
+    // Inherit the diagram rem base so .hand-card 0.72em chrome matches N/S.
     assert.match(
         css,
         /\.grid-item\.grid-filler-center\s*\{[^}]*font-size:\s*1em/s
@@ -5725,8 +5725,8 @@ test("suit rows pin glyphs so card columns left-align vertically", () => {
 });
 
 test("suit rows stretch full width so empty space right of the glyph is clickable", () => {
-    // Outer .hand-suit is the navigation/hit target; inner content stays
-    // intrinsic so font fitting can measure holdings with plain scrollWidth.
+    // Outer .hand-suit is the navigation/hit target; inner content caps at the
+    // seat width so long holdings can flex-shrink instead of overflowing.
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
     const hit = css.match(/\.hand-suit\s*\{([^}]*)\}/s);
@@ -5738,7 +5738,8 @@ test("suit rows stretch full width so empty space right of the glyph is clickabl
     assert.doesNotMatch(hit[1], /display:\s*inline-flex/);
     assert.ok(content, ".hand-suit-content rule present");
     assert.match(content[1], /display:\s*inline-flex/);
-    assert.doesNotMatch(content[1], /width:\s*100%/);
+    assert.match(content[1], /max-width:\s*100%/);
+    assert.doesNotMatch(content[1], /(?:^|[^-])width:\s*100%/);
 });
 
 test("hand card-count note indents to the suit pip column", () => {
@@ -5747,15 +5748,19 @@ test("hand card-count note indents to the suit pip column", () => {
     const count = css.match(/\.hand-card-count\s*\{([^}]*)\}/s);
 
     assert.ok(count, ".hand-card-count rule present");
-    // Indent one glyph column in em so it tracks the shared diagram scale.
+    // Indent one glyph column in em so it tracks the diagram base size.
     assert.match(count[1], /padding-left:\s*1em/);
 });
 
-test("diagram frame owns the base font so seats and result table share one scale", () => {
+test("diagram frame uses a rem base font inherited by seats and result chrome", () => {
+    // rem (not px) so tablets / user font scaling are not locked to one device.
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    const frame = css.match(/\.grid-container\s*\{([^}]*)\}/s);
 
-    assert.match(css, /\.grid-container\s*\{[^}]*font-size:\s*30px/s);
+    assert.ok(frame, ".grid-container rule present");
+    assert.match(frame[1], /font-size:\s*1\.875rem/);
+    assert.doesNotMatch(frame[1], /font-size:\s*\d+px/);
     assert.match(css, /\.grid-item\s*\{[^}]*font-size:\s*1em/s);
     assert.match(
         css,
@@ -5768,10 +5773,9 @@ test("diagram frame owns the base font so seats and result table share one scale
 });
 
 test("Click a cell hint and Solved in text share one scalable status font", () => {
-    // Both live in the SE cell; rem would ignore the diagram frame shrink.
+    // Both live in the SE cell and track the rem diagram base via em.
     // Fixed 0.5em usually fits one line; wrapping is allowed so partial-deal
-    // hints and longer #result errors do not overflow a narrow SE cell when
-    // short holdings leave the frame unscaled.
+    // hints and longer #result errors do not overflow a narrow SE cell.
     const here = dirname(fileURLToPath(import.meta.url));
     const html = readFileSync(join(here, "..", "dds_web.html"), "utf8");
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
@@ -5794,6 +5798,33 @@ test("Click a cell hint and Solved in text share one scalable status font", () =
     assert.doesNotMatch(css, /#result[^{]*\{[^}]*0\.9rem/s);
 });
 
+test("long suit holdings flex-shrink inside the seat instead of overflowing", () => {
+    // CSS packs cards into the reserved seat width; no JS font fitting.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
+    const content = css.match(/\.hand-suit-content\s*\{([^}]*)\}/s);
+    const holding = css.match(/\.hand-holding\s*\{([^}]*)\}/s);
+    const card = css.match(/\.hand-card\s*\{([^}]*)\}/s);
+    const deck = css.match(/\.deck-suit-row\s*\{([^}]*)\}/s);
+
+    assert.ok(content, ".hand-suit-content rule present");
+    assert.match(content[1], /max-width:\s*100%/);
+    assert.ok(holding, ".hand-holding rule present");
+    assert.match(holding[1], /display:\s*inline-flex/);
+    assert.match(holding[1], /min-width:\s*0/);
+    assert.match(holding[1], /flex:\s*1\s+1\s+auto/);
+    assert.ok(card, ".hand-card rule present");
+    assert.match(card[1], /flex:\s*1\s+1\s+auto/);
+    assert.match(card[1], /min-width:\s*0\.55em/);
+    assert.match(card[1], /box-sizing:\s*border-box/);
+    assert.ok(deck, ".deck-suit-row rule present");
+    assert.match(deck[1], /max-width:\s*100%/);
+    const undeployed = css.match(/#deck-status\s*\{([^}]*)\}/s);
+    assert.ok(undeployed, "#deck-status rule present");
+    assert.match(undeployed[1], /max-width:\s*100%/);
+    assert.match(undeployed[1], /min-width:\s*0/);
+});
+
 test("center undeployed pips share dealt hand-card spacing", () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(here, "..", "dds_web.css"), "utf8");
@@ -5807,297 +5838,8 @@ test("center undeployed pips share dealt hand-card spacing", () => {
     assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*padding/s);
 });
 
-function mockCenterDeckLayout({
-    clientWidth,
-    paddingLeft = "20px",
-    paddingRight = "0.25rem",
-    rowScrollWidths,
-    hidden = false,
-    // Extra fixed px that does not shrink with font-size (simulates 1px borders).
-    fixedOverflowPx = 0,
-    initialValues = {},
-}) {
-    let fontPx = 30;
-    const baseWidths = rowScrollWidths.slice();
-    const deck = {
-        id: "deck-status",
-        hidden,
-        style: {
-            maxWidth: "",
-            overflowX: "",
-            get fontSize() {
-                return fontPx === 30 ? "" : fontPx + "px";
-            },
-            set fontSize(value) {
-                if (value === "" || value == null) {
-                    fontPx = 30;
-                    return;
-                }
-                const parsed = parseFloat(value);
-                fontPx = Number.isFinite(parsed) ? parsed : 30;
-            },
-        },
-        querySelectorAll(selector) {
-            if (selector !== ".deck-suit-row") {
-                return [];
-            }
-            const scale = fontPx / 30;
-            return baseWidths.map((scrollWidth) => ({
-                scrollWidth: scrollWidth * scale + fixedOverflowPx,
-            }));
-        },
-    };
-    const center = {
-        className: "grid-item grid-filler grid-filler-center",
-        clientWidth,
-    };
-    const document = createMockDocument(initialValues);
-    const realGet = document.getElementById.bind(document);
-    document.getElementById = (id) => {
-        if (id === "deck-status") {
-            return deck;
-        }
-        return realGet(id);
-    };
-    document.querySelector = (selector) => {
-        if (selector === ".grid-filler-center") {
-            return center;
-        }
-        return null;
-    };
-    return {
-        document,
-        deck,
-        available:
-            clientWidth -
-            (parseFloat(paddingLeft) || 0) -
-            (parseFloat(paddingRight) || 0),
-        getComputedStyle() {
-            return { paddingLeft, paddingRight };
-        },
-    };
-}
-
-test("fitCenterDeckCards shrinks deck font when suit rows overflow the center cell", () => {
-    // Arrange: center content box is narrower than the longest undeployed row.
-    const layout = mockCenterDeckLayout({
-        clientWidth: 220,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400, 350, 300, 280],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert: scale ≈ 30 * (220 - 20 - 4) / 400 = 14.7px (fits on first pass).
-    const size = parseFloat(layout.deck.style.fontSize);
-    assert.ok(Number.isFinite(size), "font-size set on #deck-status");
-    assert.ok(size < 30, "center cards shrink below the seat default");
-    assert.ok(size > 10, "center cards remain readable");
-    assert.ok(Math.abs(size - 14.7) < 0.2, `expected ~14.7px, got ${size}`);
-});
-
-test("fitCenterDeckCards solves font size so fixed chrome still fits", () => {
-    // Arrange: pure proportional shrink leaves ~216px needed for available=196
-    // because 20px of borders do not scale; the closed-form fit must land inside.
-    const layout = mockCenterDeckLayout({
-        clientWidth: 220,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400],
-        fixedOverflowPx: 20,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert: final row width fits the content box (not merely "smaller font").
-    const size = parseFloat(layout.deck.style.fontSize);
-    assert.ok(size < 14.7, `should shrink below the single-pass 14.7px, got ${size}`);
-    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
-    assert.ok(
-        needed <= layout.available + 0.5,
-        `row must fit with fixed chrome, needed=${needed} available=${layout.available}`
-    );
-});
-
-test("fitCenterDeckCards scales below 10px when the center is extremely narrow", () => {
-    // Arrange: at a 10px floor the longest row would still be ~133px wide, but
-    // only 40px of content box remains — overflow into East unless we go lower.
-    const layout = mockCenterDeckLayout({
-        clientWidth: 64,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert: available = 40; scale ≈ 30 * 40 / 400 = 3px.
-    const size = parseFloat(layout.deck.style.fontSize);
-    assert.ok(size < 10, `must shrink below the old 10px floor, got ${size}`);
-    assert.ok(Math.abs(size - 3) < 0.2, `expected ~3px, got ${size}`);
-    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
-    assert.ok(needed <= 40, `row must fit the center content box, needed=${needed}`);
-});
-
-test("fitCenterDeckCards accounts for per-card fixed borders at extreme width", () => {
-    // Arrange: 13 cards × 2px borders ≈ 26px fixed; available=30 leaves little
-    // scalable room — proportional passes converge too slowly without a closed form.
-    const layout = mockCenterDeckLayout({
-        clientWidth: 54,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400],
-        fixedOverflowPx: 26,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert
-    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
-    assert.ok(
-        needed <= layout.available + 0.5,
-        `must fit with real fixed-border cost, needed=${needed} available=${layout.available}`
-    );
-    assert.equal(layout.deck.style.overflowX, "");
-});
-
-test("fitCenterDeckCards clips when fixed chrome alone exceeds the center", () => {
-    // Arrange: non-scaling chrome wider than the content box — font cannot fit.
-    const layout = mockCenterDeckLayout({
-        clientWidth: 54,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400],
-        fixedOverflowPx: 40,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert: clip fallback keeps painted overflow inside the center cell.
-    assert.equal(layout.deck.style.maxWidth, "30px");
-    assert.equal(layout.deck.style.overflowX, "hidden");
-});
-
-test("fitCenterDeckCards restores full size when rows fit the center cell", () => {
-    // Arrange
-    const layout = mockCenterDeckLayout({
-        clientWidth: 400,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [200, 180],
-    });
-    layout.deck.style.fontSize = "12px";
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert: clear inline size so CSS 30px applies again.
-    assert.equal(layout.deck.style.fontSize, "");
-});
-
-test("fitCenterDeckCards skips shrinking while the undeployed deck is hidden", () => {
-    // Arrange
-    const layout = mockCenterDeckLayout({
-        clientWidth: 220,
-        rowScrollWidths: [400],
-        hidden: true,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitCenterDeckCards();
-
-    // Assert
-    assert.equal(layout.deck.style.fontSize, "");
-});
-
-test("exitPlay refits center cards after a narrow resize during play", () => {
-    // Arrange: enter play (hides deck), resize while hidden clears the fit, then
-    // exit — unhide must refit so rows do not reappear at the full 30px size.
-    const layout = mockCenterDeckLayout({
-        clientWidth: 64,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400],
-        initialValues: PART_SCORE_PBN,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-        scheduleDealSolve() {
-            return Promise.resolve();
-        },
-    });
-    assert.equal(ctx.startPlay("south", "N", 6), true);
-    assert.equal(layout.deck.hidden, true);
-
-    // Act: simulate resize during play, then leave play mode.
-    ctx.fitCenterDeckCards();
-    assert.equal(layout.deck.style.fontSize, "");
-    ctx.exitPlay();
-
-    // Assert
-    assert.equal(layout.deck.hidden, false);
-    const size = parseFloat(layout.deck.style.fontSize);
-    assert.ok(size < 10, `exitPlay must refit below full size, got ${size}`);
-    const needed = layout.deck.querySelectorAll(".deck-suit-row")[0].scrollWidth;
-    assert.ok(needed <= layout.available, `needed=${needed} available=${layout.available}`);
-});
-
-test("updateDeckStatus refits center cards after rewriting the undeployed strip", () => {
-    // Arrange
-    const layout = mockCenterDeckLayout({
-        clientWidth: 220,
-        paddingLeft: "20px",
-        paddingRight: "4px",
-        rowScrollWidths: [400],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-    const emptyHands = {
-        north: [],
-        east: [],
-        south: [],
-        west: [],
-    };
-
-    // Act
-    ctx.updateDeckStatus(emptyHands);
-
-    // Assert: innerHTML rewrite then fit — overflow forces a smaller font.
-    assert.match(layout.deck.innerHTML, /deck-suit-row/);
-    const size = parseFloat(layout.deck.style.fontSize);
-    assert.ok(size < 30);
-});
-
-test("pageLoad listens for window resize to refit diagram fonts", () => {
-    // Arrange
+test("diagram layout does not use a JS font fitter", () => {
+    // Long holdings pack via CSS flex-shrink; keep hit/content nesting only.
     const document = createMockDocument();
     const resizeListeners = [];
     const ctx = loadDdsWeb(document, {
@@ -6108,428 +5850,22 @@ test("pageLoad listens for window resize to refit diagram fonts", () => {
         },
     });
 
-    // Act
     ctx.pageLoad();
 
-    // Assert
+    assert.equal(typeof ctx.fitDiagramFonts, "undefined");
+    assert.equal(typeof ctx.fitHandCards, "undefined");
+    assert.equal(typeof ctx.fitCenterDeckCards, "undefined");
+    assert.equal(typeof ctx.fitSouthHandCards, "undefined");
+    assert.equal(typeof ctx.fitEastHandCards, "undefined");
     assert.ok(
-        resizeListeners.some(
-            (entry) =>
-                entry.type === "resize" && entry.listener === ctx.fitDiagramFonts
-        ),
-        "pageLoad wires window resize to fitDiagramFonts"
+        !resizeListeners.some((entry) => entry.type === "resize"),
+        "pageLoad must not wire a resize font-fit listener"
     );
 });
 
-function mockSeatHandLayout({
-    seat,
-    clientWidth,
-    paddingLeft = "20px",
-    paddingRight = "20px",
-    rowScrollWidths,
-    // Extra fixed px that does not shrink with font-size (simulates 1px borders).
-    fixedOverflowPx = 0,
-    initialValues = {},
-}) {
-    let fontPx = 30;
-    let laidOutWidth = clientWidth;
-    const padLeft = parseFloat(paddingLeft) || 0;
-    const padRight = parseFloat(paddingRight) || 0;
-    const baseWidths = rowScrollWidths.slice();
-    const seatClass = "hand-" + seat;
-    const hand = {
-        className: "grid-item " + seatClass,
-        style: {
-            maxWidth: "",
-            overflowX: "",
-            get fontSize() {
-                return fontPx === 30 ? "" : fontPx + "px";
-            },
-            set fontSize(value) {
-                if (value === "" || value == null) {
-                    fontPx = 30;
-                    return;
-                }
-                const parsed = parseFloat(value);
-                fontPx = Number.isFinite(parsed) ? parsed : 30;
-            },
-        },
-        // Inline maxWidth (clip fallback) constrains layout width like a browser.
-        get clientWidth() {
-            const max = parseFloat(this.style.maxWidth);
-            if (this.style.maxWidth !== "" && Number.isFinite(max)) {
-                return max + padLeft + padRight;
-            }
-            return laidOutWidth;
-        },
-        querySelectorAll(selector) {
-            // Fitting measures .hand-suit-content (intrinsic), not the full-width
-            // .hand-suit hit target.
-            if (selector !== ".hand-suit-content") {
-                return [];
-            }
-            const scale = fontPx / 30;
-            return baseWidths.map((scrollWidth) => ({
-                scrollWidth: scrollWidth * scale + fixedOverflowPx,
-            }));
-        },
-    };
-    const document = createMockDocument(initialValues);
-    const seats = {};
-    seats[seat] = hand;
-    document.querySelector = (selector) => {
-        if (selector === "." + seatClass) {
-            return hand;
-        }
-        return null;
-    };
-    return {
-        document,
-        hand,
-        ...seats,
-        get available() {
-            return laidOutWidth - padLeft - padRight;
-        },
-        setClientWidth(width) {
-            laidOutWidth = width;
-        },
-        getComputedStyle(element) {
-            if (element === hand) {
-                return { paddingLeft, paddingRight };
-            }
-            return { paddingLeft: "0px", paddingRight: "0px" };
-        },
-    };
-}
-
-function mockSouthHandLayout(options) {
-    return mockSeatHandLayout({ ...options, seat: "south" });
-}
-
-function mockEastHandLayout(options) {
-    return mockSeatHandLayout({ ...options, seat: "east" });
-}
-
-function mockNorthHandLayout(options) {
-    return mockSeatHandLayout({ ...options, seat: "north" });
-}
-
-function mockWestHandLayout(options) {
-    return mockSeatHandLayout({ ...options, seat: "west" });
-}
-
-/** Combine per-seat mocks so fitHandCards can see all four diagram hands. */
-function mockDiagramHandLayouts(seatOptions) {
-    const handsBySelector = {};
-    const handsBySeat = {};
-    let sharedDocument = null;
-    const paddingByHand = new Map();
-    let frameFontPx = 30;
-    const frame = {
-        className: "grid-container",
-        style: {
-            maxWidth: "",
-            overflowX: "",
-            get fontSize() {
-                return frameFontPx === 30 ? "" : frameFontPx + "px";
-            },
-            set fontSize(value) {
-                if (value === "" || value == null) {
-                    frameFontPx = 30;
-                    return;
-                }
-                const parsed = parseFloat(value);
-                frameFontPx = Number.isFinite(parsed) ? parsed : 30;
-            },
-        },
-    };
-
-    for (const [seat, options] of Object.entries(seatOptions)) {
-        const layout = mockSeatHandLayout({ ...options, seat });
-        const hand = layout.hand;
-        const baseWidths = (options.rowScrollWidths || []).slice();
-        const fixedOverflowPx = options.fixedOverflowPx || 0;
-        // Model CSS inheritance: cleared seat font-size tracks the frame scale.
-        hand.querySelectorAll = (selector) => {
-            if (selector !== ".hand-suit-content") {
-                return [];
-            }
-            const privateSize = hand.style.fontSize;
-            const fontPx = privateSize
-                ? parseFloat(privateSize) || frameFontPx
-                : frameFontPx;
-            const scale = fontPx / 30;
-            return baseWidths.map((scrollWidth) => ({
-                scrollWidth: scrollWidth * scale + fixedOverflowPx,
-            }));
-        };
-        handsBySeat[seat] = hand;
-        handsBySelector[".hand-" + seat] = hand;
-        paddingByHand.set(hand, {
-            paddingLeft: options.paddingLeft || "20px",
-            paddingRight: options.paddingRight || "20px",
-        });
-        if (!sharedDocument) {
-            sharedDocument = layout.document;
-        }
-    }
-
-    sharedDocument.querySelector = (selector) => {
-        if (selector === ".grid-container") {
-            return frame;
-        }
-        return handsBySelector[selector] || null;
-    };
-
-    return {
-        document: sharedDocument,
-        frame,
-        ...handsBySeat,
-        getComputedStyle(element) {
-            const padding = paddingByHand.get(element);
-            if (padding) {
-                return padding;
-            }
-            return { paddingLeft: "0px", paddingRight: "0px" };
-        },
-    };
-}
-
-test("fitSouthHandCards shrinks font when suit rows overflow the south cell", () => {
-    // Arrange: south content box narrower than the longest holding row.
-    const layout = mockSouthHandLayout({
-        clientWidth: 220,
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        rowScrollWidths: [400, 350, 300, 280],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitSouthHandCards();
-
-    // Assert: available = 180; scale ≈ 30 * (180 - 0) / 400 when no fixed chrome.
-    const size = parseFloat(layout.south.style.fontSize);
-    assert.ok(Number.isFinite(size), "font-size set on .hand-south");
-    assert.ok(size < 30, "south cards shrink below the seat default");
-    assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
-});
-
-test("fitHandCards applies font reductions smaller than the width epsilon", () => {
-    // 400px holding in a 396px box needs ~29.7px. Comparing against the 0.5px
-    // width epsilon would skip that shrink and leave the holding overflowing.
-    const layout = mockSouthHandLayout({
-        clientWidth: 436,
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        rowScrollWidths: [400],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    ctx.fitHandCards();
-
-    const size = parseFloat(layout.south.style.fontSize);
-    assert.ok(Number.isFinite(size), "font-size set for a sub-epsilon reduction");
-    assert.ok(size < 30, "must shrink below the 30px base");
-    assert.ok(Math.abs(size - 29.7) < 0.05, `expected ~29.7px, got ${size}`);
-});
-
-test("fitHandCards applies one shared scale to north east south and west", () => {
-    // South overflows (needs ~13.5px); north/west/east fit at 30px. Scale the
-    // whole .grid-container so seats and the SE result table inherit together.
-    const diagram = mockDiagramHandLayouts({
-        north: { clientWidth: 400, rowScrollWidths: [200, 180, 160, 140] },
-        east: { clientWidth: 400, rowScrollWidths: [220, 200, 180, 160] },
-        south: { clientWidth: 220, rowScrollWidths: [400, 350, 300, 280] },
-        west: { clientWidth: 400, rowScrollWidths: [210, 190, 170, 150] },
-    });
-    const ctx = loadDdsWeb(diagram.document, {
-        getComputedStyle: diagram.getComputedStyle,
-    });
-
-    ctx.fitHandCards();
-
-    const frameSize = parseFloat(diagram.frame.style.fontSize);
-    assert.ok(Number.isFinite(frameSize), "diagram frame gets an inline font-size");
-    assert.ok(
-        Math.abs(frameSize - 13.5) < 0.2,
-        `expected ~13.5px on the frame, got ${frameSize}`
-    );
-    for (const seat of ["north", "east", "south", "west"]) {
-        assert.equal(
-            diagram[seat].style.fontSize,
-            "",
-            seat + " inherits the frame scale instead of a private font-size"
-        );
-        assert.equal(
-            diagram[seat].style.maxWidth,
-            "",
-            seat + " must not clip when inheritance matches the shared scale"
-        );
-        const needed = diagram[seat].querySelectorAll(".hand-suit-content")[0]
-            .scrollWidth;
-        const available = diagram[seat].clientWidth - 40;
-        assert.ok(
-            needed <= available + 0.5,
-            seat + ` holding must fit after inheritance (needed=${needed})`
-        );
-    }
-});
-
-test("fitSouthHandCards measures .hand-suit-content not the full-width hit target", () => {
-    // Outer .hand-suit is width:100% for clicks; fitting must query the inner
-    // content row so stretched scrollWidth never enters the measurement.
-    const padLeft = 20;
-    const padRight = 20;
-    let fontPx = 30;
-    let laidOutWidth = 220;
-    const intrinsicAt30 = 400;
-    const available = 180;
-    const measuredSelectors = [];
-    const hand = {
-        className: "grid-item hand-south",
-        style: {
-            maxWidth: "",
-            overflowX: "",
-            get fontSize() {
-                return fontPx === 30 ? "" : fontPx + "px";
-            },
-            set fontSize(value) {
-                if (value === "" || value == null) {
-                    fontPx = 30;
-                    return;
-                }
-                const parsed = parseFloat(value);
-                fontPx = Number.isFinite(parsed) ? parsed : 30;
-            },
-        },
-        get clientWidth() {
-            const max = parseFloat(this.style.maxWidth);
-            if (this.style.maxWidth !== "" && Number.isFinite(max)) {
-                return max + padLeft + padRight;
-            }
-            return laidOutWidth;
-        },
-        querySelectorAll(selector) {
-            measuredSelectors.push(selector);
-            const scale = fontPx / 30;
-            const intrinsic = intrinsicAt30 * scale;
-            if (selector === ".hand-suit") {
-                // Stretched hit-target would poison fitting if selected.
-                return [{ scrollWidth: Math.max(intrinsic, available) }];
-            }
-            if (selector === ".hand-suit-content") {
-                return [{ scrollWidth: intrinsic }];
-            }
-            return [];
-        },
-    };
+test("updateDeckStatus still rewrites the undeployed strip without fitting", () => {
     const document = createMockDocument();
-    document.querySelector = (selector) => {
-        return selector === ".hand-south" ? hand : null;
-    };
-    const ctx = loadDdsWeb(document, {
-        getComputedStyle(element) {
-            if (element === hand) {
-                return {
-                    paddingLeft: padLeft + "px",
-                    paddingRight: padRight + "px",
-                };
-            }
-            return { paddingLeft: "0px", paddingRight: "0px" };
-        },
-    });
-
-    ctx.fitSouthHandCards();
-
-    assert.ok(
-        measuredSelectors.includes(".hand-suit-content"),
-        "fitting queries inner content rows"
-    );
-    assert.ok(
-        !measuredSelectors.includes(".hand-suit"),
-        "fitting must not measure the stretched hit target"
-    );
-    const size = parseFloat(hand.style.fontSize);
-    assert.ok(Number.isFinite(size), "font-size set on .hand-south");
-    assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
-    assert.equal(hand.style.maxWidth, "", "must not fall back to clipping");
-});
-
-test("fitSouthHandCards solves font size so fixed chrome still fits", () => {
-    // Arrange: 20px non-scaling borders; closed form must land inside available=180.
-    const layout = mockSouthHandLayout({
-        clientWidth: 220,
-        rowScrollWidths: [400],
-        fixedOverflowPx: 20,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitSouthHandCards();
-
-    // Assert
-    const size = parseFloat(layout.south.style.fontSize);
-    assert.ok(size < 13.5, `should shrink below pure proportional 13.5px, got ${size}`);
-    const needed = layout.south.querySelectorAll(".hand-suit-content")[0].scrollWidth;
-    assert.ok(
-        needed <= layout.available + 0.5,
-        `south row must not spill into the contract matrix, needed=${needed}`
-    );
-});
-
-test("fitSouthHandCards clips when fixed chrome alone exceeds the south cell", () => {
-    // Arrange
-    const layout = mockSouthHandLayout({
-        clientWidth: 60,
-        rowScrollWidths: [400],
-        fixedOverflowPx: 40,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitSouthHandCards();
-
-    // Assert: available = 20; clip keeps overflow out of the SE matrix cell.
-    assert.equal(layout.south.style.maxWidth, "20px");
-    assert.equal(layout.south.style.overflowX, "hidden");
-});
-
-test("fitSouthHandCards restores full size when rows fit the south cell", () => {
-    // Arrange
-    const layout = mockSouthHandLayout({
-        clientWidth: 400,
-        rowScrollWidths: [200, 180],
-    });
-    layout.south.style.fontSize = "12px";
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitSouthHandCards();
-
-    // Assert
-    assert.equal(layout.south.style.fontSize, "");
-});
-
-test("updateHandCardDisplays refits south after rewriting holdings", () => {
-    // Arrange
-    const layout = mockSouthHandLayout({
-        clientWidth: 220,
-        rowScrollWidths: [400],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
+    const ctx = loadDdsWeb(document);
     const emptyHands = {
         north: [],
         east: [],
@@ -6537,166 +5873,30 @@ test("updateHandCardDisplays refits south after rewriting holdings", () => {
         west: [],
     };
 
-    // Act
-    ctx.updateHandCardDisplays(emptyHands);
+    ctx.updateDeckStatus(emptyHands);
 
-    // Assert
-    const size = parseFloat(layout.south.style.fontSize);
-    assert.ok(size < 30, "updateHandCardDisplays must refit south holdings");
+    const deck = document.getElementById("deck-status");
+    assert.match(deck.innerHTML, /deck-suit-row/);
+    assert.ok(!deck.style.fontSize, "no inline fit font on the deck");
 });
 
-test("updateHandCardDisplays refits the center deck after the frame scale changes", () => {
-    // Hands may restore the shared frame font after updateActionButtons already
-    // fitted the undeployed deck; refit the whole diagram so the deck tracks.
+test("updateHandCardDisplays still rewrites holdings without fitting", () => {
     const document = createMockDocument();
     const ctx = loadDdsWeb(document);
-    let diagramFits = 0;
-    ctx.fitDiagramFonts = () => {
-        diagramFits += 1;
-    };
 
     ctx.updateHandCardDisplays({
         north: [],
         east: [],
-        south: [],
+        south: cardsFromKeys(ctx, [
+            "SA", "SK", "SQ", "SJ", "ST", "S9", "S8", "S7", "S6", "S5", "S4", "S3", "S2",
+        ]),
         west: [],
     });
 
-    assert.equal(diagramFits, 1);
-});
-
-test("fitEastHandCards shrinks font when suit rows overflow the east cell", () => {
-    // Arrange
-    const layout = mockEastHandLayout({
-        clientWidth: 220,
-        rowScrollWidths: [400, 350, 300, 280],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitEastHandCards();
-
-    // Assert: available = 180; scale ≈ 13.5px with no fixed chrome.
-    const size = parseFloat(layout.east.style.fontSize);
-    assert.ok(Number.isFinite(size), "font-size set on .hand-east");
-    assert.ok(size < 30, "east cards shrink below the seat default");
-    assert.ok(Math.abs(size - 13.5) < 0.2, `expected ~13.5px, got ${size}`);
-});
-
-test("fitEastHandCards solves font size so fixed chrome still fits", () => {
-    // Arrange
-    const layout = mockEastHandLayout({
-        clientWidth: 220,
-        rowScrollWidths: [400],
-        fixedOverflowPx: 20,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitEastHandCards();
-
-    // Assert
-    const size = parseFloat(layout.east.style.fontSize);
-    assert.ok(size < 13.5, `should shrink below pure proportional 13.5px, got ${size}`);
-    const needed = layout.east.querySelectorAll(".hand-suit-content")[0].scrollWidth;
-    assert.ok(
-        needed <= layout.available + 0.5,
-        `east row must not spill past the window edge, needed=${needed}`
+    assert.match(
+        document.getElementById("south_spades_cards").innerHTML,
+        /data-card="SA"/
     );
-});
-
-test("fitEastHandCards clips when fixed chrome alone exceeds the east cell", () => {
-    // Arrange
-    const layout = mockEastHandLayout({
-        clientWidth: 60,
-        rowScrollWidths: [400],
-        fixedOverflowPx: 40,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitEastHandCards();
-
-    // Assert
-    assert.equal(layout.east.style.maxWidth, "20px");
-    assert.equal(layout.east.style.overflowX, "hidden");
-});
-
-test("fitEastHandCards recovers after clip when the cell widens", () => {
-    // Arrange: first fit clips at an extremely narrow width.
-    const layout = mockEastHandLayout({
-        clientWidth: 60,
-        rowScrollWidths: [400],
-        fixedOverflowPx: 40,
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-    ctx.fitEastHandCards();
-    assert.equal(layout.east.style.maxWidth, "20px");
-
-    // Act: viewport/cell grows — must clear the stale clip before measuring.
-    layout.setClientWidth(220);
-    ctx.fitEastHandCards();
-
-    // Assert: no longer permanently clipped; fits the wider content box.
-    assert.equal(layout.east.style.maxWidth, "");
-    assert.equal(layout.east.style.overflowX, "");
-    const size = parseFloat(layout.east.style.fontSize);
-    assert.ok(size < 30, `expected a fitted font below 30px, got ${size}`);
-    const needed = layout.east.querySelectorAll(".hand-suit-content")[0].scrollWidth;
-    assert.ok(
-        needed <= layout.available + 0.5,
-        `widened east row must fit, needed=${needed} available=${layout.available}`
-    );
-});
-
-test("fitEastHandCards restores full size when rows fit the east cell", () => {
-    // Arrange
-    const layout = mockEastHandLayout({
-        clientWidth: 400,
-        rowScrollWidths: [200, 180],
-    });
-    layout.east.style.fontSize = "12px";
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-
-    // Act
-    ctx.fitEastHandCards();
-
-    // Assert
-    assert.equal(layout.east.style.fontSize, "");
-});
-
-test("updateHandCardDisplays refits east after rewriting holdings", () => {
-    // Arrange
-    const layout = mockEastHandLayout({
-        clientWidth: 220,
-        rowScrollWidths: [400],
-    });
-    const ctx = loadDdsWeb(layout.document, {
-        getComputedStyle: layout.getComputedStyle,
-    });
-    const emptyHands = {
-        north: [],
-        east: [],
-        south: [],
-        west: [],
-    };
-
-    // Act
-    ctx.updateHandCardDisplays(emptyHands);
-
-    // Assert
-    const size = parseFloat(layout.east.style.fontSize);
-    assert.ok(size < 30, "updateHandCardDisplays must refit east holdings");
 });
 
 test("hand-card pips show a light outline affordance for clickability", () => {

@@ -905,30 +905,22 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
         finally:
             page.close()
 
-    def test_center_undeployed_cards_shrink_on_narrow_window(self) -> None:
-        """When the diagram narrows, center pips shrink instead of covering East."""
+    def test_center_undeployed_cards_flex_pack_on_narrow_window(self) -> None:
+        """When the diagram narrows, center pips flex-shrink instead of covering East."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            page.set_viewport_size({"width": 1280, "height": 900})
-            wide = page.evaluate(
+            page.set_viewport_size({"width": 720, "height": 900})
+            page.wait_for_function(
                 """() => {
                   const last = document.querySelector(
                     '#deck-status .deck-suit-row .hand-card[data-card="S2"]'
                   );
-                  const deck = document.getElementById('deck-status');
-                  return {
-                    cardFont: parseFloat(getComputedStyle(last).fontSize),
-                    deckFont: parseFloat(getComputedStyle(deck).fontSize),
-                  };
-                }"""
-            )
-
-            page.set_viewport_size({"width": 720, "height": 900})
-            # Refit runs on resize; wait until layout reflects the narrower width.
-            page.wait_for_function(
-                """() => {
-                  const deck = document.getElementById('deck-status');
-                  return parseFloat(getComputedStyle(deck).fontSize) < 30;
+                  const east = document.querySelector('.hand-east');
+                  if (!last || !east) {
+                    return false;
+                  }
+                  return last.getBoundingClientRect().right <=
+                    east.getBoundingClientRect().left - 1;
                 }"""
             )
             narrow = page.evaluate(
@@ -937,143 +929,91 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     '#deck-status .deck-suit-row .hand-card[data-card="S2"]'
                   );
                   const east = document.querySelector('.hand-east');
-                  const deck = document.getElementById('deck-status');
                   const lastBox = last.getBoundingClientRect();
                   const eastBox = east.getBoundingClientRect();
                   return {
                     lastRight: lastBox.right,
                     eastLeft: eastBox.left,
-                    cardFont: parseFloat(getComputedStyle(last).fontSize),
-                    deckFont: parseFloat(getComputedStyle(deck).fontSize),
+                    cardWidth: lastBox.width,
                   };
                 }"""
             )
 
-            self.assertLess(
-                narrow["deckFont"],
-                wide["deckFont"],
-                msg="narrow window must shrink undeployed center cards",
-            )
-            self.assertLess(
-                narrow["cardFont"],
-                wide["cardFont"],
-                msg="narrow window must shrink center card pips",
-            )
             self.assertLessEqual(
                 narrow["lastRight"],
                 narrow["eastLeft"] - 1,
-                msg="shrunk undeployed spade row must not run into East",
+                msg="flex-packed undeployed spade row must not run into East",
+            )
+            self.assertGreater(
+                narrow["cardWidth"],
+                0,
+                msg="flex-packed center pips must remain visible",
             )
             self.assertEqual(errors, [])
         finally:
             page.close()
 
-    def test_east_hand_shrinks_instead_of_overflowing_window(self) -> None:
-        """When the diagram narrows, East holdings shrink instead of extending past the right edge."""
+    def test_east_hand_flex_packs_instead_of_overflowing_window(self) -> None:
+        """Long East holdings flex-shrink instead of extending past the right edge."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
             page.locator("#east_spades").fill("AKQJT98765432")
             page.locator("#east_spades").dispatch_event("input")
-            page.set_viewport_size({"width": 1280, "height": 900})
+            page.set_viewport_size({"width": 720, "height": 900})
             page.wait_for_function(
                 """() => {
-                  const east = document.querySelector('.hand-east');
-                  return parseFloat(getComputedStyle(east).fontSize) < 30;
-                }"""
-            )
-            wide = page.evaluate(
-                """() => {
-                  const east = document.querySelector('.hand-east');
                   const last = document.querySelector(
                     '.hand-east .hand-card[data-card="S2"]'
                   );
-                  return {
-                    handFont: parseFloat(getComputedStyle(east).fontSize),
-                    cardFont: parseFloat(getComputedStyle(last).fontSize),
-                  };
+                  return !!last &&
+                    last.getBoundingClientRect().right <= window.innerWidth - 1;
                 }"""
-            )
-
-            page.set_viewport_size({"width": 720, "height": 900})
-            page.wait_for_function(
-                """(wideFont) => {
-                  const east = document.querySelector('.hand-east');
-                  return parseFloat(getComputedStyle(east).fontSize) < wideFont - 0.25;
-                }""",
-                arg=wide["handFont"],
             )
             narrow = page.evaluate(
                 """() => {
                   const last = document.querySelector(
                     '.hand-east .hand-card[data-card="S2"]'
                   );
-                  const east = document.querySelector('.hand-east');
                   const lastBox = last.getBoundingClientRect();
                   return {
                     lastRight: lastBox.right,
                     windowRight: window.innerWidth,
-                    handFont: parseFloat(getComputedStyle(east).fontSize),
-                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                    cardWidth: lastBox.width,
                   };
                 }"""
             )
 
-            self.assertLess(
-                narrow["handFont"],
-                wide["handFont"],
-                msg="narrow window must shrink the East hand font",
-            )
-            self.assertLess(
-                narrow["cardFont"],
-                wide["cardFont"],
-                msg="narrow window must shrink East card pips",
-            )
             self.assertLessEqual(
                 narrow["lastRight"],
                 narrow["windowRight"] - 1,
-                msg="shrunk East spade row must not run past the window edge",
+                msg="flex-packed East spade row must not run past the window edge",
+            )
+            self.assertGreater(
+                narrow["cardWidth"],
+                0,
+                msg="flex-packed East pips must remain visible",
             )
             self.assertEqual(errors, [])
         finally:
             page.close()
 
-    def test_south_hand_shrinks_instead_of_covering_contract_matrix(self) -> None:
-        """When the diagram narrows, South holdings shrink instead of covering SE."""
+    def test_south_hand_flex_packs_instead_of_covering_contract_matrix(self) -> None:
+        """Long South holdings flex-shrink instead of covering SE."""
         page, errors = self._open_page(self.site_dir.joinpath("dds_web.html").as_uri())
         try:
-            # One full suit in South makes the holding wider than a narrow south cell.
             page.locator("#south_spades").fill("AKQJT98765432")
             page.locator("#south_spades").dispatch_event("input")
-            page.set_viewport_size({"width": 1280, "height": 900})
-            # Full-suit South already shrinks under the 1100px diagram cap; wait
-            # until that wide fit settles before recording the baseline.
+            page.set_viewport_size({"width": 720, "height": 900})
             page.wait_for_function(
                 """() => {
-                  const south = document.querySelector('.hand-south');
-                  return parseFloat(getComputedStyle(south).fontSize) < 30;
-                }"""
-            )
-            wide = page.evaluate(
-                """() => {
-                  const south = document.querySelector('.hand-south');
                   const last = document.querySelector(
                     '.hand-south .hand-card[data-card="S2"]'
                   );
-                  return {
-                    handFont: parseFloat(getComputedStyle(south).fontSize),
-                    cardFont: parseFloat(getComputedStyle(last).fontSize),
-                  };
+                  const matrix = document.getElementById('result-table');
+                  return !!last && !!matrix &&
+                    last.getBoundingClientRect().right <=
+                      matrix.getBoundingClientRect().left - 1;
                 }"""
-            )
-
-            page.set_viewport_size({"width": 720, "height": 900})
-            # Wide fit is already < 30px; wait for a further shrink on narrow.
-            page.wait_for_function(
-                """(wideFont) => {
-                  const south = document.querySelector('.hand-south');
-                  return parseFloat(getComputedStyle(south).fontSize) < wideFont - 0.25;
-                }""",
-                arg=wide["handFont"],
             )
             narrow = page.evaluate(
                 """() => {
@@ -1081,45 +1021,37 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     '.hand-south .hand-card[data-card="S2"]'
                   );
                   const matrix = document.getElementById('result-table');
-                  const south = document.querySelector('.hand-south');
                   const lastBox = last.getBoundingClientRect();
                   const matrixBox = matrix.getBoundingClientRect();
                   return {
                     lastRight: lastBox.right,
                     matrixLeft: matrixBox.left,
-                    handFont: parseFloat(getComputedStyle(south).fontSize),
-                    cardFont: parseFloat(getComputedStyle(last).fontSize),
+                    cardWidth: lastBox.width,
                   };
                 }"""
             )
 
-            self.assertLess(
-                narrow["handFont"],
-                wide["handFont"],
-                msg="narrow window must shrink the South hand font",
-            )
-            self.assertLess(
-                narrow["cardFont"],
-                wide["cardFont"],
-                msg="narrow window must shrink South card pips",
-            )
             self.assertLessEqual(
                 narrow["lastRight"],
                 narrow["matrixLeft"] - 1,
-                msg="shrunk South spade row must not run into the contract matrix",
+                msg="flex-packed South spade row must not run into the contract matrix",
+            )
+            self.assertGreater(
+                narrow["cardWidth"],
+                0,
+                msg="flex-packed South pips must remain visible",
             )
             self.assertEqual(errors, [])
         finally:
             page.close()
 
-    def test_narrow_window_shared_scale_keeps_long_holdings_and_status_readable(
+    def test_narrow_window_flex_pack_keeps_long_holdings_and_status_readable(
         self,
     ) -> None:
-        """Long holdings shrink the whole frame; SE status stays inside the cell."""
+        """Long holdings flex-pack in-seat; SE status stays inside the cell."""
         with _HttpSite(self.site_dir) as site:
             page, errors = self._open_page(site.url)
             try:
-                # Full-suit South forces a shared frame shrink; other seats stay short.
                 page.locator("#south_spades").fill("AKQJT98765432")
                 page.locator("#south_spades").dispatch_event("input")
                 page.locator("#north_hearts").fill("A")
@@ -1129,60 +1061,37 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                 page.locator("#west_diamonds").fill("Q")
                 page.locator("#west_diamonds").dispatch_event("input")
 
-                # Full-suit South already shrinks under the 1100px diagram cap;
-                # wait for that wide fit before recording the baseline.
-                page.set_viewport_size({"width": 1280, "height": 900})
+                page.set_viewport_size({"width": 720, "height": 900})
                 page.wait_for_function(
                     """() => {
-                      const frame = document.querySelector('.grid-container');
-                      return parseFloat(getComputedStyle(frame).fontSize) < 30;
+                      const last = document.querySelector(
+                        '.hand-south .hand-card[data-card="S2"]'
+                      );
+                      const matrix = document.getElementById('result-table');
+                      return !!last && !!matrix &&
+                        last.getBoundingClientRect().right <=
+                          matrix.getBoundingClientRect().left - 1;
                     }"""
-                )
-                wide_frame_font = page.evaluate(
-                    """() => parseFloat(
-                      getComputedStyle(document.querySelector('.grid-container')).fontSize
-                    )"""
-                )
-
-                page.set_viewport_size({"width": 720, "height": 900})
-                # Wide fit is already < 30px; wait for a further shrink on narrow.
-                page.wait_for_function(
-                    """(wideFont) => {
-                      const frame = document.querySelector('.grid-container');
-                      return parseFloat(getComputedStyle(frame).fontSize) < wideFont - 0.25;
-                    }""",
-                    arg=wide_frame_font,
                 )
 
                 layout = page.evaluate(
                     """() => {
-                      const frame = document.querySelector('.grid-container');
                       const se = document.querySelector('.grid-filler-se');
-                      const hint = document.getElementById('result-table-hint');
                       const result = document.getElementById('result');
                       const southLast = document.querySelector(
                         '.hand-south .hand-card[data-card="S2"]'
                       );
                       const matrix = document.getElementById('result-table');
-                      const seatFonts = {};
-                      for (const seat of ['north', 'east', 'south', 'west']) {
-                        const hand = document.querySelector('.hand-' + seat);
-                        seatFonts[seat] = parseFloat(getComputedStyle(hand).fontSize);
-                      }
                       // Force a long status line the way a solve error would.
                       result.textContent =
                         'Deal incomplete: enter all 52 cards before solving.';
                       const seBox = se.getBoundingClientRect();
-                      const hintBox = hint.getBoundingClientRect();
                       const resultBox = result.getBoundingClientRect();
                       const lastBox = southLast.getBoundingClientRect();
                       const matrixBox = matrix.getBoundingClientRect();
                       return {
-                        frameFont: parseFloat(getComputedStyle(frame).fontSize),
-                        seatFonts,
                         lastRight: lastBox.right,
                         matrixLeft: matrixBox.left,
-                        hintRight: hintBox.right,
                         resultRight: resultBox.right,
                         seRight: seBox.right,
                         statusWhiteSpace: getComputedStyle(result).whiteSpace,
@@ -1190,22 +1099,19 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     }"""
                 )
 
-                self.assertLess(
-                    layout["frameFont"],
-                    wide_frame_font - 0.25,
-                    msg="narrow window must shrink the shared diagram frame further",
+                # Computed style resolves rem to px; assert no inline JS fit override.
+                inline_frame = page.evaluate(
+                    """() => document.querySelector('.grid-container').style.fontSize"""
                 )
-                for seat, font in layout["seatFonts"].items():
-                    self.assertAlmostEqual(
-                        font,
-                        layout["frameFont"],
-                        delta=0.25,
-                        msg=f"{seat} must inherit the shared frame scale",
-                    )
+                self.assertEqual(
+                    inline_frame,
+                    "",
+                    msg="CSS flex packing must not set an inline frame font-size",
+                )
                 self.assertLessEqual(
                     layout["lastRight"],
                     layout["matrixLeft"] - 1,
-                    msg="shrunk South holding must not cover the result table",
+                    msg="flex-packed South holding must not cover the result table",
                 )
                 self.assertNotEqual(
                     layout["statusWhiteSpace"],

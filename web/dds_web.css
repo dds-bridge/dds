@@ -304,8 +304,8 @@
 .grid-container {
   background-color: #2196F3;
   display: grid;
-  /* Base diagram type size; JS may shrink this for the whole frame. */
-  font-size: 30px;
+  /* Rem base so tablets / user font scaling are not locked to one device. */
+  font-size: 1.875rem;
   grid-template-areas:
     "nw north ne"
     "west center east"
@@ -465,18 +465,21 @@
 }
 
 .hand-holding {
-  display: inline;
+  display: inline-flex;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .hand-suit-content,
 .deck-suit-row {
   align-items: baseline;
   gap: 0;
+  max-width: 100%;
   text-align: left;
   white-space: nowrap;
 }
 
-/* Full-width hit target; content width stays intrinsic for font fitting. */
+/* Full-width hit target; content caps at the seat so cards can flex-shrink. */
 .hand-suit {
   cursor: text;
   display: block;
@@ -485,10 +488,12 @@
 
 .hand-suit-content {
   display: inline-flex;
+  max-width: 100%;
 }
 
 .deck-suit-row {
   display: flex;
+  max-width: 100%;
   min-height: 1.2em;
 }
 
@@ -522,13 +527,17 @@
   background: transparent;
   border: 1px solid #bbb;
   border-radius: 0.15em;
+  box-sizing: border-box;
   color: inherit;
   cursor: text;
-  /* Below the seat's 30px so corner trick digits clear the pip glyph. */
+  /* Shrink long suits into the seat; floor keeps pips readable. */
+  flex: 1 1 auto;
+  /* Below the seat base so corner trick digits clear the pip glyph. */
   font-size: 0.72em;
   line-height: 1.15;
   /* No left margin: suit glyph sits flush; right margin separates dealt pips. */
   margin: 0 0.04em 0 0;
+  min-width: 0.55em;
   padding: 0 0.28em 0.18em 0.02em;
   position: relative;
 }
@@ -587,8 +596,11 @@ td {
   flex-direction: column;
   gap: 0.15rem;
   line-height: 1.25;
+  max-width: 100%;
+  min-width: 0;
   text-align: left;
   white-space: nowrap;
+  width: 100%;
 }
 
 #play-bar {

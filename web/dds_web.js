@@ -33,11 +33,6 @@
             undeployedCardHtml
             handHoldingHtml
             escapeHtml
-            fitCenterDeckCards
-            fitHandCards
-            fitSouthHandCards
-            fitEastHandCards
-            fitDiagramFonts
             updateHandCardDisplays
             addCardToHand
             removeCardFromHand
@@ -1371,296 +1366,11 @@ function deckStatusHtml(hands) {
     }).join("");
 }
 
-const SEAT_FONT_PX = 30;
-const FIT_EPSILON_PX = 0.5;
-
-function maxRowScrollWidth(root, rowSelector) {
-    let needed = 0;
-
-    if (!root || typeof root.querySelectorAll !== "function") {
-        return 0;
-    }
-
-    for (const row of root.querySelectorAll(rowSelector)) {
-        needed = Math.max(needed, row.scrollWidth || 0);
-    }
-
-    return needed;
-}
-
-function contentBoxWidth(element) {
-    if (!element || typeof getComputedStyle !== "function") {
-        return 0;
-    }
-
-    const style = getComputedStyle(element);
-
-    return element.clientWidth -
-        (parseFloat(style.paddingLeft) || 0) -
-        (parseFloat(style.paddingRight) || 0);
-}
-
-function clearFitStyles(element) {
-    element.style.fontSize = "";
-    element.style.maxWidth = "";
-    element.style.overflowX = "";
-}
-
-function clipElementToAvailable(element, available) {
-    element.style.maxWidth = available + "px";
-    element.style.overflowX = "hidden";
-}
-
-function fitFontToContentWidth(element, available, rowSelector, baseFontPx) {
-    // Prefer clearing any prior shrink so a roomy box returns to the CSS seat
-    // size instead of keeping a stale inline fit.
-    clearFitStyles(element);
-
-    if (!(available > 0)) {
-        return;
-    }
-
-    const neededFull = maxRowScrollWidth(element, rowSelector);
-
-    if (!(neededFull > available + FIT_EPSILON_PX)) {
-        return;
-    }
-
-    // 1px card borders do not scale with font-size. Probe near-zero font to
-    // estimate that fixed chrome, then solve for the font that fits in one shot
-    // (proportional iteration converges too slowly near the fixed floor).
-    element.style.fontSize = "0.01px";
-    const fixedPx = maxRowScrollWidth(element, rowSelector);
-    const scalablePx = neededFull - fixedPx;
-
-    if (!(fixedPx <= available + FIT_EPSILON_PX) || !(scalablePx > 0)) {
-        clearFitStyles(element);
-        clipElementToAvailable(element, available);
-        return;
-    }
-
-    const fontPx = baseFontPx * (available - fixedPx) / scalablePx;
-
-    if (!(fontPx > 0)) {
-        clearFitStyles(element);
-        clipElementToAvailable(element, available);
-        return;
-    }
-
-    element.style.fontSize = fontPx + "px";
-
-    if (maxRowScrollWidth(element, rowSelector) > available + FIT_EPSILON_PX) {
-        clipElementToAvailable(element, available);
-    }
-}
-
-function diagramFrameElement() {
-    if (typeof document.querySelector !== "function") {
-        return null;
-    }
-    return document.querySelector(".grid-container");
-}
-
-function diagramFrameFontPx() {
-    const frame = diagramFrameElement();
-    if (frame && frame.style && frame.style.fontSize) {
-        const parsed = parseFloat(frame.style.fontSize);
-        if (Number.isFinite(parsed) && parsed > 0) {
-            return parsed;
-        }
-    }
-    return SEAT_FONT_PX;
-}
-
-function fitCenterDeckCards(baseFontPx) {
-    const deckStatus = document.getElementById("deck-status");
-
-    if (!deckStatus) {
-        return;
-    }
-
-    clearFitStyles(deckStatus);
-
-    if (deckStatus.hidden) {
-        return;
-    }
-
-    const center = typeof document.querySelector === "function"
-        ? document.querySelector(".grid-filler-center")
-        : null;
-
-    if (!center) {
-        return;
-    }
-
-    const base = baseFontPx != null && baseFontPx > 0
-        ? baseFontPx
-        : diagramFrameFontPx();
-
-    fitFontToContentWidth(
-        deckStatus,
-        contentBoxWidth(center),
-        ".deck-suit-row",
-        base
-    );
-}
-
-const HAND_SEAT_SELECTORS = [
-    ".hand-north",
-    ".hand-east",
-    ".hand-south",
-    ".hand-west",
-];
-
-function handSeatElements() {
-    if (typeof document.querySelector !== "function") {
-        return [];
-    }
-
-    const hands = [];
-    for (let i = 0; i < HAND_SEAT_SELECTORS.length; i++) {
-        const hand = document.querySelector(HAND_SEAT_SELECTORS[i]);
-        if (hand) {
-            hands.push(hand);
-        }
-    }
-    return hands;
-}
-
-function requiredHandFontPx(hand, available) {
-    if (!(available > 0)) {
-        return null;
-    }
-
-    const neededFull = maxRowScrollWidth(hand, ".hand-suit-content");
-    if (!(neededFull > available + FIT_EPSILON_PX)) {
-        return SEAT_FONT_PX;
-    }
-
-    // 1px card borders do not scale with font-size. Probe near-zero font to
-    // estimate that fixed chrome, then solve for the font that fits in one shot.
-    hand.style.fontSize = "0.01px";
-    const fixedPx = maxRowScrollWidth(hand, ".hand-suit-content");
-    hand.style.fontSize = "";
-    const scalablePx = neededFull - fixedPx;
-
-    if (!(fixedPx <= available + FIT_EPSILON_PX) || !(scalablePx > 0)) {
-        return null;
-    }
-
-    const fontPx = SEAT_FONT_PX * (available - fixedPx) / scalablePx;
-    return fontPx > 0 ? fontPx : null;
-}
-
-function applySharedDiagramFont(sharedFontPx, plan) {
-    const frame = diagramFrameElement();
-    // Apply every reduction below the base size. FIT_EPSILON_PX is for row
-    // widths, not font-size deltas (a 0.3px shrink can still clear overflow).
-    const shrink = sharedFontPx < SEAT_FONT_PX;
-
-    if (frame) {
-        if (shrink) {
-            frame.style.fontSize = sharedFontPx + "px";
-        }
-        // Seats inherit the frame scale; only clip when a holding still spills.
-        for (let i = 0; i < plan.length; i++) {
-            const entry = plan[i];
-            entry.hand.style.fontSize = "";
-            if (!(entry.available > 0)) {
-                continue;
-            }
-            if (entry.fontPx == null) {
-                clipElementToAvailable(entry.hand, entry.available);
-                continue;
-            }
-            if (
-                shrink
-                && maxRowScrollWidth(entry.hand, ".hand-suit-content")
-                    > entry.available + FIT_EPSILON_PX
-            ) {
-                clipElementToAvailable(entry.hand, entry.available);
-            }
-        }
-        return;
-    }
-
-    // Tests / partial DOMs without .grid-container: scale each seat directly.
-    for (let i = 0; i < plan.length; i++) {
-        const entry = plan[i];
-        if (!(entry.available > 0)) {
-            continue;
-        }
-        if (entry.fontPx == null) {
-            clipElementToAvailable(entry.hand, entry.available);
-            continue;
-        }
-        if (shrink) {
-            entry.hand.style.fontSize = sharedFontPx + "px";
-            if (
-                maxRowScrollWidth(entry.hand, ".hand-suit-content")
-                    > entry.available + FIT_EPSILON_PX
-            ) {
-                clipElementToAvailable(entry.hand, entry.available);
-            }
-        }
-    }
-}
-
-function fitHandCards() {
-    const hands = handSeatElements();
-    const frame = diagramFrameElement();
-    if (hands.length === 0 && !frame) {
-        return SEAT_FONT_PX;
-    }
-
-    if (frame) {
-        frame.style.fontSize = "";
-        frame.style.maxWidth = "";
-        frame.style.overflowX = "";
-    }
-
-    // Clear clip/maxWidth before measuring: an earlier narrow fit's inline
-    // maxWidth would otherwise keep clientWidth stuck at the clipped size.
-    for (let i = 0; i < hands.length; i++) {
-        clearFitStyles(hands[i]);
-    }
-
-    let sharedFontPx = SEAT_FONT_PX;
-    const plan = [];
-
-    for (let i = 0; i < hands.length; i++) {
-        const hand = hands[i];
-        const available = contentBoxWidth(hand);
-        const fontPx = requiredHandFontPx(hand, available);
-        plan.push({ hand: hand, available: available, fontPx: fontPx });
-        if (fontPx != null && fontPx < sharedFontPx) {
-            sharedFontPx = fontPx;
-        }
-    }
-
-    applySharedDiagramFont(sharedFontPx, plan);
-    return sharedFontPx;
-}
-
-function fitSouthHandCards() {
-    fitHandCards();
-}
-
-function fitEastHandCards() {
-    fitHandCards();
-}
-
-function fitDiagramFonts() {
-    const sharedFontPx = fitHandCards();
-    fitCenterDeckCards(sharedFontPx);
-}
-
 function updateDeckStatus(hands) {
     const deckStatus = document.getElementById("deck-status");
 
     if (deckStatus) {
         deckStatus.innerHTML = deckStatusHtml(hands);
-        fitCenterDeckCards();
     }
 }
 
@@ -2008,8 +1718,6 @@ function updateHandCardDisplays(hands) {
             }
         }
     }
-
-    fitDiagramFonts();
 }
 
 function onHandCardClick(direction, card) {
@@ -3376,9 +3084,6 @@ function pageLoad() {
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     document.addEventListener("focusout", handleDocumentFocusOut);
-    if (typeof window !== "undefined" && window.addEventListener) {
-        window.addEventListener("resize", fitDiagramFonts);
-    }
     updateActionButtons();
     focusNorthSpades();
     // Programmatic focus may not emit selectionchange; paint the caret so
