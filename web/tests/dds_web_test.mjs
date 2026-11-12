@@ -5763,7 +5763,7 @@ test("diagram frame uses a rem base font inherited by seats and result chrome", 
     assert.match(frame[1], /container-type:\s*inline-size/);
     assert.match(
         frame[1],
-        /font-size:\s*clamp\(\s*0\.5rem\s*,\s*[\d.]+cqi\s*,\s*1\.875rem\s*\)/
+        /font-size:\s*clamp\(\s*0\.5rem\s*,\s*4cqi\s*,\s*1\.875rem\s*\)/
     );
     assert.doesNotMatch(frame[1], /font-size:\s*\d+px/);
     assert.doesNotMatch(frame[1], /font-size:\s*1\.875rem\s*;/);
@@ -5821,9 +5821,12 @@ test("long suit holdings flex-shrink inside the seat instead of overflowing", ()
     assert.match(holding[1], /flex:\s*1\s+1\s+auto/);
     assert.ok(card, ".hand-card rule present");
     assert.match(card[1], /flex:\s*1\s+1\s+auto/);
-    assert.match(card[1], /min-width:\s*0\.4em/);
+    assert.match(card[1], /min-width:\s*0\.35em/);
     assert.match(card[1], /box-sizing:\s*border-box/);
     assert.match(card[1], /overflow:\s*hidden/);
+    // Borders/padding in em so chrome shrinks with the container-query font.
+    assert.match(card[1], /border:\s*[\d.]+em\s+solid/);
+    assert.doesNotMatch(card[1], /border:\s*\d+px\s+solid/);
     assert.ok(deck, ".deck-suit-row rule present");
     assert.match(deck[1], /max-width:\s*100%/);
     const undeployed = css.match(/#deck-status\s*\{([^}]*)\}/s);
@@ -5838,8 +5841,8 @@ test("center undeployed pips share dealt hand-card spacing", () => {
     const dealt = css.match(/\.hand-card\s*\{([^}]*)\}/s);
 
     assert.ok(dealt, ".hand-card rule present");
-    assert.match(dealt[1], /margin:\s*0\s+0\.04em\s+0\s+0/);
-    assert.match(dealt[1], /padding:\s*0\s+0\.28em\s+0\.18em\s+0\.02em/);
+    assert.match(dealt[1], /margin:\s*0\s+0\.01em\s+0\s+0/);
+    assert.match(dealt[1], /padding:\s*0\s+0\.04em\s+0\.18em\s+0\.02em/);
     // No center-only spacing override — undeployed cards match dealt pips.
     assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*margin/s);
     assert.doesNotMatch(css, /#deck-status\s+\.hand-card\s*\{[^}]*padding/s);
@@ -5918,7 +5921,7 @@ test("hand-card pips show a light outline affordance for clickability", () => {
     assert.doesNotMatch(rules, /border:\s*none/);
     assert.match(
         rules,
-        /(?:outline:\s*1px\s+solid|border:\s*1px\s+solid|box-shadow:\s*0\s+0\s+0\s+1px)/
+        /(?:outline:\s*[\d.]+(?:px|em)\s+solid|border:\s*[\d.]+(?:px|em)\s+solid|box-shadow:\s*0\s+0\s+0\s+[\d.]+(?:px|em))/
     );
 });
 

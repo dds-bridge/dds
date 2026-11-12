@@ -1077,6 +1077,11 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                     matrixLeft: matrix.getBoundingClientRect().left,
                     cardWidth: last.getBoundingClientRect().width,
                     cardOverflow: getComputedStyle(last).overflow,
+                    // Content box must leave room for the rank, not only chrome.
+                    contentWidth:
+                      last.clientWidth -
+                      (parseFloat(getComputedStyle(last).paddingLeft) || 0) -
+                      (parseFloat(getComputedStyle(last).paddingRight) || 0),
                   };
                 }"""
             )
@@ -1100,6 +1105,11 @@ class DdsWebHtmlE2eTest(unittest.TestCase):
                 layout["cardOverflow"],
                 "hidden",
                 msg="tight cards must clip rank text inside the pip chrome",
+            )
+            self.assertGreater(
+                layout["contentWidth"],
+                2,
+                msg="rank content box must stay positive at 360px (not chrome-only)",
             )
             self.assertEqual(errors, [])
         finally:
