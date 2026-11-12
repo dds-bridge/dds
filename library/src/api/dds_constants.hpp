@@ -171,7 +171,8 @@ constexpr const char TEXT_PLAY_FAULT[] = "AnalysePlay input error";
 constexpr int RETURN_PBN_FAULT = -99;
 constexpr const char TEXT_PBN_FAULT[] = "PBN string error";
 
-// SolveBoard() and AnalysePlay*()
+// SolveAllBoards*()/SolveAllChunks*() and AnalyseAllPlays*(), when a batch
+// exceeds MAXNOOFBOARDS.
 constexpr int RETURN_TOO_MANY_BOARDS = -101;
 constexpr const char TEXT_TOO_MANY_BOARDS[] =
     "Too many Boards requested";
