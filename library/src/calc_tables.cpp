@@ -114,8 +114,10 @@ auto calc_single_common_internal(
         if (reuse_same_board)
         {
             // Fast path for full deals: null-window reuse with a partner/opponent hint.
+            // South's partner is North; fut already holds East's score by then.
             const int hint =
-                (k == 2 ? fut.score[0] : kFullDealRemainingTricks - fut.score[0]);
+                (k == 2 ? solved.solved_board[bno].score[0]
+                        : kFullDealRemainingTricks - fut.score[0]);
             res = solve_same_board(ctx, deal, &fut, hint);
         }
         else
@@ -522,8 +524,9 @@ auto calc_single_deal_scores(
         deal.first = k;
         if (reuse_same_board)
         {
+            // South's partner is North; fut already holds East's score by then.
             const int hint =
-                (k == 2 ? fut.score[0] : kFullDealRemainingTricks - fut.score[0]);
+                (k == 2 ? scores[0] : kFullDealRemainingTricks - fut.score[0]);
             res = solve_same_board(ctx, deal, &fut, hint);
         }
         else
