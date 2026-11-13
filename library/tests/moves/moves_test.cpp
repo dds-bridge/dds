@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
+#include <ostream>
 #include <cstring>
 #include <chrono>
 
@@ -549,6 +550,197 @@ TEST_F(MovesTest, MoveGenResetsSnapshottedFieldsBeforeHeuristicContext)
     poisoned.lastNumMoves = 99;
     poisoned.leadSuit = 2;
     EXPECT_EQ(run_gen123(poisoned), gen123_clean);
+}
+
+namespace
+{
+
+// Ranks as rank_in_suit bits (bit 0 is the two).
+constexpr unsigned short kA = 0x1000, kK = 0x0800, kQ = 0x0400, kJ = 0x0200,
+                         k9 = 0x0080, k5 = 0x0008, k3 = 0x0002, k2 = 0x0001;
+
+// Deal for pinning MoveGen output. Hand 0 has A Q 9 / - / 5 / K J:
+// - suit 0: A and Q are split by East's K; J and T are out, so Q and 9 merge
+//   into one move with 9 in its sequence (exercises removed_ranks[suit]);
+// - suit 1 is void, so the lead loop skips a suit;
+// - suit 3: K and J are split by South's Q, and are the last suit, so
+//   lastNumMoves ends up non-zero.
+// Hand 1 holds A and 2 of suit 1 with K Q J of that suit held elsewhere, so
+// following suit 1 gives two moves; hand 2 holds a single card of suit 1.
+auto make_movegen_deal() -> CompactDeal
+{
+    CompactDeal d{};
+    d.rank_in_suit[0][0] = kA | kQ | k9;
+    d.rank_in_suit[0][2] = k5;
+    d.rank_in_suit[0][3] = kK | kJ;
+    d.rank_in_suit[1][0] = kK;
+    d.rank_in_suit[1][1] = kA | k2;
+    d.rank_in_suit[1][2] = k9;
+    d.rank_in_suit[2][0] = k3;
+    d.rank_in_suit[2][1] = kK;
+    d.rank_in_suit[2][2] = kJ;
+    d.rank_in_suit[2][3] = kQ;
+    d.rank_in_suit[3][1] = kQ | kJ;
+    d.rank_in_suit[3][2] = kA;
+    d.rank_in_suit[3][3] = k2;
+
+    for (int h = 0; h < DDS_HANDS; ++h)
+    {
+        for (int s = 0; s < DDS_SUITS; ++s)
+        {
+            d.tpos.rank_in_suit[h][s] = d.rank_in_suit[h][s];
+            d.tpos.length[h][s] =
+                static_cast<unsigned char>(popcount16(d.rank_in_suit[h][s]));
+            d.tpos.aggr[s] =
+                static_cast<unsigned short>(d.tpos.aggr[s] | d.rank_in_suit[h][s]);
+        }
+    }
+    return d;
+}
+
+struct GenMove
+{
+    int suit;
+    int rank;
+    int sequence;
+    int weight;
+
+    auto operator==(const GenMove& o) const -> bool
+    {
+        return suit == o.suit && rank == o.rank && sequence == o.sequence &&
+               weight == o.weight;
+    }
+};
+
+auto operator<<(std::ostream& os, const GenMove& m) -> std::ostream&
+{
+    return os << "{" << m.suit << ", " << m.rank << ", 0x" << std::hex
+              << m.sequence << std::dec << ", " << m.weight << "}";
+}
+
+// Everything MoveGen0/MoveGen123 leave behind: the returned count, the move
+// list in final order, the list bounds and the counter members.
+struct GenResult
+{
+    int returned;
+    std::vector<GenMove> moves;
+    int list_current;
+    int list_last;
+    int num_moves;
+    int last_num_moves;
+    int suit;
+};
+
+auto snapshot(const Moves& m, const int tricks, const int hand_rel,
+              const int returned) -> GenResult
+{
+    GenResult r{};
+    r.returned = returned;
+    const MovePlyType& list = m.moveList[tricks][hand_rel];
+    for (int i = 0; i < returned && i < 14; ++i)
+        r.moves.push_back({list.move[i].suit, list.move[i].rank,
+                           list.move[i].sequence, list.move[i].weight});
+    r.list_current = list.current;
+    r.list_last = list.last;
+    r.num_moves = m.numMoves;
+    r.last_num_moves = m.lastNumMoves;
+    r.suit = m.suit;
+    return r;
+}
+
+constexpr int kGenTricks = 5;
+
+auto run_movegen0(const int trump) -> GenResult
+{
+    static RelRanksType rel[8192] = {};
+    const CompactDeal deal = make_movegen_deal();
+    const MoveType best{};
+    Moves m;
+    m.Init(kGenTricks, 0, nullptr, nullptr, deal.rank_in_suit, trump, 0);
+    const int n = m.MoveGen0(kGenTricks, deal.tpos, best, best, rel);
+    return snapshot(m, kGenTricks, 0, n);
+}
+
+// Hand 3 leads suit 1, so hand_rel 1 is hand 0 (void), 2 is hand 1 (two
+// moves) and 3 is hand 2 (one move).
+auto run_movegen123(const int trump, const int hand_rel) -> GenResult
+{
+    constexpr int lead_hand = 3;
+    constexpr int lead_suit = 1;
+    const CompactDeal deal = make_movegen_deal();
+    Moves m;
+    m.Init(kGenTricks, 0, nullptr, nullptr, deal.rank_in_suit, trump, lead_hand);
+    m.track[kGenTricks].lead_suit = lead_suit;
+    m.track[kGenTricks].move[0] = ExtCard{lead_suit, 12, lead_hand};
+    const int n = m.MoveGen123(kGenTricks, hand_rel, deal.tpos);
+    return snapshot(m, kGenTricks, hand_rel, n);
+}
+
+}  // namespace
+
+// MoveGen0 and MoveGen123 count moves in locals and set numMoves,
+// lastNumMoves and suit once after each loop. Pin the full output (moves in
+// final order with weights, list bounds and counter members), captured
+// before that change, for each generation path.
+TEST_F(MovesTest, MoveGen0LeadOutputIsPinned)
+{
+    const GenResult r = run_movegen0(DDS_NOTRUMP);
+
+    const std::vector<GenMove> expected = {
+        {3, 11, 0x00, 1}, {3, 13, 0x00, -1}, {2, 5, 0x00, -26},
+        {0, 12, 0x80, -61}, {0, 14, 0x00, -63}};
+    EXPECT_EQ(r.returned, 5);
+    EXPECT_EQ(r.moves, expected);
+    EXPECT_EQ(r.list_current, 0);
+    EXPECT_EQ(r.list_last, 4);
+    EXPECT_EQ(r.num_moves, 5);
+    EXPECT_EQ(r.last_num_moves, 3);  // first move of suit 3, the last suit
+    EXPECT_EQ(r.suit, DDS_SUITS);
+}
+
+TEST_F(MovesTest, MoveGen123VoidOutputIsPinned)
+{
+    const GenResult r = run_movegen123(DDS_NOTRUMP, /*hand_rel=*/1);
+
+    const std::vector<GenMove> expected = {
+        {0, 12, 0x80, -7}, {0, 14, 0x00, -9}, {2, 5, 0x00, -12},
+        {3, 11, 0x00, -14}, {3, 13, 0x00, -16}};
+    EXPECT_EQ(r.returned, 5);
+    EXPECT_EQ(r.moves, expected);
+    EXPECT_EQ(r.list_current, 0);
+    EXPECT_EQ(r.list_last, 4);
+    EXPECT_EQ(r.num_moves, 5);
+    EXPECT_EQ(r.last_num_moves, 3);
+    EXPECT_EQ(r.suit, DDS_SUITS);
+}
+
+TEST_F(MovesTest, MoveGen123FollowOutputIsPinned)
+{
+    const GenResult r = run_movegen123(DDS_NOTRUMP, /*hand_rel=*/2);
+
+    const std::vector<GenMove> expected = {{1, 14, 0x00, 46}, {1, 2, 0x00, -2}};
+    EXPECT_EQ(r.returned, 2);
+    EXPECT_EQ(r.moves, expected);
+    EXPECT_EQ(r.list_current, 0);
+    EXPECT_EQ(r.list_last, 1);
+    EXPECT_EQ(r.num_moves, 2);
+    EXPECT_EQ(r.last_num_moves, 0);
+    EXPECT_EQ(r.suit, 1);  // the lead suit
+}
+
+// A single legal card returns before the heuristic and sort.
+TEST_F(MovesTest, MoveGen123SingleFollowOutputIsPinned)
+{
+    const GenResult r = run_movegen123(DDS_NOTRUMP, /*hand_rel=*/3);
+
+    const std::vector<GenMove> expected = {{1, 13, 0x00, 0}};
+    EXPECT_EQ(r.returned, 1);
+    EXPECT_EQ(r.moves, expected);
+    EXPECT_EQ(r.list_current, 0);
+    EXPECT_EQ(r.list_last, 0);
+    EXPECT_EQ(r.num_moves, 1);
+    EXPECT_EQ(r.last_num_moves, 0);
+    EXPECT_EQ(r.suit, 1);
 }
 
 /**

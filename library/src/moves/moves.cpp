@@ -221,15 +221,23 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
             make_heuristic_context(tpos, bestMove, bestMoveTT, thrp_rel,
                              track[tricks]);
 
-    for (suit = 0; suit < DDS_SUITS; suit++) {
-        unsigned short ris = tpos.rank_in_suit[leadHand][suit];
+    // The card writes below go through a pointer to int fields, so they could
+    // alias the members numMoves, lastNumMoves and suit; keeping those in locals
+    // lets the compiler hold them in registers. The members get their final
+    // values once, after the loop.
+    MoveType* const out = mply;
+    const unsigned short* const own = tpos.rank_in_suit[leadHand];
+    int n = 0;
+    int suit_first = 0;
+    for (int s = 0; s < DDS_SUITS; s++) {
+        unsigned short ris = own[s];
         if (ris == 0)
             continue;
 
-        lastNumMoves = numMoves;
+        suit_first = n;
         mp = &group_data[ris];
         g = mp->last_group_;
-        removed = trackp->removed_ranks[suit];
+        removed = trackp->removed_ranks[s];
 
         // Generate moves for this suit by iterating through card groups.
         // Merge consecutive groups when gaps are filled by removed cards.
@@ -242,19 +250,22 @@ auto Moves::MoveGen0(const int tricks, const Pos &tpos,
             while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
                 seq |= mp->fullseq_[--g];
 
-            mply[numMoves].sequence = seq;
-            mply[numMoves].suit = suit;
-            mply[numMoves].rank = rank;
+            out[n].sequence = seq;
+            out[n].suit = s;
+            out[n].rank = rank;
 
-            numMoves++;
+            n++;
             g--;
         }
 
-        hctx.suit = suit;
-        hctx.last_num_moves = lastNumMoves;
-        hctx.num_moves = numMoves;
+        hctx.suit = s;
+        hctx.last_num_moves = suit_first;
+        hctx.num_moves = n;
         ::call_heuristic(hctx, lead_case);
     }
+    suit = DDS_SUITS;
+    numMoves = n;
+    lastNumMoves = suit_first;
 
 #ifdef DDS_MOVES
     if (lead_case == WeightCase::Trump0)
@@ -308,6 +319,10 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
         g = mp->last_group_;
         removed = trackp->removed_ranks[leadSuit];
 
+        // Local count and pointer: the card writes could alias the members.
+        MoveType* const out = mply;
+        const int lead_suit = leadSuit;
+        int n = 0;
         while (g >= 0) {
             rank = mp->rank_[g];
             seq = mp->sequence_[g];
@@ -315,13 +330,14 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
             while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
                 seq |= mp->fullseq_[--g];
 
-            mply[numMoves].sequence = seq;
-            mply[numMoves].suit = leadSuit;
-            mply[numMoves].rank = rank;
+            out[n].sequence = seq;
+            out[n].suit = lead_suit;
+            out[n].rank = rank;
 
-            numMoves++;
+            n++;
             g--;
         }
+        numMoves = n;
 
         weight_case = weight_case_follow(handRel, trump_winner, /*is_void=*/false);
 #ifdef DDS_MOVES
@@ -352,15 +368,20 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
             make_heuristic_context(tpos, empty_move, empty_move, nullptr,
                              track[tricks]);
 
-    for (suit = 0; suit < DDS_SUITS; suit++) {
-        ris = tpos.rank_in_suit[currHand][suit];
+    // Local count, pointer and suit index, as in MoveGen0; members set after.
+    MoveType* const out = mply;
+    const unsigned short* const own = tpos.rank_in_suit[currHand];
+    int n = 0;
+    int suit_first = 0;
+    for (int s = 0; s < DDS_SUITS; s++) {
+        ris = own[s];
         if (ris == 0)
             continue;
 
-        lastNumMoves = numMoves;
+        suit_first = n;
         mp = &group_data[ris];
         g = mp->last_group_;
-        removed = trackp->removed_ranks[suit];
+        removed = trackp->removed_ranks[s];
 
         while (g >= 0) {
             rank = mp->rank_[g];
@@ -369,19 +390,22 @@ auto Moves::MoveGen123(const int tricks, const int handRel, const Pos &tpos)
             while (g >= 1 && ((mp->gap_[g] & removed) == mp->gap_[g]))
                 seq |= mp->fullseq_[--g];
 
-            mply[numMoves].sequence = seq;
-            mply[numMoves].suit = suit;
-            mply[numMoves].rank = rank;
+            out[n].sequence = seq;
+            out[n].suit = s;
+            out[n].rank = rank;
 
-            numMoves++;
+            n++;
             g--;
         }
 
-        hctx.suit = suit;
-        hctx.last_num_moves = lastNumMoves;
-        hctx.num_moves = numMoves;
+        hctx.suit = s;
+        hctx.last_num_moves = suit_first;
+        hctx.num_moves = n;
         ::call_heuristic(hctx, weight_case);
     }
+    suit = DDS_SUITS;
+    numMoves = n;
+    lastNumMoves = suit_first;
 
     list.current = 0;
     list.last = numMoves - 1;
