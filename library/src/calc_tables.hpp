@@ -64,6 +64,17 @@ auto declarer_tricks_from_leader_score(
     int leader_side_score) -> int;
 
 /**
+ * @brief Test hook: observe the hint used for each same-board re-solve.
+ *
+ * Full-deal table solves re-solve each board for leaders East, South and
+ * West, starting each null-window search from a hint. When set, the observer
+ * is called with the strain, the leader and the hint before each re-solve.
+ * Pass nullptr to remove it. Intended for tests only.
+ */
+using SameBoardHintObserver = void (*)(int trump, int leader, int hint);
+auto set_same_board_hint_observer(SameBoardHintObserver observer) -> void;
+
+/**
  * @brief Unbounded CalcAllTables with optional per-strain-board timings.
  *
  * Same behavior as CalcAllTablesX. When @p strain_times_us is non-null, it is
