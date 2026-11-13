@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
+#include <utility>
 #include <cstring>
 #include <chrono>
 
@@ -549,6 +550,125 @@ TEST_F(MovesTest, MoveGenResetsSnapshottedFieldsBeforeHeuristicContext)
     poisoned.lastNumMoves = 99;
     poisoned.leadSuit = 2;
     EXPECT_EQ(run_gen123(poisoned), gen123_clean);
+}
+
+namespace
+{
+
+constexpr int kPromoteTrick = 4;
+
+// Five generated moves for (kPromoteTrick, hand 0). The third, the ten of
+// suit 2, carries the 9 and 8 in its sequence (bit_map_rank[r] is
+// 1 << (r - 2)).
+auto fill_promote_list(Moves& m, const int current) -> void
+{
+    MovePlyType& list = m.moveList[kPromoteTrick][0];
+    list.move[0] = MoveType{0, 14, 0, 50};
+    list.move[1] = MoveType{1, 13, 0, 40};
+    list.move[2] = MoveType{2, 10, 0x0080 | 0x0040, 30};
+    list.move[3] = MoveType{1, 5, 0, 20};
+    list.move[4] = MoveType{3, 7, 0, 10};
+    list.current = current;
+    list.last = 4;
+}
+
+// The list as (suit, rank) pairs, which identify the moves above.
+auto promote_order(const Moves& m) -> std::vector<std::pair<int, int>>
+{
+    const MovePlyType& list = m.moveList[kPromoteTrick][0];
+    std::vector<std::pair<int, int>> order;
+    for (int i = 0; i <= list.last; ++i)
+        order.emplace_back(list.move[i].suit, list.move[i].rank);
+    return order;
+}
+
+}  // namespace
+
+TEST_F(MovesTest, GetMoveReturnsIndexedMove)
+{
+    fill_promote_list(*moves, 0);
+    for (int i = 0; i <= 4; ++i)
+    {
+        const MoveType& mv = moves->GetMove(kPromoteTrick, 0, i);
+        EXPECT_EQ(&mv, &moves->moveList[kPromoteTrick][0].move[i]);
+    }
+}
+
+// The matching move becomes the next one tried; moves between keep order.
+TEST_F(MovesTest, PromoteNextMovesMatchToCurrentAndKeepsOrder)
+{
+    fill_promote_list(*moves, 1);
+    EXPECT_TRUE(moves->PromoteNext(kPromoteTrick, 0, MoveType{1, 5, 0, 0}));
+
+    const std::vector<std::pair<int, int>> want = {
+        {0, 14}, {1, 5}, {1, 13}, {2, 10}, {3, 7}};
+    EXPECT_EQ(promote_order(*moves), want);
+    EXPECT_EQ(moves->moveList[kPromoteTrick][0].current, 1);
+    EXPECT_EQ(moves->moveList[kPromoteTrick][0].last, 4);
+    // The whole move travels, including sequence and weight.
+    EXPECT_EQ(moves->moveList[kPromoteTrick][0].move[1].weight, 20);
+}
+
+// The last move in the list can be promoted.
+TEST_F(MovesTest, PromoteNextPromotesLastMove)
+{
+    fill_promote_list(*moves, 0);
+    EXPECT_TRUE(moves->PromoteNext(kPromoteTrick, 0, MoveType{3, 7, 0, 0}));
+
+    const std::vector<std::pair<int, int>> want = {
+        {3, 7}, {0, 14}, {1, 13}, {2, 10}, {1, 5}};
+    EXPECT_EQ(promote_order(*moves), want);
+}
+
+// A killer recorded as a card inside a generated move's sequence still
+// matches that move.
+TEST_F(MovesTest, PromoteNextMatchesRankInSequence)
+{
+    fill_promote_list(*moves, 0);
+    EXPECT_TRUE(moves->PromoteNext(kPromoteTrick, 0, MoveType{2, 9, 0, 0}));
+
+    const std::vector<std::pair<int, int>> want = {
+        {2, 10}, {0, 14}, {1, 13}, {1, 5}, {3, 7}};
+    EXPECT_EQ(promote_order(*moves), want);
+    EXPECT_EQ(moves->moveList[kPromoteTrick][0].move[0].sequence, 0x0080 | 0x0040);
+}
+
+// The move already next is left where it is.
+TEST_F(MovesTest, PromoteNextOfCurrentMoveLeavesListUnchanged)
+{
+    fill_promote_list(*moves, 2);
+    const auto before = promote_order(*moves);
+    EXPECT_TRUE(moves->PromoteNext(kPromoteTrick, 0, MoveType{2, 10, 0, 0}));
+    EXPECT_EQ(promote_order(*moves), before);
+}
+
+// Same rank in another suit is not a match.
+TEST_F(MovesTest, PromoteNextRequiresSameSuit)
+{
+    fill_promote_list(*moves, 0);
+    const auto before = promote_order(*moves);
+    EXPECT_FALSE(moves->PromoteNext(kPromoteTrick, 0, MoveType{0, 13, 0, 0}));
+    EXPECT_EQ(promote_order(*moves), before);
+}
+
+// Moves before current were already tried and must not be tried again.
+TEST_F(MovesTest, PromoteNextIgnoresAlreadyTriedMoves)
+{
+    fill_promote_list(*moves, 2);
+    const auto before = promote_order(*moves);
+    EXPECT_FALSE(moves->PromoteNext(kPromoteTrick, 0, MoveType{0, 14, 0, 0}));
+    EXPECT_FALSE(moves->PromoteNext(kPromoteTrick, 0, MoveType{1, 13, 0, 0}));
+    EXPECT_EQ(promote_order(*moves), before);
+    EXPECT_EQ(moves->moveList[kPromoteTrick][0].current, 2);
+}
+
+// A card no generated move covers changes nothing.
+TEST_F(MovesTest, PromoteNextWithoutMatchLeavesListUnchanged)
+{
+    fill_promote_list(*moves, 0);
+    const auto before = promote_order(*moves);
+    EXPECT_FALSE(moves->PromoteNext(kPromoteTrick, 0, MoveType{2, 4, 0, 0}));
+    EXPECT_EQ(promote_order(*moves), before);
 }
 
 /**

@@ -247,6 +247,18 @@ py_test(
     ],
 )
 
+# Regression: search changes must not change results on hands/list100.txt.
+py_test(
+    name = "dtest_reference_list_test",
+    size = "small",
+    srcs = ["test_dtest_reference_list.py"],
+    main = "test_dtest_reference_list.py",
+    data = [
+        ":dtest",
+        "//hands:list100.txt",
+    ],
+)
+
 # Integration: real_main/main must exit non-zero after the first mismatch.
 py_test(
     name = "dtest_mismatch_exit_test",
