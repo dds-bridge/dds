@@ -33,10 +33,6 @@
             undeployedCardHtml
             handHoldingHtml
             escapeHtml
-            fitCenterDeckCards
-            fitSouthHandCards
-            fitEastHandCards
-            fitDiagramFonts
             updateHandCardDisplays
             addCardToHand
             removeCardFromHand
@@ -1370,179 +1366,11 @@ function deckStatusHtml(hands) {
     }).join("");
 }
 
-const SEAT_FONT_PX = 30;
-const FIT_EPSILON_PX = 0.5;
-
-function rowIntrinsicContentWidth(row) {
-    if (!row) {
-        return 0;
-    }
-
-    // .hand-suit uses width:100% as a click hit-target, so laid-out scrollWidth
-    // is at least the cell width — including during the near-zero font probe.
-    // Measure with max-content so fitting sees the holding, not the stretch.
-    const style = row.style;
-    if (style && typeof style === "object") {
-        const previousWidth = style.width;
-        style.width = "max-content";
-        const width = row.scrollWidth || 0;
-        style.width = previousWidth;
-        return width;
-    }
-
-    return row.scrollWidth || 0;
-}
-
-function maxRowScrollWidth(root, rowSelector) {
-    let needed = 0;
-
-    if (!root || typeof root.querySelectorAll !== "function") {
-        return 0;
-    }
-
-    for (const row of root.querySelectorAll(rowSelector)) {
-        needed = Math.max(needed, rowIntrinsicContentWidth(row));
-    }
-
-    return needed;
-}
-
-function contentBoxWidth(element) {
-    if (!element || typeof getComputedStyle !== "function") {
-        return 0;
-    }
-
-    const style = getComputedStyle(element);
-
-    return element.clientWidth -
-        (parseFloat(style.paddingLeft) || 0) -
-        (parseFloat(style.paddingRight) || 0);
-}
-
-function clearFitStyles(element) {
-    element.style.fontSize = "";
-    element.style.maxWidth = "";
-    element.style.overflowX = "";
-}
-
-function clipElementToAvailable(element, available) {
-    element.style.maxWidth = available + "px";
-    element.style.overflowX = "hidden";
-}
-
-function fitFontToContentWidth(element, available, rowSelector, baseFontPx) {
-    // Prefer clearing any prior shrink so a roomy box returns to the CSS seat
-    // size instead of keeping a stale inline fit.
-    clearFitStyles(element);
-
-    if (!(available > 0)) {
-        return;
-    }
-
-    const neededFull = maxRowScrollWidth(element, rowSelector);
-
-    if (!(neededFull > available + FIT_EPSILON_PX)) {
-        return;
-    }
-
-    // 1px card borders do not scale with font-size. Probe near-zero font to
-    // estimate that fixed chrome, then solve for the font that fits in one shot
-    // (proportional iteration converges too slowly near the fixed floor).
-    element.style.fontSize = "0.01px";
-    const fixedPx = maxRowScrollWidth(element, rowSelector);
-    const scalablePx = neededFull - fixedPx;
-
-    if (!(fixedPx <= available + FIT_EPSILON_PX) || !(scalablePx > 0)) {
-        clearFitStyles(element);
-        clipElementToAvailable(element, available);
-        return;
-    }
-
-    const fontPx = baseFontPx * (available - fixedPx) / scalablePx;
-
-    if (!(fontPx > 0)) {
-        clearFitStyles(element);
-        clipElementToAvailable(element, available);
-        return;
-    }
-
-    element.style.fontSize = fontPx + "px";
-
-    if (maxRowScrollWidth(element, rowSelector) > available + FIT_EPSILON_PX) {
-        clipElementToAvailable(element, available);
-    }
-}
-
-function fitCenterDeckCards() {
-    const deckStatus = document.getElementById("deck-status");
-
-    if (!deckStatus) {
-        return;
-    }
-
-    clearFitStyles(deckStatus);
-
-    if (deckStatus.hidden) {
-        return;
-    }
-
-    const center = typeof document.querySelector === "function"
-        ? document.querySelector(".grid-filler-center")
-        : null;
-
-    if (!center) {
-        return;
-    }
-
-    fitFontToContentWidth(
-        deckStatus,
-        contentBoxWidth(center),
-        ".deck-suit-row",
-        SEAT_FONT_PX
-    );
-}
-
-function fitSeatHandCards(seatSelector) {
-    const hand = typeof document.querySelector === "function"
-        ? document.querySelector(seatSelector)
-        : null;
-
-    if (!hand) {
-        return;
-    }
-
-    // Clear clip/maxWidth before measuring: an earlier narrow fit's inline
-    // maxWidth would otherwise keep clientWidth stuck at the clipped size.
-    clearFitStyles(hand);
-
-    fitFontToContentWidth(
-        hand,
-        contentBoxWidth(hand),
-        ".hand-suit",
-        SEAT_FONT_PX
-    );
-}
-
-function fitSouthHandCards() {
-    fitSeatHandCards(".hand-south");
-}
-
-function fitEastHandCards() {
-    fitSeatHandCards(".hand-east");
-}
-
-function fitDiagramFonts() {
-    fitCenterDeckCards();
-    fitSouthHandCards();
-    fitEastHandCards();
-}
-
 function updateDeckStatus(hands) {
     const deckStatus = document.getElementById("deck-status");
 
     if (deckStatus) {
         deckStatus.innerHTML = deckStatusHtml(hands);
-        fitCenterDeckCards();
     }
 }
 
@@ -1890,9 +1718,6 @@ function updateHandCardDisplays(hands) {
             }
         }
     }
-
-    fitSouthHandCards();
-    fitEastHandCards();
 }
 
 function onHandCardClick(direction, card) {
@@ -3259,9 +3084,6 @@ function pageLoad() {
     }
     document.addEventListener("selectionchange", handleSuitSelectionChange);
     document.addEventListener("focusout", handleDocumentFocusOut);
-    if (typeof window !== "undefined" && window.addEventListener) {
-        window.addEventListener("resize", fitDiagramFonts);
-    }
     updateActionButtons();
     focusNorthSpades();
     // Programmatic focus may not emit selectionchange; paint the caret so
