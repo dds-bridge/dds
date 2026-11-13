@@ -1,3 +1,5 @@
+using DDS_Core.Helpers;
+
 namespace DDS_Core.Tests;
 
 /// <summary>
@@ -15,5 +17,21 @@ public class SolveBoardResultTests
     public void SolveBoardResult_HasValue(SolveBoardResult result, int expected)
     {
         Assert.Equal(expected, (int)result);
+    }
+
+    /// <summary>
+    /// The four new members above went straight from <see cref="SolveBoardResult"/>
+    /// into the PR without a matching case in
+    /// <see cref="SolveBoardResultExtensions.GetRcErrorMessage"/>, so each fell through
+    /// to its "Unknown error" default instead of the message DDS actually documents for it.
+    /// </summary>
+    [Theory]
+    [InlineData(SolveBoardResult.NoSuit, "Denomination filter vector has no entries")]
+    [InlineData(SolveBoardResult.TooManyTables, "Too many DD tables requested")]
+    [InlineData(SolveBoardResult.ChunkSize, "Chunk size is less than 1")]
+    [InlineData(SolveBoardResult.ParTableFault, "Missing double dummy table, or an entry outside the range 0 to 13")]
+    public void SolveBoardResult_HasErrorMessage(SolveBoardResult result, string expected)
+    {
+        Assert.Equal(expected, result.GetRcErrorMessage());
     }
 }
