@@ -125,6 +125,18 @@ filegroup(
 )
 
 # max_threads override equivalence + rename/alias initialization test
+# Batch APIs give repeated boards the same results as single solves
+cc_test(
+    name = "duplicate_boards_test",
+    size = "small",
+    srcs = ["duplicate_boards_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "max_threads_equivalence_test",
     size = "small",

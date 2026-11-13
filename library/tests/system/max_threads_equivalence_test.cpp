@@ -130,3 +130,23 @@ TEST(MaxThreadsEquivalence, DeprecatedSetMaxThreadsAliasStillWorks)
     DdTableResults table{};
     EXPECT_EQ(CalcDDtable(deal, &table), RETURN_NO_FAULT);
 }
+
+// SetResources must leave the library usable when the thread count changes in
+// either direction between solves. It used to also reset a ThreadMgr that
+// nothing else read; results must not depend on that.
+TEST(MaxThreadsEquivalence, SetResourcesThreadCountChangesKeepSolving)
+{
+    InitializeStaticMemory();
+    const DdTableDeal deal = make_known_deal();
+    DdTableResults reference{};
+    ASSERT_EQ(CalcDDtableN(deal, &reference, /*maxThreads=*/1), RETURN_NO_FAULT);
+
+    for (const int threads : {1, 4, 2, 1, 0})
+    {
+        SetResources(/*maxMemoryMB=*/0, threads);
+        DdTableResults table{};
+        ASSERT_EQ(CalcDDtable(deal, &table), RETURN_NO_FAULT)
+            << "after SetResources(0, " << threads << ")";
+        expect_tables_equal(reference, table);
+    }
+}
