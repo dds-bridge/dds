@@ -462,7 +462,7 @@ Check that list/array types match expectations:
 
 ### DDS errors
 Refer to DDS error codes in the C++ library documentation. Common ones:
-- Error -2: Invalid board state (e.g., wrong card count)
+- Error -2: Zero cards supplied (RETURN_ZERO_CARDS)
 - Error -14: Wrong number of remaining cards
 
 ## Contributing

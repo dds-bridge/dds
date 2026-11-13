@@ -77,8 +77,11 @@ constexpr int DDS_NOTRUMP = 4;  ///< No trump strain index
 constexpr int RETURN_NO_FAULT = 1;
 constexpr const char TEXT_NO_FAULT[] = "Success";
 
-// Currently happens when fopen() fails or when AnalyseAllPlaysBin()
-// get a different number of Boards in its first two arguments.
+// General catch-all, used across the solver, par calculation, table
+// calculation, the C-ABI validation layer, and parallel board solving
+// (a worker-thread exception maps here). Too many call sites to enumerate
+// usefully here without going stale again; see
+// `grep -rn RETURN_UNKNOWN_FAULT library/src` for the current ones.
 constexpr int RETURN_UNKNOWN_FAULT = -1;
 constexpr const char TEXT_UNKNOWN_FAULT[] = "General error";
 
@@ -168,7 +171,8 @@ constexpr const char TEXT_PLAY_FAULT[] = "AnalysePlay input error";
 constexpr int RETURN_PBN_FAULT = -99;
 constexpr const char TEXT_PBN_FAULT[] = "PBN string error";
 
-// SolveBoard() and AnalysePlay*()
+// SolveAllBoards*()/SolveAllChunks*() and AnalyseAllPlays*(), when a batch
+// exceeds MAXNOOFBOARDS.
 constexpr int RETURN_TOO_MANY_BOARDS = -101;
 constexpr const char TEXT_TOO_MANY_BOARDS[] =
     "Too many Boards requested";

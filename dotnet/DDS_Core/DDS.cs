@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
 using DDS_Core.Helpers;
 using DDS_Core.Native;
 
@@ -629,7 +628,6 @@ public class DDS
     #endregion
 
     #region private methods
-        [Conditional("DEBUG")]
         private static void ThrowIfError(in int result, in string functionName)
         {
             if (result != (int)SolveBoardResult.NoFault)

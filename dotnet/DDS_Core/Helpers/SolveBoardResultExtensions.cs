@@ -34,6 +34,10 @@
              SolveBoardResult.ThreadCreate     => "Could not create threads",
              SolveBoardResult.ThreadWait       => "Something failed waiting for thread to end",
              SolveBoardResult.ThreadMissing    => "Tried to set a multi-threading system that is not present",
+             SolveBoardResult.NoSuit           => "Denomination filter vector has no entries",
+             SolveBoardResult.TooManyTables    => "Too many DD tables requested",
+             SolveBoardResult.ChunkSize        => "Chunk size is less than 1",
+             SolveBoardResult.ParTableFault    => "Missing double dummy table, or an entry outside the range 0 to 13",
              _                                 => "Unknown error"
              };
     }

@@ -1,7 +1,8 @@
 ﻿namespace DDS_Core;
 
 /// <summary>
-/// DDS return codes for SolveBoard() and related functions.
+/// DDS return codes for SolveBoard(), AnalysePlay*(), CalcAllTables*(),
+/// SolveAllChunks*(), and Par*() functions.
 /// </summary>
 public enum SolveBoardResult
 {
@@ -11,8 +12,9 @@ public enum SolveBoardResult
     NoFault = 1,
 
     /// <summary>
-    /// General error. Currently happens when fopen() fails or when AnalyseAllPlaysBin()
-    /// gets a different number of Boards in its first two arguments.
+    /// General catch-all, used across the solver, par calculation, table
+    /// calculation, the C-ABI validation layer, and parallel board solving
+    /// (a worker-thread exception maps here).
     /// </summary>
     UnknownFault = -1,
 
@@ -125,5 +127,25 @@ public enum SolveBoardResult
     /// <summary>
     /// Tried to set a multi-threading system that is not present in DLL.
     /// </summary>
-    ThreadMissing = -104
+    ThreadMissing = -104,
+
+    /// <summary>
+    /// Denomination filter vector has no entries.
+    /// </summary>
+    NoSuit = -201,
+
+    /// <summary>
+    /// Too many DD tables requested.
+    /// </summary>
+    TooManyTables = -202,
+
+    /// <summary>
+    /// Chunk size is less than 1.
+    /// </summary>
+    ChunkSize = -301,
+
+    /// <summary>
+    /// Missing double dummy table, or an entry outside the range 0 to 13.
+    /// </summary>
+    ParTableFault = -401
 }

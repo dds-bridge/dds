@@ -1233,8 +1233,9 @@ It is possible to ask DDS to give up its dynamically allocated memory by calling
 <td>1</td><td>RETURN_NO_FAULT</td><td>&nbsp;</td>
 </tr>
 <tr>
-<td>-1</td><td>RETURN_UNKNOWN_FAULT</td><td>Currently happens when fopen() returns an error or when AnalyseAllPlaysBin() gets a
-different number of boards in its first two arguments.</td>
+<td>-1</td><td>RETURN_UNKNOWN_FAULT</td><td>General catch-all, used across the solver, par calculation, table
+calculation, the C-ABI validation layer, and parallel board solving (a worker-thread exception maps here). See
+`grep -rn RETURN_UNKNOWN_FAULT library/src` for the current call sites rather than relying on this description.</td>
 </tr>
 <tr>
 <td>-2</td><td>RETURN_ZERO_CARDS</td><td>SolveBoard(), self-explanatory.</td>
@@ -1255,10 +1256,10 @@ different number of boards in its first two arguments.</td>
 <td>-8</td><td>RETURN_SOLNS_WRONG_LO</td><td>SolveBoard(), solutions is less than 1.</td>
 </tr>
 <tr>
-<td>-10</td><td>RETURN_SOLNS_WRONG_HI</td><td>SolveBoard(), solutions is higher than 3.</td>
+<td>-9</td><td>RETURN_SOLNS_WRONG_HI</td><td>SolveBoard(), solutions is higher than 3.</td>
 </tr>
 <tr>
-<td>-11</td><td>RETURN_TOO_MANY_CARDS</td><td>SolveBoard(), self-explanatory.</td>
+<td>-10</td><td>RETURN_TOO_MANY_CARDS</td><td>SolveBoard(), self-explanatory.</td>
 </tr>
 <tr>
 <td>-12</td><td>RETURN_SUIT_OR_RANK</td><td>SolveBoard(), either currentTrickSuit or currentTrickRank have wrong data.</td>
@@ -1291,13 +1292,16 @@ Invalid suit or rank supplied. (c) A played card is not held by the right player
 <tr>
 <td>-99</td><td>RETURN_PBN_FAULT</td><td>Returned from a number of places if a PBN string is faulty.</td>
 </tr>
-<tr><td>-101</td><td>RETURN_TOO_MANY_THREADS</td><td>Currently never returned.</td>
+<tr><td>-101</td><td>RETURN_TOO_MANY_BOARDS</td><td>SolveAllBoards*()/SolveAllChunks*() and AnalyseAllPlays*(), returned when a batch exceeds MAXNOOFBOARDS.</td>
 </tr>
 <tr>
 <td>-102</td><td>RETURN_THREAD_CREATE</td><td>Returned from multi-threading functions.</td>
 </tr>
 <tr>
 <td>-103</td><td>RETURN_THREAD_WAIT</td><td>Returned from multi-threading functions when something went wrong while waiting for all threads to complete.</td>
+</tr>
+<tr>
+<td>-104</td><td>RETURN_THREAD_MISSING</td><td>Tried to set a multi-threading system that is not present in DLL.</td>
 </tr>
 <tr>
 <td>-201</td><td>RETURN_NO_SUIT</td><td>CalcAllTables\*(), returned when the denomination filter vector has no entries.</td>

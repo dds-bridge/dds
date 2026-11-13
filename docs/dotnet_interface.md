@@ -382,8 +382,9 @@ if (rc !=  (int)SolveBoardResult.NoFault)
 ```
 ### Internal Error Handling
 
-In DEBUG mode, the library will throw exceptions for any DDS error code returned by the underlying functions. 
-This allows for easier debugging and error tracking during development.
+The library throws exceptions for any DDS error code returned by the underlying functions, in every build
+configuration (DEBUG and Release). This allows error tracking during development without silently swallowing
+failures in deployed Release builds.
 
 ---
 
