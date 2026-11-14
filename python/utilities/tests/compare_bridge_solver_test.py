@@ -231,6 +231,26 @@ class CompareSummaryTest(unittest.TestCase):
         )
         self.assertEqual(args.dds_threads, 1)
 
+    def test_parser_defaults_to_sibling_bridge_solver_cpp(self) -> None:
+        # Local checkout lives beside dds/; bazel run resolves via BUILD_WORKING_DIRECTORY.
+        parser = cbs._build_parser()
+        args = parser.parse_args([])
+
+        self.assertEqual(
+            args.bridge_solver, Path("../Bridge-Solver-CPP/solver")
+        )
+        self.assertEqual(
+            args.deals_dir, Path("../Bridge-Solver-CPP/deals/fixed")
+        )
+
+    def test_default_bridge_solver_cpp_constants(self) -> None:
+        self.assertEqual(
+            cbs.DEFAULT_BRIDGE_SOLVER, Path("../Bridge-Solver-CPP/solver")
+        )
+        self.assertEqual(
+            cbs.DEFAULT_DEALS_DIR, Path("../Bridge-Solver-CPP/deals/fixed")
+        )
+
     def test_parser_rejects_negative_dds_threads(self) -> None:
         parser = cbs._build_parser()
         args = parser.parse_args(

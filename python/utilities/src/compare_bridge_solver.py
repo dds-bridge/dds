@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""Compare DDS vs macroxue/bridge-solver on full DD-table wall time.
+"""Compare DDS vs Bridge-Solver-CPP (macroxue/bridge-solver) on full DD-table wall time.
 
 Apples-to-apples: five strains × four declarers, DDS forced to one thread.
-Requires a built macroxue ``solver`` binary (not vendored here).
+Defaults assume a sibling checkout at ``../Bridge-Solver-CPP`` with a built
+``solver`` binary.
 
-Usage:
-  bazelisk run //python/utilities:compare_bridge_solver -- \\
-    --bridge-solver /path/to/solver \\
-    --deals-dir /path/to/bridge-solver/deals/fixed \\
-    --limit 25
+Usage (from the dds/ directory, with Bridge-Solver-CPP beside it):
+  bazelisk run //python/utilities:compare_bridge_solver -- --limit 25
 """
 
 from __future__ import annotations
@@ -25,6 +23,11 @@ from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
 from dds3 import calc_all_tables_pbn, initialize_static_memory
+
+# Sibling checkout of https://github.com/macroxue/Bridge-Solver-CPP (or
+# macroxue/bridge-solver); relative paths resolve via BUILD_WORKING_DIRECTORY.
+DEFAULT_BRIDGE_SOLVER = Path("../Bridge-Solver-CPP/solver")
+DEFAULT_DEALS_DIR = Path("../Bridge-Solver-CPP/deals/fixed")
 
 _SEATS = ("N", "E", "S", "W")
 _SUITS = ("S", "H", "D", "C")
@@ -318,7 +321,8 @@ def run_macroxue_solver(
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Benchmark DDS vs macroxue/bridge-solver on full DD tables. "
+            "Benchmark DDS vs Bridge-Solver-CPP (macroxue/bridge-solver) on "
+            "full DD tables. Defaults to ../Bridge-Solver-CPP beside dds/. "
             "Default DDS threading is 1 for a fair single-thread compare; "
             "raise --dds-threads to measure multi-threaded DDS."
         )
@@ -326,14 +330,20 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--bridge-solver",
         type=Path,
-        required=True,
-        help="Path to the built macroxue solver binary",
+        default=DEFAULT_BRIDGE_SOLVER,
+        help=(
+            "Path to the built solver binary "
+            f"(default: {DEFAULT_BRIDGE_SOLVER})"
+        ),
     )
     parser.add_argument(
         "--deals-dir",
         type=Path,
-        required=True,
-        help="Directory of macroxue deal files (e.g. deals/fixed)",
+        default=DEFAULT_DEALS_DIR,
+        help=(
+            "Directory of deal files "
+            f"(default: {DEFAULT_DEALS_DIR})"
+        ),
     )
     parser.add_argument(
         "--limit",
@@ -378,9 +388,10 @@ def resolve_user_path(
 ) -> Path:
     """Resolve CLI paths relative to the user's invoking directory under bazel run.
 
-    ``bazel run`` changes cwd to the runfiles tree, so ``../bridge-solver/solver``
-    must be anchored at ``BUILD_WORKING_DIRECTORY`` (the directory from which
-    bazel was invoked), not the runfiles cwd.
+    ``bazel run`` changes cwd to the runfiles tree, so
+    ``../Bridge-Solver-CPP/solver`` must be anchored at
+    ``BUILD_WORKING_DIRECTORY`` (the directory from which bazel was invoked),
+    not the runfiles cwd.
     """
     env = os.environ if environ is None else environ
     expanded = path.expanduser()

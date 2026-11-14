@@ -447,7 +447,7 @@ class TestParseArgs(unittest.TestCase):
         self.assertFalse(cfg.reverse)
         self.assertEqual(cfg.specs, [])
         self.assertEqual(cfg.dtest_extra, [])
-        self.assertIsNone(cfg.bridgesolver)
+        self.assertEqual(cfg.bridgesolvers, [])
         self.assertIsNone(cfg.hand_file)
         self.assertEqual(cfg.solvers, ("solve", "calc"))
 
@@ -456,7 +456,7 @@ class TestParseArgs(unittest.TestCase):
             ["--bridgesolver", "/tmp/solver"],
             env={},
         )
-        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.bridgesolvers, [Path("/tmp/solver")])
         self.assertEqual(cfg.solvers, ("solve", "calc"))
 
     def test_bridgesolver_with_calc_ok(self) -> None:
@@ -464,7 +464,7 @@ class TestParseArgs(unittest.TestCase):
             ["--bridgesolver", "/tmp/solver", "-s", "calc"],
             env={},
         )
-        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.bridgesolvers, [Path("/tmp/solver")])
         self.assertEqual(cfg.solvers, ("calc",))
 
     def test_bridgesolver_with_solve_ok(self) -> None:
@@ -472,7 +472,7 @@ class TestParseArgs(unittest.TestCase):
             ["--bridgesolver", "/tmp/solver", "-s", "solve"],
             env={},
         )
-        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.bridgesolvers, [Path("/tmp/solver")])
         self.assertEqual(cfg.solvers, ("solve",))
 
     def test_bridgesolver_flag(self) -> None:
@@ -480,26 +480,85 @@ class TestParseArgs(unittest.TestCase):
             ["--bridgesolver", "/tmp/solver", "-s", "calc"],
             env={},
         )
-        self.assertEqual(cfg.bridgesolver, Path("/tmp/solver"))
+        self.assertEqual(cfg.bridgesolvers, [Path("/tmp/solver")])
 
     def test_bridgesolver_env(self) -> None:
         cfg = benchmark.parse_args(
             ["-s", "calc"],
             env={"BRIDGESOLVER": "/env/solver"},
         )
-        self.assertEqual(cfg.bridgesolver, Path("/env/solver"))
+        self.assertEqual(cfg.bridgesolvers, [Path("/env/solver")])
 
     def test_bridgesolver_cli_overrides_env(self) -> None:
         cfg = benchmark.parse_args(
             ["--bridgesolver", "/cli/solver", "-s", "calc"],
             env={"BRIDGESOLVER": "/env/solver"},
         )
-        self.assertEqual(cfg.bridgesolver, Path("/cli/solver"))
+        self.assertEqual(cfg.bridgesolvers, [Path("/cli/solver")])
 
     def test_bridgesolver_requires_value(self) -> None:
         with self.assertRaises(benchmark.BenchmarkError) as ctx:
             benchmark.parse_args(["--bridgesolver"], env={})
         self.assertIn("missing value for --bridgesolver", str(ctx.exception))
+
+    def test_bridge_solver_cpp_defaults_to_sibling_solver(self) -> None:
+        cfg = benchmark.parse_args(["--bridge-solver-cpp", "-s", "calc"], env={})
+        self.assertEqual(
+            cfg.bridgesolvers, [Path("../Bridge-Solver-CPP/solver")]
+        )
+
+    def test_default_bridge_solver_cpp_constant(self) -> None:
+        self.assertEqual(
+            benchmark.DEFAULT_BRIDGE_SOLVER_CPP,
+            Path("../Bridge-Solver-CPP/solver"),
+        )
+
+    def test_bridge_solver_cpp_and_bridgesolver_both_allowed(self) -> None:
+        cfg = benchmark.parse_args(
+            [
+                "--bridge-solver-cpp",
+                "--bridgesolver",
+                "/tmp/other-solver",
+                "-s",
+                "calc",
+            ],
+            env={},
+        )
+        self.assertEqual(
+            cfg.bridgesolvers,
+            [
+                Path("../Bridge-Solver-CPP/solver"),
+                Path("/tmp/other-solver"),
+            ],
+        )
+
+    def test_bridgesolver_then_bridge_solver_cpp_preserves_cli_order(self) -> None:
+        cfg = benchmark.parse_args(
+            [
+                "--bridgesolver",
+                "/tmp/other-solver",
+                "--bridge-solver-cpp",
+                "-s",
+                "calc",
+            ],
+            env={},
+        )
+        self.assertEqual(
+            cfg.bridgesolvers,
+            [
+                Path("/tmp/other-solver"),
+                Path("../Bridge-Solver-CPP/solver"),
+            ],
+        )
+
+    def test_bridge_solver_cpp_overrides_env(self) -> None:
+        cfg = benchmark.parse_args(
+            ["--bridge-solver-cpp", "-s", "calc"],
+            env={"BRIDGESOLVER": "/env/solver"},
+        )
+        self.assertEqual(
+            cfg.bridgesolvers, [Path("../Bridge-Solver-CPP/solver")]
+        )
 
     def test_bridgesolver_rejects_duplicate_in_dtest_extra(self) -> None:
         with self.assertRaises(benchmark.BenchmarkError) as ctx:
@@ -1339,10 +1398,10 @@ class TestRunDtestWasm(unittest.TestCase):
             harness.write_text("h")
             solver = root / "my-solver"
             solver.write_text("y")
-            labels, paths, bs = benchmark.append_bridgesolver_peer(
+            labels, paths, bs = benchmark.append_bridgesolver_peers(
                 ["develop"],
                 [dtest],
-                solver,
+                [solver],
                 harness_dtest=harness,
             )
             # Peer must use a current-tree harness that understands
@@ -1350,6 +1409,32 @@ class TestRunDtestWasm(unittest.TestCase):
             self.assertEqual(labels, ["develop", "my-solver"])
             self.assertEqual(paths, [dtest, harness])
             self.assertEqual(bs, [None, solver])
+
+    def test_bridgesolver_appends_multiple_comparison_peers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dtest = root / "dtest"
+            dtest.write_text("x")
+            harness = root / "harness-dtest"
+            harness.write_text("h")
+            cpp = root / "Bridge-Solver-CPP" / "solver"
+            cpp.parent.mkdir()
+            cpp.write_text("c")
+            other = root / "other-solver"
+            other.write_text("o")
+            labels, paths, bs = benchmark.append_bridgesolver_peers(
+                ["develop"],
+                [dtest],
+                [benchmark.DEFAULT_BRIDGE_SOLVER_CPP, other],
+                harness_dtest=harness,
+            )
+            self.assertEqual(
+                labels, ["develop", "Bridge-Solver-CPP", "other-solver"]
+            )
+            self.assertEqual(paths, [dtest, harness, harness])
+            self.assertEqual(
+                bs, [None, benchmark.DEFAULT_BRIDGE_SOLVER_CPP, other]
+            )
 
     def test_js_resolves_relative_hands_path(self) -> None:
         # cwd for node is the wasm artifact dir; relative -f must not resolve there.

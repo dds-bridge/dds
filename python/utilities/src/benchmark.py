@@ -32,7 +32,9 @@ Environment:
   DETAILS    If 1, keep per-run rows and build output (default: 0, summary only)
   SYS_USER   If 1, include a sys/user column per binary in the summary
   EPSILON    For a two-binary comparison, max % diff treated as equal (default: 0.5)
-  BRIDGESOLVER  Optional path to macroxue/bridge-solver (passed to dtest solve/calc)
+  BRIDGESOLVER  Optional path to Bridge-Solver-CPP / macroxue/bridge-solver
+                (passed to dtest solve/calc). Prefer --bridge-solver-cpp for
+                the sibling ../Bridge-Solver-CPP/solver default.
 """
 
 from __future__ import annotations
@@ -47,6 +49,9 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping, Sequence, TextIO
+
+# Sibling checkout of https://github.com/macroxue/Bridge-Solver-CPP
+DEFAULT_BRIDGE_SOLVER_CPP = Path("../Bridge-Solver-CPP/solver")
 
 SOLVERS = ("solve", "calc")
 ALT_ENTER = "\033[?1049h\033[H\033[2J"
@@ -134,7 +139,7 @@ class Config:
     branch_binary: Path | None = None  # BRANCH env / default dtest path
     hands_dir: Path | None = None
     hand_file: Path | None = None  # -f / --file; replaces list10^n matrix
-    bridgesolver: Path | None = None
+    bridgesolvers: list[Path] = field(default_factory=list)
     solvers: tuple[str, ...] = SOLVERS
     specs: list[tuple[str, str]] = field(default_factory=list)
     dtest_extra: list[str] = field(default_factory=list)
@@ -161,27 +166,35 @@ def label_for_path(path: str | Path) -> str:
     return name if name else str(path)
 
 
-def append_bridgesolver_peer(
+def bridgesolver_label(path: Path) -> str:
+    """Column label for a bridge-solver peer binary."""
+    if path == DEFAULT_BRIDGE_SOLVER_CPP:
+        return "Bridge-Solver-CPP"
+    return label_for_path(path)
+
+
+def append_bridgesolver_peers(
     labels: list[str],
     paths: list[Path],
-    bridgesolver: Path,
+    bridgesolvers: Sequence[Path],
     *,
     harness_dtest: Path,
 ) -> tuple[list[str], list[Path], list[Path | None]]:
-    """Append a calc peer that runs ``harness_dtest --bridgesolver``.
+    """Append peers that run ``harness_dtest --bridgesolver`` for each solver.
 
-    Returns (labels, paths, bridgesolver_by_index). The peer uses
+    Returns (labels, paths, bridgesolver_by_index). Peers use
     ``harness_dtest`` (must understand ``--bridgesolver``), not the baseline
     DDS binary under test — older ``--branch`` builds may lack the flag.
     """
-    if not paths:
+    if bridgesolvers and not paths:
         raise BenchmarkError("--bridgesolver requires a baseline dtest binary")
     bs_by_idx: list[Path | None] = [None] * len(paths)
     labels = list(labels)
     paths = list(paths)
-    labels.append(label_for_path(bridgesolver))
-    paths.append(harness_dtest)
-    bs_by_idx.append(bridgesolver)
+    for bridgesolver in bridgesolvers:
+        labels.append(bridgesolver_label(bridgesolver))
+        paths.append(harness_dtest)
+        bs_by_idx.append(bridgesolver)
     return labels, paths, bs_by_idx
 
 
@@ -538,12 +551,12 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
         cfg.hands_dir = Path(env["HANDS_DIR"])
     if env.get("BRANCH"):
         cfg.branch_binary = Path(env["BRANCH"])
-    if env.get("BRIDGESOLVER"):
-        cfg.bridgesolver = Path(env["BRIDGESOLVER"])
 
     repeats_given = False
     cli_binary_given = False
     bridgesolver_given = False
+    bridge_solver_cpp_given = False
+    bridgesolver_cli: list[Path] = []
     solver_given = False
     hand_file_given = False
     args = list(argv)
@@ -591,6 +604,11 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
                 raise BenchmarkError("missing value for --binary")
             cfg.specs.append(("binary", args[i]))
             cli_binary_given = True
+        elif a == "--bridge-solver-cpp":
+            if bridge_solver_cpp_given:
+                raise BenchmarkError("--bridge-solver-cpp may be given only once")
+            bridge_solver_cpp_given = True
+            bridgesolver_cli.append(DEFAULT_BRIDGE_SOLVER_CPP)
         elif a == "--bridgesolver":
             if bridgesolver_given:
                 raise BenchmarkError("--bridgesolver may be given only once")
@@ -598,7 +616,7 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
             i += 1
             if i >= len(args):
                 raise BenchmarkError("missing value for --bridgesolver")
-            cfg.bridgesolver = Path(args[i])
+            bridgesolver_cli.append(Path(args[i]))
         elif a in ("-s", "--solver"):
             if solver_given:
                 raise BenchmarkError(f"{a} may be given only once")
@@ -641,11 +659,16 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
     if not cli_binary_given and env.get("BINARY"):
         cfg.specs.append(("binary", env["BINARY"]))
 
-    if cfg.bridgesolver is not None and "--bridgesolver" in cfg.dtest_extra:
+    if bridgesolver_cli:
+        cfg.bridgesolvers = bridgesolver_cli
+    elif env.get("BRIDGESOLVER"):
+        cfg.bridgesolvers = [Path(env["BRIDGESOLVER"])]
+
+    if cfg.bridgesolvers and "--bridgesolver" in cfg.dtest_extra:
         raise BenchmarkError(
             "--bridgesolver cannot also appear in dtest args after --"
         )
-    if cfg.bridgesolver is not None:
+    if cfg.bridgesolvers:
         allowed = {"solve", "calc"}
         if not cfg.solvers or not set(cfg.solvers).issubset(allowed):
             raise BenchmarkError(
@@ -664,13 +687,12 @@ def parse_args(argv: Sequence[str], env: Mapping[str, str] | None = None) -> Con
         )
 
     n_bins = len(cfg.specs) if cfg.specs else 1
-    if cfg.bridgesolver is not None:
-        n_bins += 1
+    n_bins += len(cfg.bridgesolvers)
     if cfg.reverse and n_bins < 2:
         raise BenchmarkError(
             "--reverse requires at least two binaries "
             "(two or more --branch/--wasm_branch/--binary, "
-            "or one of those with --bridgesolver)"
+            "or one of those with --bridgesolver/--bridge-solver-cpp)"
         )
     return cfg
 
@@ -701,12 +723,16 @@ Options:
                       Alias: --wasm-branch. Labels appear as wasm:NAME.
   --binary PATH       Path to a prebuilt dtest binary to benchmark. Repeatable.
                       A .js path (dtest_wasm) is run via node with the sibling .wasm.
-  --bridgesolver PATH Compare DDS against macroxue/bridge-solver at PATH
-                      (adds a second summary column; requires -s solve and/or
+  --bridgesolver PATH Compare DDS against Bridge-Solver-CPP / bridge-solver at
+                      PATH (adds a summary column; requires -s solve and/or
                       -s calc). Runs via a harness dtest built from the
                       *current* tree (supports --bridgesolver); DDS columns
                       still use --branch / --binary as usual. Env: BRIDGESOLVER.
-                      Do not also pass --bridgesolver after --.
+                      Do not also pass --bridgesolver after --. May be combined
+                      with --bridge-solver-cpp.
+  --bridge-solver-cpp Same as --bridgesolver with PATH
+                      ../Bridge-Solver-CPP/solver (sibling checkout). May be
+                      combined with --bridgesolver (CLI order = column order).
   --details           Keep per-run timing rows and build (git/bazel) output
   --sys-user          Include a sys/user column per binary in the summary
                       (env: SYS_USER=1)
@@ -751,7 +777,9 @@ Examples:
   python/utilities/src/benchmark.py --binary /path/to/dtest --epsilon 1
   python/utilities/src/benchmark.py --binary /path/to/dtest --reverse
   python/utilities/src/benchmark.py --repeats 5 --binary /path/to/dtest
+  python/utilities/src/benchmark.py --bridge-solver-cpp -s calc
   python/utilities/src/benchmark.py --bridgesolver /path/to/solver -s calc
+  python/utilities/src/benchmark.py --bridge-solver-cpp --bridgesolver /path/to/solver -s calc
   python/utilities/src/benchmark.py --branch . --bridgesolver /path/to/solver -s calc
   DRY_RUN=1 python/utilities/src/benchmark.py
   ./benchmark.sh"""
@@ -1086,7 +1114,7 @@ class BenchmarkRunner:
                 self.restore_branch(False)
 
         bs_by_idx: list[Path | None] = [None] * len(paths)
-        if self.cfg.bridgesolver is not None:
+        if self.cfg.bridgesolvers:
             # Always build/copy the *current* checkout's dtest as the harness.
             # --branch may have produced older binaries that reject --bridgesolver.
             harness = self.new_tmp_bin()
@@ -1110,10 +1138,10 @@ class BenchmarkRunner:
                     self.root / DTEST_REL, harness, follow_symlinks=True
                 )
                 ensure_executable(harness)
-            labels, paths, bs_by_idx = append_bridgesolver_peer(
+            labels, paths, bs_by_idx = append_bridgesolver_peers(
                 labels,
                 paths,
-                self.cfg.bridgesolver,
+                self.cfg.bridgesolvers,
                 harness_dtest=harness,
             )
         return labels, paths, bs_by_idx
@@ -1313,8 +1341,8 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
     print(f"{'solvers:':<12} {' '.join(cfg.solvers)}")
     print(f"{'git branch:':<12} {runner.git_branch}")
     print(f"{'repeats:':<12} {cfg.repeats}")
-    if cfg.bridgesolver is not None:
-        print(f"{'bridgesolver:':<12} {cfg.bridgesolver}")
+    for bs in cfg.bridgesolvers:
+        print(f"{'bridgesolver:':<12} {bs}")
     if cfg.dtest_extra:
         print(f"{'dtest args:':<12} {' '.join(cfg.dtest_extra)}")
     print()

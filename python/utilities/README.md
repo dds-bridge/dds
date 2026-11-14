@@ -47,6 +47,14 @@ bazelisk run //python/utilities:benchmark
 python python/utilities/src/benchmark.py --build -- -n 8
 ```
 
+Compare against a sibling [Bridge-Solver-CPP](https://github.com/macroxue/Bridge-Solver-CPP)
+checkout (`../Bridge-Solver-CPP/solver`), an explicit `--bridgesolver PATH`, or both:
+
+```bash
+python python/utilities/src/benchmark.py --bridge-solver-cpp -s calc
+python python/utilities/src/benchmark.py --bridge-solver-cpp --bridgesolver /path/to/solver -s calc
+```
+
 ## `create_list_for_dtest`
 
 Generate random `dtest` hand-list files (conventionally `listNNN.txt` with `--seed NNN`).
@@ -60,19 +68,30 @@ See also `utilities/src/regenerate_hand_lists.sh` and `utilities/src/verify_list
 
 ## `compare_bridge_solver`
 
-Wall-time bake-off of DDS vs [macroxue/bridge-solver](https://github.com/macroxue/bridge-solver)
+Wall-time bake-off of DDS vs
+[Bridge-Solver-CPP](https://github.com/macroxue/Bridge-Solver-CPP)
+(same CLI as [macroxue/bridge-solver](https://github.com/macroxue/bridge-solver))
 on full double-dummy tables (5 strains × 4 declarers). DDS is capped at one
 thread so the comparison matches their single-threaded `solver` process.
 
-Build their solver portably (their PGO `makefile` assumes Linux `/proc/cpuinfo`):
+Defaults assume a sibling checkout at `../Bridge-Solver-CPP` with a built
+`solver` binary. Relative paths resolve from the directory where you invoke
+bazel (`BUILD_WORKING_DIRECTORY`).
 
 ```bash
-git clone https://github.com/macroxue/bridge-solver.git
-cd bridge-solver
+# From dds/, with Bridge-Solver-CPP beside it:
+bazelisk run //python/utilities:compare_bridge_solver -- --limit 25
+```
+
+Build their solver if needed (their PGO `makefile` assumes Linux `/proc/cpuinfo`):
+
+```bash
+git clone https://github.com/macroxue/Bridge-Solver-CPP.git ../Bridge-Solver-CPP
+cd ../Bridge-Solver-CPP
 c++ -std=c++17 -O3 -o solver solver.cc
 ```
 
-Then run (relative paths are resolved from the directory where you invoke bazel):
+Override paths for a different checkout:
 
 ```bash
 bazelisk run //python/utilities:compare_bridge_solver -- \
@@ -86,8 +105,6 @@ multi-threaded DDS run:
 
 ```bash
 bazelisk run //python/utilities:compare_bridge_solver -- \
-  --bridge-solver ../bridge-solver/solver \
-  --deals-dir ../bridge-solver/deals/fixed \
   --limit 25 \
   --dds-threads 8
 ```
