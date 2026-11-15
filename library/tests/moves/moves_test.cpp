@@ -615,7 +615,7 @@ struct GenMove
 auto operator<<(std::ostream& os, const GenMove& m) -> std::ostream&
 {
     return os << "{" << m.suit << ", " << m.rank << ", 0x" << std::hex
-              << m.sequence << std::dec << ", " << m.weight << "}";
+        << m.sequence << std::dec << ", " << m.weight << "}";
 }
 
 // Everything MoveGen0/MoveGen123 leave behind: the returned count, the move
@@ -632,7 +632,7 @@ struct GenResult
 };
 
 auto snapshot(const Moves& m, const int tricks, const int hand_rel,
-              const int returned) -> GenResult
+        const int returned) -> GenResult
 {
     GenResult r{};
     r.returned = returned;
@@ -672,6 +672,10 @@ auto run_movegen123(const int trump, const int hand_rel) -> GenResult
     m.Init(kGenTricks, 0, nullptr, nullptr, deal.rank_in_suit, trump, lead_hand);
     m.track[kGenTricks].lead_suit = lead_suit;
     m.track[kGenTricks].move[0] = ExtCard{lead_suit, 12, lead_hand};
+    // Hand 0 is void and discards its 5 of suit 2; the lead still wins.
+    // hand_rel 2 reads these, so they must not be left indeterminate.
+    m.track[kGenTricks].move[1] = ExtCard{2, 5, 0};
+    m.track[kGenTricks].high[1] = 0;
     const int n = m.MoveGen123(kGenTricks, hand_rel, deal.tpos);
     return snapshot(m, kGenTricks, hand_rel, n);
 }
