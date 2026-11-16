@@ -10,6 +10,7 @@
 #include "calc_tables.hpp"
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <limits>
 #include <numeric>
@@ -74,7 +75,20 @@ auto is_full_thirteen_trick_deal(
     return remaining_tricks_from_holdings(cards) == kFullDealRemainingTricks;
 }
 
+std::atomic<SameBoardHintObserver> same_board_hint_observer{nullptr};
+
+auto notify_same_board_hint(const Deal& deal, const int hint) -> void
+{
+    if (auto observer = same_board_hint_observer.load(std::memory_order_relaxed))
+        observer(deal.trump, deal.first, hint);
+}
+
 }  // namespace
+
+auto set_same_board_hint_observer(SameBoardHintObserver observer) -> void
+{
+    same_board_hint_observer.store(observer, std::memory_order_relaxed);
+}
 
 
 auto calc_single_common_internal(
@@ -114,8 +128,11 @@ auto calc_single_common_internal(
         if (reuse_same_board)
         {
             // Fast path for full deals: null-window reuse with a partner/opponent hint.
+            // South's partner is North; fut already holds East's score by then.
             const int hint =
-                (k == 2 ? fut.score[0] : kFullDealRemainingTricks - fut.score[0]);
+                (k == 2 ? solved.solved_board[bno].score[0]
+                        : kFullDealRemainingTricks - fut.score[0]);
+            notify_same_board_hint(deal, hint);
             res = solve_same_board(ctx, deal, &fut, hint);
         }
         else
@@ -522,8 +539,10 @@ auto calc_single_deal_scores(
         deal.first = k;
         if (reuse_same_board)
         {
+            // South's partner is North; fut already holds East's score by then.
             const int hint =
-                (k == 2 ? fut.score[0] : kFullDealRemainingTricks - fut.score[0]);
+                (k == 2 ? scores[0] : kFullDealRemainingTricks - fut.score[0]);
+            notify_same_board_hint(deal, hint);
             res = solve_same_board(ctx, deal, &fut, hint);
         }
         else
