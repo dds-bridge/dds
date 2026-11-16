@@ -262,6 +262,18 @@ cc_test(
     ],
 )
 
+# Regression tests for the South hint in full-deal table solves
+cc_test(
+    name = "same_board_hint_test",
+    size = "small",
+    srcs = ["same_board_hint_test.cpp"],
+    deps = [
+        "//library/src:testable_dds",
+        "//library/src/api:api_definitions",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Integration tests for DDS_PRINT_TT_STATS output (#397)
 cc_test(
     name = "tt_print_stats_test",
