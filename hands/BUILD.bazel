@@ -3,6 +3,7 @@ exports_files(
     [
         "list1.txt",
         "list2.txt",
+        "list100.txt",
         "nothing_makes.txt",
         "everyone_makes_3N.pbn",
         "ns_make_7.pbn",

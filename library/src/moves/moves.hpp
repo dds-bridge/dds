@@ -310,6 +310,21 @@ public:
         auto GetLength(const int trick, const int relHand) const -> int;
 
         /**
+     * @brief Get the idx-th generated move for trick/hand (0 <= idx < GetLength).
+     */
+        auto GetMove(const int trick, const int relHand, const int idx) const
+            -> const MoveType &;
+
+        /**
+     * @brief Make the not yet tried move matching m (same suit; rank equal
+     * to it or in its sequence) the next one that MakeNext() considers.
+     * The order of the other moves is kept.
+     * @return true if such a move was found.
+     */
+        auto PromoteNext(const int trick, const int relHand, const MoveType &m)
+            -> bool;
+
+        /**
      * @brief Apply a specific move to tracking state.
      *
      * @param mply Move to apply

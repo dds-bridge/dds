@@ -397,6 +397,7 @@ static bool ab_search_0_ctx(
 
     bool success = (ctx.search().node_type_store(hand) == MAXNODE ? true : false);
     bool value = ! success;
+    bool first_lead = true;
 
     TIMER_START(TIMER_NO_MOVEGEN, depth);
     for (int ss = 0; ss < DDS_SUITS; ss++)
@@ -452,6 +453,18 @@ static bool ab_search_0_ctx(
         // Accumulate win_ranks from the explored child to inform subsequent moves
         for (int ss = 0; ss < DDS_SUITS; ss++)
             posPoint->win_ranks[depth][ss] |= posPoint->win_ranks[depth - 1][ss];
+
+        // The first lead failed. If the killer (the lead that last cut at
+        // this depth) was not that lead, try it next rather than wherever
+        // its heuristic weight put it.
+        if (first_lead)
+        {
+            first_lead = false;
+            const MoveType& killer = ctx.search().best_move(depth);
+            if (killer.rank != 0 &&
+                    (killer.suit != mply->suit || killer.rank != mply->rank))
+                ctx.move_gen().promote_next(tricks, 0, killer);
+        }
 
         TIMER_START(TIMER_NO_NEXTMOVE, depth);
         TIMER_END(TIMER_NO_NEXTMOVE, depth);
@@ -651,6 +664,74 @@ ABexit:
 }
 
 
+
+// Enhanced transposition cutoff (ETC) for the last hand to a trick.
+//
+// Each card the fourth hand can play completes the trick and leads to a
+// position that ab_search_0 would first look up in the transposition table
+// (depth >= 20) or settle at once on tricks_max. Probing all of those
+// children before searching any of them finds a child that is already known
+// to cut, which saves the search of whatever card the heuristic ordering
+// would have tried first. It changes only the order in which children are
+// evaluated, never a value. Applied in the first ETC_TRICKS tricks of the
+// search, where subtrees are largest and the probes cheapest by comparison.
+static const int ETC_TRICKS = 3;
+
+static bool etc_cutoff(
+    Pos * posPoint,
+    const int target,
+    const int depth,
+    const int tricks,
+    const bool success,
+    SolverContext& ctx)
+{
+    unsigned short makeWinRank[DDS_SUITS];
+    const int num_moves = ctx.move_gen().get_length(tricks, 3);
+    if (num_moves < 2)
+        return false;
+
+    const int d1 = depth - 1;
+    const int t1 = d1 >> 2;
+
+    for (int m = 0; m < num_moves; m++)
+    {
+        const MoveType mv = ctx.move_gen().get_move(tricks, 3, m);
+        ctx.move_gen().make_specific(mv, tricks, 3);
+        make_3(posPoint, makeWinRank, depth, &mv, ctx);
+        const bool max_won =
+            (ctx.search().node_type_store(posPoint->first[d1]) == MAXNODE);
+        if (max_won)
+            posPoint->tricks_max++;
+
+        // Same tests, in effect, that ab_search_0 makes first at depth d1.
+        for (int ss = 0; ss < DDS_SUITS; ss++)
+            posPoint->win_ranks[d1][ss] = 0;
+        bool known = true;
+        bool child;
+        if (posPoint->tricks_max >= target)
+            child = true;
+        else if (posPoint->tricks_max + t1 + 1 < target)
+            child = false;
+        else
+            known = apply_ab_tt_lookup(posPoint, target, d1, t1,
+                posPoint->first[d1], ctx, child);
+
+        undo_0(posPoint, depth, mv, ctx);
+        if (max_won)
+            posPoint->tricks_max--;
+
+        if (known && child == success)
+        {
+            for (int ss = 0; ss < DDS_SUITS; ss++)
+                posPoint->win_ranks[depth][ss] = static_cast<unsigned short>(
+                    posPoint->win_ranks[d1][ss] | makeWinRank[ss]);
+            ctx.search().best_move(depth) = mv;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool ab_search_3(
     Pos * posPoint,
     const int target,
@@ -691,6 +772,15 @@ static bool ab_search_3_ctx(
         ctx.move_gen().purge(tricks, 3, ctx.search().forbidden_moves());
 
     TIMER_END(TIMER_NO_MOVEGEN, depth);
+
+    if (depth - 1 >= 20 &&
+        depth != ctx.search().ini_depth() &&
+        ctx.search().ini_depth() - depth < 4 * ETC_TRICKS &&
+        etc_cutoff(posPoint, target, depth, tricks, success, ctx))
+    {
+        AB_COUNT(AB_MOVE_LOOP, success, depth);
+        return success;
+    }
 
     for (int ss = 0; ss < DDS_SUITS; ss++)
         posPoint->win_ranks[depth][ss] = 0;

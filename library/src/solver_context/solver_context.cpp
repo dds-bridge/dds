@@ -429,6 +429,22 @@ auto SolverContext::MoveGenContext::get_length(
     return thr_->moves.GetLength(trick, relHand);
 }
 
+auto SolverContext::MoveGenContext::get_move(
+    const int trick,
+    const int relHand,
+    const int idx) const -> const MoveType&
+{
+    return thr_->moves.GetMove(trick, relHand, idx);
+}
+
+auto SolverContext::MoveGenContext::promote_next(
+    const int trick,
+    const int relHand,
+    const MoveType& m) -> bool
+{
+    return thr_->moves.PromoteNext(trick, relHand, m);
+}
+
 auto SolverContext::MoveGenContext::rewind(
     const int tricks,
     const int relHand) -> void
